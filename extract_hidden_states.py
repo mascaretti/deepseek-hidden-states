@@ -4,17 +4,17 @@ import os
 import pickle
 from tqdm import tqdm
 from datasets import load_dataset
+import time
 
 def batch_generator(lst, batch_size):
     for i in range(0, len(lst), batch_size):
         yield lst[i:i + batch_size]
 
-def main(what="filckr", batch_size=10):
+def main(file_path="/home/rende/deepseek-hidden-states/stsb_sentence1.txt", batch_size=10):
     # Read the "flickr.csv" file line by line
-    prompts = []
-    with open("/home/rende/deepseek/filckr8k_filtered_4080.csv", "r") as file:
-        for line in file:
-            prompts.append(line.strip())
+
+    with open(file_path, "r") as f:
+        prompts = [line.strip() for line in f]
 
     # Create an LLM.
     NODE_RANK = int(os.environ["SLURM_NODEID"])
@@ -26,6 +26,7 @@ def main(what="filckr", batch_size=10):
         dist_init_addr="10.149.146.53:8000",
         node_rank=NODE_RANK,
         grammar_backend="xgrammar",
+        disable_radix_cache=True,
     ) 
 
     sampling_params = {
@@ -34,13 +35,17 @@ def main(what="filckr", batch_size=10):
         "max_new_tokens": 2,
     }
 
-    all_outputs = []
-    for p in tqdm(batch_generator(prompts, batch_size)):
+    folder_path = os.path.splitext(file_path)[0]  # removes .txt extension
+    os.makedirs(folder_path, exist_ok=True)
+
+    for i, p in enumerate(batch_generator(prompts, batch_size)):
+        start = time.time()
         outputs = llm.generate(p, sampling_params=sampling_params)
-        all_outputs.append(outputs)
-    
-    with open(f"{what}_outputs.pkl", "wb") as f:
-        pickle.dump(all_outputs, f)
+        with open(f"{folder_path}/chunk_{i}.pkl", "wb") as f:
+            pickle.dump(outputs, f)
+
+        t_step = time.time() - start
+        print(f"iter {i} | t_step = {t_step:.2f}", flush=True)
 
     llm.shutdown()
 
