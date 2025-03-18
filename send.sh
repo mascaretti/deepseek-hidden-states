@@ -9,7 +9,7 @@
 
 source /home/rende/mysglang/bin/activate
 
-cd /home/rende/deepseek
+cd /home/rende/deepseek-hidden-states
 
 srun --ntasks=2 --nodes=2 python3 extract_hidden_states.py
 

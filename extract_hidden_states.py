@@ -10,8 +10,9 @@ def batch_generator(lst, batch_size):
     for i in range(0, len(lst), batch_size):
         yield lst[i:i + batch_size]
 
-def main(file_path="/home/rende/deepseek-hidden-states/stsb_sentence1.txt", batch_size=10):
-    # Read the "flickr.csv" file line by line
+def main(batch_size=10):
+    #file_path = "/home/laios/Data/Text/tokens/corpus_Helsinki-NLP/opus_books/LLM_A_Llama3/model_A_id_0/languageA_English/min_token_length_40/max_token_length_50/source.txt"
+    file_path = "/home/laios/Data/Text/tokens/corpus_Helsinki-NLP/opus_books/LLM_A_Llama3/model_A_id_0/LLM_B_Llama3/model_B_id_0/languageA_English/languageB_Spanish/min_token_length_40/max_token_length_50/target.txt"
 
     with open(file_path, "r") as f:
         prompts = [line.strip() for line in f]
@@ -35,7 +36,7 @@ def main(file_path="/home/rende/deepseek-hidden-states/stsb_sentence1.txt", batc
         "max_new_tokens": 2,
     }
 
-    folder_path = os.path.splitext(file_path)[0]  # removes .txt extension
+    folder_path = "./deepseek_spanish" #os.path.splitext(file_path)[0]  # removes .txt extension
     os.makedirs(folder_path, exist_ok=True)
 
     for i, p in enumerate(batch_generator(prompts, batch_size)):
