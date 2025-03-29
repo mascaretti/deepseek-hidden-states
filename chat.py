@@ -1,33 +1,49 @@
-from sglang.utils import print_highlight
+import torch
+import sglang as sgl
+import os
+import pickle
 from tqdm import tqdm
-import requests
-url = f"http://127.0.0.1:30000/v1/chat/completions"
+import time
 
-import sys
-f = open('chinese.txt', 'w')
-sys.stdout = f #* redirect the outputs in this file
+def batch_generator(lst, batch_size):
+    for i in range(0, len(lst), batch_size):
+        yield lst[i:i + batch_size]
 
-file_path = "./source.txt"
+def main(batch_size=10):
+    file_path = "./source.txt"
 
-with open(file_path, 'r') as file:
-    for line in tqdm(file):
-        line = line.strip()
+    question = "Can you translate the following sentence into Chinese? Provide only the answer.\n"
 
-        question = "Can you translate the following sentence into Chinese? Provide only the answer.\n"
-        prompt = question + line
+    with open(file_path, "r") as f:
+        prompts = [question + line.strip() for line in f]
 
-        print("======== Prompt ========", flush=True)
-        print(prompt)
+    # Create an LLM.
+    NODE_RANK = int(os.environ["SLURM_NODEID"])
+    llm = sgl.Engine(
+        model_path="/home/rende/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-V3/snapshots/86518964eaef84e3fdd98e9861759a1384f9c29d",
+        tp_size=16,
+        return_hidden_states=False,
+        nnodes=2,
+        dist_init_addr="10.149.146.53:8000",
+        node_rank=NODE_RANK,
+        grammar_backend="xgrammar",
+    ) 
 
-        data = {
-            "model": "deepseek-ai/DeepSeek-V3",
-            "messages": [{"role": "user", "content": question + line}],
-        }
+    folder_path = "./chinese_translations" #os.path.splitext(file_path)[0]  # removes .txt extension
+    os.makedirs(folder_path, exist_ok=True)
 
-        print("******** Answer ********")
+    for i, p in enumerate(batch_generator(prompts, batch_size)):
+        start = time.time()
+        outputs = llm.generate(p)
+        with open(f"{folder_path}/chunk_{i}.pkl", "wb") as f:
+            pickle.dump(outputs, f)
 
-        response = requests.post(url, json=data)
-        print_highlight(response.json()['choices'][0]['message']['content'])
+        t_step = time.time() - start
+        print(f"iter {i} | t_step = {t_step:.2f}", flush=True)
 
-        print("========================")
+    llm.shutdown()
 
+# The __main__ condition is necessary here because we use "spawn" to create subprocesses
+# Spawn starts a fresh program every time, if there is no __main__, it will run into infinite loop to keep spawning processes from sgl.Engine
+if __name__ == "__main__":
+    main()
