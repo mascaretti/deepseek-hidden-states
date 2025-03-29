@@ -3,7 +3,7 @@ import pickle
 from pathlib import Path
 import re
 
-path = "../chinese_translations"
+path = "./chinese_translations"
 folder = Path(path)
 
 def extract_index(file):
@@ -22,4 +22,4 @@ for file in files:
         # print("====== PROMPT ========")
         # print(prompt)
         # print("****** ANSWER ********")
-        print(sentence['text'].replace("\n", ""))
+        print(sentence['text'].replace("\n", "").strip("“").strip("”").strip("。"))
