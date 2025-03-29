@@ -9,13 +9,13 @@ def batch_generator(lst, batch_size):
     for i in range(0, len(lst), batch_size):
         yield lst[i:i + batch_size]
 
-def main(batch_size=10):
+def main(batch_size=500):
     file_path = "./source.txt"
 
-    question = "Can you translate the following sentence into Chinese? Provide only the answer.\n"
+    question = "Can you translate the following sentence into Chinese? Provide only the answer.\n \n"
 
     with open(file_path, "r") as f:
-        prompts = [question + line.strip() for line in f]
+        prompts = [question + line.strip().strip('"') for line in f]
 
     # Create an LLM.
     NODE_RANK = int(os.environ["SLURM_NODEID"])
@@ -36,7 +36,7 @@ def main(batch_size=10):
         start = time.time()
         outputs = llm.generate(p)
         with open(f"{folder_path}/chunk_{i}.pkl", "wb") as f:
-            pickle.dump(outputs, f)
+            pickle.dump((p, outputs), f)
 
         t_step = time.time() - start
         print(f"iter {i} | t_step = {t_step:.2f}", flush=True)
