@@ -22,4 +22,4 @@ for file in files:
         # print("====== PROMPT ========")
         # print(prompt)
         # print("****** ANSWER ********")
-        print(sentence['text'].replace("\n", "").strip("“").strip("”").strip("。"))
+        print(sentence['text'].replace("\n", ""))
