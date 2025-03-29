@@ -14,16 +14,12 @@ files = sorted(
     [f for f in folder.iterdir() if f.is_file() and f.name.startswith("chunk_")],
     key=extract_index)
 
-for file in files[:2]:
-    print(file.name)
+for file in files:
     data = pickle.load(open(path + "/" + file.name, 'rb'))
     prompts, outputs = data
 
     for prompt, sentence in zip(prompts, outputs):
-        # hidden_states = sentence['meta_info']['hidden_states'][0]
-        # print(hidden_states.shape)
-        print("--------")
-        print("====== PROMPT ========")
-        print(prompt)
-        print("****** ANSWER ********")
-        print(sentence['text'])
+        # print("====== PROMPT ========")
+        # print(prompt)
+        # print("****** ANSWER ********")
+        print(sentence['text'].replace("\n", ""))
