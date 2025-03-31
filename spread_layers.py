@@ -1,29 +1,20 @@
 import pickle
-
 from pathlib import Path
-import re
 
 import torch
 from safetensors.torch import save_file
 
 from tqdm import tqdm
 
-def extract_index(file):
-    match = re.search(r'chunk_(\d+)\.pkl', file.name)
-    return int(match.group(1)) if match else float('inf')  # push non-matching files to the end
+from utils import list_chuncks_folder
 
 def main(input_path):
-    folder = Path(input_path)
+    files = list_chuncks_folder(input_path)
 
     #* create folder in output_path
     output_path= input_path + "_safetensors"
     Path(output_path).mkdir(parents=True, exist_ok=True)
     print("Output path = ", output_path, flush=True)
-
-    #* collect all the files starting with *chunk_* in the input_path
-    files = sorted(
-        [f for f in folder.iterdir() if f.is_file() and f.name.startswith("chunk_")],
-        key=extract_index)
 
     for file in tqdm(files):
         print(file.name)
