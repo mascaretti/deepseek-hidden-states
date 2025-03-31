@@ -8,12 +8,12 @@ def extract_index(file):
     match = re.search(r'chunk_(\d+)\.pkl', file.name)
     return int(match.group(1)) if match else float('inf')  # push non-matching files to the end
 
-def list_chunks_folder(path):
+def list_folder(path, desc="chunk_"):
     folder = Path(path)
 
     #* collect all the files starting with *chunk_* in the input_path
     files = sorted(
-        [f for f in folder.iterdir() if f.is_file() and f.name.startswith("chunk_")],
+        [f for f in folder.iterdir() if f.name.startswith(desc)],
         key=extract_index)
 
     return files

@@ -3,10 +3,10 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-from utils import list_chunks_folder
+from utils import list_folder
 
 def main(input_path):
-    files = list_chunks_folder(input_path)
+    files = list_folder(input_path,  desc="chunk_")
 
     #* create folder in output_path
     output_path= input_path + "_spread"
