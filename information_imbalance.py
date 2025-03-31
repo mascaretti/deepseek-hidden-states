@@ -70,15 +70,42 @@ def compute_relative_rank(x_dist, y_dist):
 
 batch_relative_ranks = jax.vmap(compute_relative_rank)
 
-@partial(jax.jit, static_argnames=("distance_fn",))
-def information_imbalance(X, Y, from_subset, to_subset, distance_fn):
+def build_information_imbalance(key, X, Y, distance_fn, frac_rows=0.20):
+    """Construct function to compute the information imbalance between sets X and Y.
+
+    Args:
+       key: the JAX random key.
+       X: sets from which we compute the information imbalance.
+       Y: sets to which we compute the information imbalance.
+       distance_fn: function to compute the distance in spaces X and Y.
+       frac_rows: fraction of rows that are selected as origins.
     """
-    """
-    n = len(from_subset)
-    m = len(to_subset)
-    d_X = pairwise_distances(distance_fn, X[from_subset], X[to_subset])
-    d_Y = pairwise_distances(distance_fn, Y[from_subset], Y[to_subset])
-    ranks, cards = batch_relative_ranks(d_X, d_Y)
-    # jax.debug.print("cards: {cards}", cards=cards)
-    inf_imb = 2. * (jnp.sum(ranks) / jnp.sum(cards)) / (m - 2.)
-    return inf_imb
+    n_samples = X.shape[0]
+    n_row_samples = jnp.floor(n_samples * frac_rows).astype(int)
+    n_col_samples = (n_samples - n_row_samples).astype(int)
+
+    indices = jnp.arange(subset_size)
+    key, subkey = random.split(key)
+    origin_rows = random.choice(key=subkey, a=subset_size, shape=(n_row_samples,), replace=False)
+
+    remaining_indices = jnp.setdiff1d(indices, indices_rows)
+    key, subkey = random.split(key)
+    destination_columns = random.permutation(subkey, x=remaining_indices)
+    
+    def information_imbalance(X, Y):
+        """Function to compute the information imbalance from X to Y.
+
+        Args:
+            X: the origin space.
+            Y: the destination space.
+
+        Returns:
+            The value of the information imbalance from X to Y.
+        """
+    
+        d_X = pairwise_distances(distance_fn, X[origin_rows], X[destination_rows])
+        d_Y = pairwise_distances(distance_fn, Y[origin_rows], Y[destination_rows])
+        ranks, cards = batch_relative_ranks(d_X, d_Y)
+        inf_imb = 2. * (jnp.sum(ranks) / jnp.sum(cards)) / (m - 2.)
+        return inf_imb
+    return jax.jit(information_imbalance)
