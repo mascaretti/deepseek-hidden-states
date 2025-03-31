@@ -39,16 +39,15 @@ def main(input_path_A, input_path_B, n_tokens):
     information_imbalance_fn = build_information_imbalance(L2_distance)
 
     matrix = []
-    for i in tqdm(range(0, 61, 3), desc="Computing row"):
+    for i in tqdm(range(1, 62, 3), desc="Computing row"):
         row_i = []
         activations_A = collect_layer_activations(input_path_A, n_layer=i, n_tokens=n_tokens, max_batch=4000)
-        for j in (pbar := tqdm(range(0, 61, 3), desc="Computing column", leave=False)):
+        for j in (pbar := tqdm(range(1, 62, 3), desc="Computing column", leave=False)):
             activations_B = collect_layer_activations(input_path_B, n_layer=j, n_tokens=n_tokens, max_batch=4000)
             inf_imb = information_imbalance_fn(activations_A, activations_B)
-            print(inf_imb)
             row_i.append(inf_imb.item())
 
-            pbar.set_description(f"Computing column (II {inf_imb:.2f})")
+            pbar.set_description(f"Computing column (II {inf_imb:.4f})")
 
         matrix.append(row_i)
 
