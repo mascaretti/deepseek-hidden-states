@@ -10,6 +10,9 @@ import torch
 from tqdm import tqdm
 from natsort import natsorted
 
+import sys
+
+
 def collect_layer_activations(input_path, n_layer, n_tokens, max_batch=None):
     """
     The last n_tokens are collected.
@@ -35,36 +38,32 @@ def collect_layer_activations(input_path, n_layer, n_tokens, max_batch=None):
     return flatten_tokens_features(tensors)
 
 
-def main(input_path_A, input_path_B, n_tokens):
+def main(input_path_A, input_path_B, row_number, n_tokens, max_batch=4000):
     information_imbalance_fn = build_information_imbalance(L2_distance)
 
-    matrix = []
-    for i in tqdm(range(1, 62, 3), desc="Computing row"):
-        row_i = []
-        activations_A = collect_layer_activations(input_path_A, n_layer=i, n_tokens=n_tokens, max_batch=4000)
-        for j in (pbar := tqdm(range(1, 62, 3), desc="Computing column", leave=False)):
-            activations_B = collect_layer_activations(input_path_B, n_layer=j, n_tokens=n_tokens, max_batch=4000)
-            inf_imb = information_imbalance_fn(activations_A, activations_B)
-            row_i.append(inf_imb.item())
+    activations_A = collect_layer_activations(input_path_A, n_layer=row_number, n_tokens=n_tokens, max_batch=max_batch)
 
-            pbar.set_description(f"Computing column (II {inf_imb:.4f})")
+    row = []
+    for j in (pbar := tqdm(range(1, 62, 3), desc="Computing column")):
+        activations_B = collect_layer_activations(input_path_B, n_layer=j, n_tokens=n_tokens, max_batch=max_batch)
+        inf_imb = information_imbalance_fn(activations_A, activations_B)
+        row.append(inf_imb.item())
 
-        matrix.append(row_i)
+        pbar.set_description(f"Computing column (II {inf_imb:.4f})")
 
-    matrix = np.array(matrix)
-    np.savetxt("matrix.txt", matrix)
-    plt.imshow(matrix)
-    plt.colorbar()
-    plt.savefig("f.png")
+    matrix = np.array(row)
+    np.savetxt(f"row_{row_number}.txt", matrix, fmt="%.5f")
 
 if __name__ == "__main__":
-    import sys
     input_path_A = "/home/laios/activations/flickr/deepseek_captions1_safetensors"
     input_path_B = "/home/laios/activations/flickr/deepseek_captions3_safetensors"
+
+    row_number = int(sys.argv[1])
     n_tokens = 1
 
     print("Input path A = ", input_path_A, flush=True)
     print("Input path B = ", input_path_B, flush=True)
-    main(input_path_A=input_path_A, 
-         input_path_B=input_path_B, 
+    main(input_path_A=input_path_A,
+         input_path_B=input_path_B,
+         row_number=row_number,
          n_tokens=n_tokens)
