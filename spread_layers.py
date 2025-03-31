@@ -1,9 +1,6 @@
 import pickle
 from pathlib import Path
 
-import torch
-from safetensors.torch import save_file
-
 from tqdm import tqdm
 
 from utils import list_chuncks_folder
@@ -12,7 +9,7 @@ def main(input_path):
     files = list_chuncks_folder(input_path)
 
     #* create folder in output_path
-    output_path= input_path + "_safetensors"
+    output_path= input_path + "_spread"
     Path(output_path).mkdir(parents=True, exist_ok=True)
     print("Output path = ", output_path, flush=True)
 
@@ -20,15 +17,14 @@ def main(input_path):
         print(file.name)
         data = pickle.load(open(input_path + "/" + file.name, 'rb'))
 
-        all_hidden_states = {}
         for i, sentence in enumerate(data):
             hidden_states = sentence['meta_info']['hidden_states'][0]
 
+            chunk_path = output_path + f"/chunk_{i}"
+            Path(chunk_path).mkdir(parents=True, exist_ok=True)
             for layer_idx, layer_tensor in enumerate(hidden_states.split(1, dim=0)):
-                all_hidden_states[f"input_{i}_layer_{layer_idx}"] = layer_tensor.squeeze(0)
-
-        new_file_name = file.name.split('.')[0] + ".safetensors"
-        save_file(all_hidden_states, output_path + "/" + new_file_name)
+                with open(chunk_path + f"/layer_{layer_idx}.pkl", 'wb') as f:
+                    pickle.dump(layer_tensor.squeeze(0), f)
 
 if __name__ == "__main__":
     """
