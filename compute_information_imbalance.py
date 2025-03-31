@@ -5,7 +5,7 @@ from safetensors import safe_open
 from information_imbalance_module import L2_distance, build_information_imbalance, hamming_distance
 import jax
 import jax.numpy as jnp
-from utils import bf16_torch_to_jax, flatten_tokens_features, list_chuncks_folder
+from utils import bf16_torch_to_jax, flatten_tokens_features, list_chunks_folder
 import torch
 from tqdm import tqdm
 from natsort import natsorted
@@ -19,7 +19,7 @@ def collect_layer_activations(input_path, n_layer, n_tokens, max_batch=None):
     """
     tensors = []
 
-    files = list_chuncks_folder(input_path)
+    files = list_chunks_folder(input_path)
 
     for file in tqdm(files, desc="Loading files", leave=False):
         #* limit the max batch
