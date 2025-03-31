@@ -5,49 +5,11 @@ from jax.scipy.stats import rankdata
 import numpy as np
 from functools import partial
 
-key = jrandom.PRNGKey(42)  # Change 42 for different randomness
-
 def binarize(a):
     a = np.sign(a)
     a[np.asarray(a == 0).nonzero()] = -1 # occasional zeros are set to -1
     a = a.astype(np.int8)
     return a
-
-def compute_rank_matrix(batch_rows, batch_columns):
-    """
-    """
-    diffs = batch_rows[:, jnp.newaxis, :] - batch_columns[jnp.newaxis, :, :]
-    dist2_matrix = jnp.sum(diffs * diffs, axis=-1)
-
-    rank_matrix = dist2_matrix.argsort(axis=1).argsort(axis=1)
-    return rank_matrix
-
-def compute_imbalance_and_error(
-        data_A, data_B, indices_rows, indices_columns, k
-    ):
-        """
-        """
-        N = indices_rows.shape[0]
-        max_rank = indices_columns.shape[0]
-
-        batch_A_ranks = compute_rank_matrix( # compute rank matrix A
-            batch_rows=data_A[indices_rows],
-            batch_columns=data_A[indices_columns],
-        ) + 1
-
-        batch_B_ranks = compute_rank_matrix( # compute rank matrix B
-            batch_rows=data_B[indices_rows],
-            batch_columns=data_B[indices_columns],
-        ) + 1
-    
-        mask = jnp.where(batch_A_ranks <= k, 1.0, 0.0)
-        
-        # compute imbalance and error
-        values_average = 2.0 / ((max_rank + 1)*k) * jnp.sum(batch_B_ranks * mask, axis=1)
-        imbalance = jnp.mean(values_average)
-        error_imbalance = jnp.std(values_average, ddof=1) / jnp.sqrt(N)
-
-        return imbalance, error_imbalance
 
 def hamming_distance(x, y):
     return jnp.count_nonzero(x != y)
@@ -60,7 +22,6 @@ def L2_distance(x, y):
 
 def pairwise_distances(distance, xs, ys):
   return jax.vmap(lambda x: jax.vmap(lambda y: distance(x, y))(xs))(ys).T
-
 
 def compute_relative_rank(x_dist, y_dist):
     x_rank = rankdata(x_dist, method="min")
