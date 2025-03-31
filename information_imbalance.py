@@ -90,7 +90,7 @@ def build_information_imbalance(key, X, Y, distance_fn, frac_rows=0.20):
 
     remaining_indices = jnp.setdiff1d(indices, indices_rows)
     key, subkey = random.split(key)
-    destination_columns = random.permutation(subkey, x=remaining_indices)
+    destination_rows = random.permutation(subkey, x=remaining_indices)
     
     def information_imbalance(X, Y):
         """Function to compute the information imbalance from X to Y.
