@@ -1,5 +1,8 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
 from safetensors import safe_open
-from information_imbalance import L2_distance, build_information_imbalance, hamming_distance
+from information_imbalance_module import L2_distance, build_information_imbalance, hamming_distance
 import jax
 import jax.numpy as jnp
 from utils import bf16_torch_to_jax, flatten_tokens_features, list_chuncks_folder
@@ -15,7 +18,7 @@ def collect_layer_activations(input_path, n_layer, n_tokens, max_batch=None):
 
     files = list_chuncks_folder(input_path)
 
-    for file in tqdm(files, desc="Loading files"):
+    for file in tqdm(files, desc="Loading files", leave=False):
         #* limit the max batch
         if max_batch and len(tensors) >= max_batch: break
 
@@ -31,17 +34,29 @@ def collect_layer_activations(input_path, n_layer, n_tokens, max_batch=None):
     tensors = jnp.array(tensors)
     return flatten_tokens_features(tensors)
 
+
 def main(input_path_A, input_path_B, n_tokens):
-    activations_A = collect_layer_activations(input_path_A, n_layer=1, n_tokens=n_tokens, max_batch=100)
-    activations_B = collect_layer_activations(input_path_B, n_layer=1, n_tokens=n_tokens, max_batch=100)
-
-    print(f"{activations_A.shape =}")
-    print(f"{activations_B.shape =}")
-
     information_imbalance_fn = build_information_imbalance(L2_distance)
-    inf_imb = information_imbalance_fn(activations_A, activations_B)
 
-    print("Information imbalance: ", inf_imb)
+    matrix = []
+    for i in tqdm(range(0, 61, 3), desc="Computing row"):
+        row_i = []
+        activations_A = collect_layer_activations(input_path_A, n_layer=i, n_tokens=n_tokens, max_batch=4000)
+        for j in (pbar := tqdm(range(0, 61, 3), desc="Computing column", leave=False)):
+            activations_B = collect_layer_activations(input_path_B, n_layer=j, n_tokens=n_tokens, max_batch=4000)
+            inf_imb = information_imbalance_fn(activations_A, activations_B)
+            print(inf_imb)
+            row_i.append(inf_imb.item())
+
+            pbar.set_description(f"Computing column (II {inf_imb:.2f})")
+
+        matrix.append(row_i)
+
+    matrix = np.array(matrix)
+    np.savetxt("matrix.txt", matrix)
+    plt.imshow(matrix)
+    plt.colorbar()
+    plt.savefig("f.png")
 
 if __name__ == "__main__":
     import sys

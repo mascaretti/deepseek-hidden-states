@@ -18,7 +18,7 @@ def L2_distance(x, y, significant_digits=2):
     u = (x-y)
     normalized_distance = jnp.sum(u*u) / (jnp.sum(x*x) * jnp.sum(y*y))
     scale = 10**significant_digits
-    return (scale*normalized_distance).astype(jnp.uint16)
+    return (scale*normalized_distance).astype(jnp.int32)
 
 def pairwise_distances(distance, xs, ys):
   return jax.vmap(lambda x: jax.vmap(lambda y: distance(x, y))(xs))(ys).T

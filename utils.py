@@ -1,7 +1,7 @@
 import re
 from pathlib import Path
 import torch
-import jax.numpy as jnp
+
 from einops import rearrange
 
 def extract_index(file):
@@ -19,6 +19,7 @@ def list_chuncks_folder(path):
     return files
 
 def bf16_torch_to_jax(tensor):
+    import jax.numpy as jnp
     intermediate_tensor = tensor.view(torch.uint16)
     tensor = jnp.array(intermediate_tensor).view('bfloat16')
     return tensor
