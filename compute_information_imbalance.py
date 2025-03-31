@@ -5,8 +5,8 @@ from safetensors import safe_open
 from information_imbalance_module import L2_distance, build_information_imbalance, hamming_distance
 import jax
 import jax.numpy as jnp
-from utils import bf16_torch_to_jax, flatten_tokens_features, list_chunks_folder
-import torch
+from utils import bf16_torch_to_jax, flatten_tokens_features, list_folder
+import pickle
 from tqdm import tqdm
 from natsort import natsorted
 
@@ -19,20 +19,25 @@ def collect_layer_activations(input_path, n_layer, n_tokens, max_batch=None):
     """
     tensors = []
 
-    files = list_chunks_folder(input_path)
+    folders = list_folder(input_path, desc="chunk_")
 
-    for file in tqdm(files, desc="Loading files", leave=False):
+    for folder in tqdm(folders, desc="Loading files", leave=False):
         #* limit the max batch
         if max_batch and len(tensors) >= max_batch: break
 
-        with safe_open(input_path+"/"+file.name, framework="pt") as f:
-            natural_sorted_keys =  natsorted(f.keys())
-            keys = filter(lambda k: k.split("_")[-1] == str(n_layer), natural_sorted_keys)
+        chunk_folder = input_path + "/" + folder.name
+        natural_sorted_chunks = natsorted([file.stem for file in list_folder(chunk_folder, desc="input_")])
+        chunks = filter(lambda k: k.split("_")[-1] == str(n_layer), natural_sorted_chunks)
 
-            for k in keys:
-                tensor = f.get_slice(k)[-n_tokens:, :]
-                tensor = bf16_torch_to_jax(tensor)
-                tensors.append(tensor)
+        for chunk in chunks:
+            chunk_path = chunk_folder + f"/{chunk}.pkl"
+
+            with open(chunk_path, "rb") as f:
+                tensor = pickle.load(f)
+
+            tensor = tensor[-n_tokens:, :]
+            tensor = bf16_torch_to_jax(tensor)
+            tensors.append(tensor)
 
     tensors = jnp.array(tensors)
     return flatten_tokens_features(tensors)
@@ -55,8 +60,8 @@ def main(input_path_A, input_path_B, row_number, n_tokens, max_batch=4000):
     np.savetxt(f"row_{row_number}.txt", matrix, fmt="%.5f")
 
 if __name__ == "__main__":
-    input_path_A = "/home/laios/activations/flickr/deepseek_captions1_safetensors"
-    input_path_B = "/home/laios/activations/flickr/deepseek_captions3_safetensors"
+    input_path_A = "/home/laios/activations/flickr/deepseek_captions1_spread"
+    input_path_B = "/home/laios/activations/flickr/deepseek_captions3_spread"
 
     row_number = int(sys.argv[1])
     n_tokens = 1
