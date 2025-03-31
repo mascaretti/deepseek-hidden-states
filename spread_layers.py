@@ -16,14 +16,14 @@ def main(input_path):
     for file in tqdm(files):
         print(file.name)
         data = pickle.load(open(input_path + "/" + file.name, 'rb'))
+        chunk_path = output_path + f"/{file.stem}"
+        Path(chunk_path).mkdir(parents=True, exist_ok=True)
 
         for i, sentence in enumerate(data):
             hidden_states = sentence['meta_info']['hidden_states'][0]
 
-            chunk_path = output_path + f"/chunk_{i}"
-            Path(chunk_path).mkdir(parents=True, exist_ok=True)
             for layer_idx, layer_tensor in enumerate(hidden_states.split(1, dim=0)):
-                with open(chunk_path + f"/layer_{layer_idx}.pkl", 'wb') as f:
+                with open(chunk_path + f"/input_{i}_layer_{layer_idx}.pkl", 'wb') as f:
                     pickle.dump(layer_tensor.squeeze(0), f)
 
 if __name__ == "__main__":
