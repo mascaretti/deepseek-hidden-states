@@ -13,7 +13,6 @@ def binarize(a):
     a = a.astype(np.int8)
     return a
 
-@jax.jit
 def compute_rank_matrix(batch_rows, batch_columns):
     """
     """
@@ -23,7 +22,6 @@ def compute_rank_matrix(batch_rows, batch_columns):
     rank_matrix = dist2_matrix.argsort(axis=1).argsort(axis=1)
     return rank_matrix
 
-@jax.jit
 def compute_imbalance_and_error(
         data_A, data_B, indices_rows, indices_columns, k
     ):
@@ -51,11 +49,9 @@ def compute_imbalance_and_error(
 
         return imbalance, error_imbalance
 
-@jax.jit
 def hamming_distance(x, y):
     return jnp.count_nonzero(x != y)
 
-@jax.jit
 def L2_distance(x, y):
     u = (x-y)
     # u = (10*x-10*y).astype(jnp.int32)
@@ -65,7 +61,7 @@ def L2_distance(x, y):
 def pairwise_distances(distance, xs, ys):
   return jax.vmap(lambda x: jax.vmap(lambda y: distance(x, y))(xs))(ys).T
 
-@jax.jit
+
 def compute_relative_rank(x_dist, y_dist):
     x_rank = rankdata(x_dist, method="min")
     y_rank = rankdata(y_dist, method="min")
@@ -74,14 +70,14 @@ def compute_relative_rank(x_dist, y_dist):
 
 batch_relative_ranks = jax.vmap(compute_relative_rank)
 
-@partial(jax.jit,static_argnums=(0,))
-def information_imbalance(distance,X, Y, from_subset, to_subset):
+@partial(jax.jit, static_argnames=("distance_fn",))
+def information_imbalance(X, Y, from_subset, to_subset, distance_fn):
     """
     """
     n = len(from_subset)
     m = len(to_subset)
-    d_X = pairwise_distances(distance, X[from_subset], X[to_subset])
-    d_Y = pairwise_distances(distance, Y[from_subset], Y[to_subset])
+    d_X = pairwise_distances(distance_fn, X[from_subset], X[to_subset])
+    d_Y = pairwise_distances(distance_fn, Y[from_subset], Y[to_subset])
     ranks, cards = batch_relative_ranks(d_X, d_Y)
     # jax.debug.print("cards: {cards}", cards=cards)
     inf_imb = 2. * (jnp.sum(ranks) / jnp.sum(cards)) / (m - 2.)
