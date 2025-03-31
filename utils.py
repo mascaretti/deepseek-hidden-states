@@ -1,6 +1,8 @@
 import re
 from pathlib import Path
-
+import torch
+import jax.numpy as jnp
+from einops import rearrange
 
 def extract_index(file):
     match = re.search(r'chunk_(\d+)\.pkl', file.name)
@@ -15,3 +17,12 @@ def list_chuncks_folder(path):
         key=extract_index)
 
     return files
+
+def bf16_torch_to_jax(tensor):
+    intermediate_tensor = tensor.view(torch.uint16)
+    tensor = jnp.array(intermediate_tensor).view('bfloat16')
+    return tensor
+
+def flatten_tokens_features(tensor):
+    tensor = rearrange(tensor, 'batch tokens embed -> batch (tokens embed)')
+    return tensor

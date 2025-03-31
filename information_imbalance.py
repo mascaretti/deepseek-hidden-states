@@ -14,11 +14,11 @@ def binarize(a):
 def hamming_distance(x, y):
     return jnp.count_nonzero(x != y)
 
-def L2_distance(x, y):
+def L2_distance(x, y, significant_digits=2):
     u = (x-y)
-    # u = (10*x-10*y).astype(jnp.int32)
-    # return jnp.dot(u,u)
-    return (100*jnp.sqrt(jnp.dot(u,u))).astype(jnp.int32)
+    normalized_distance = jnp.sum(u*u) / (jnp.sum(x*x) * jnp.sum(y*y))
+    scale = 10**significant_digits
+    return (scale*normalized_distance).astype(jnp.uint16)
 
 def pairwise_distances(distance, xs, ys):
   return jax.vmap(lambda x: jax.vmap(lambda y: distance(x, y))(xs))(ys).T
@@ -31,7 +31,7 @@ def compute_relative_rank(x_dist, y_dist):
 
 batch_relative_ranks = jax.vmap(compute_relative_rank)
 
-def build_information_imbalance(key, X, Y, distance_fn, frac_rows=0.20):
+def build_information_imbalance(distance_fn):
     """Construct function to compute the information imbalance between sets X and Y.
 
     Args:
@@ -41,18 +41,6 @@ def build_information_imbalance(key, X, Y, distance_fn, frac_rows=0.20):
        distance_fn: function to compute the distance in spaces X and Y.
        frac_rows: fraction of rows that are selected as origins.
     """
-    n_samples = X.shape[0]
-    n_row_samples = jnp.floor(n_samples * frac_rows).astype(int)
-    n_col_samples = (n_samples - n_row_samples).astype(int)
-
-    indices = jnp.arange(subset_size)
-    key, subkey = random.split(key)
-    origin_rows = random.choice(key=subkey, a=subset_size, shape=(n_row_samples,), replace=False)
-
-    remaining_indices = jnp.setdiff1d(indices, indices_rows)
-    key, subkey = random.split(key)
-    destination_rows = random.permutation(subkey, x=remaining_indices)
-    
     def information_imbalance(X, Y):
         """Function to compute the information imbalance from X to Y.
 
@@ -63,10 +51,13 @@ def build_information_imbalance(key, X, Y, distance_fn, frac_rows=0.20):
         Returns:
             The value of the information imbalance from X to Y.
         """
-    
-        d_X = pairwise_distances(distance_fn, X[origin_rows], X[destination_rows])
-        d_Y = pairwise_distances(distance_fn, Y[origin_rows], Y[destination_rows])
+        assert X.shape[0] == Y.shape[0]
+
+        M = X.shape[0]
+        d_X = pairwise_distances(distance_fn, X, X)
+        d_Y = pairwise_distances(distance_fn, Y, Y)
         ranks, cards = batch_relative_ranks(d_X, d_Y)
-        inf_imb = 2. * (jnp.sum(ranks) / jnp.sum(cards)) / (m - 2.)
+        inf_imb = 2. * (jnp.sum(ranks) / jnp.sum(cards)) / (M - 2.)
         return inf_imb
+    
     return jax.jit(information_imbalance)
