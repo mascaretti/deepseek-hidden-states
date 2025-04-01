@@ -11,7 +11,7 @@ def hamming_distance(x, y):
 
 def L2_distance(x, y, significant_digits=2):
     u = (x-y)
-nnn    normalized_distance = jnp.sqrt(jnp.sum(u*u) / (jnp.sum(x*x) * jnp.sum(y*y)))
+    normalized_distance = jnp.sqrt(jnp.sum(u*u) / (jnp.sum(x*x) * jnp.sum(y*y)))
     scale = 10**significant_digits
     return (scale*normalized_distance).astype(jnp.int32)
 
