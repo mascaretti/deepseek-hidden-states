@@ -4,6 +4,7 @@ import jax.random as jrandom
 from jax.scipy.stats import rankdata
 import numpy as np
 from functools import partial
+from jax import random
 
 def binarize(a):
     a = np.sign(a)
@@ -31,7 +32,7 @@ def compute_relative_rank(x_dist, y_dist):
 
 batch_relative_ranks = jax.vmap(compute_relative_rank)
 
-def build_information_imbalance(distance_fn):
+def build_information_imbalance(key, X, Y, distance_fn):
     """Construct function to compute the information imbalance between sets X and Y.
 
     Args:
@@ -39,8 +40,20 @@ def build_information_imbalance(distance_fn):
        X: sets from which we compute the information imbalance.
        Y: sets to which we compute the information imbalance.
        distance_fn: function to compute the distance in spaces X and Y.
-       frac_rows: fraction of rows that are selected as origins.
     """
+    assert X.shape[0] == Y.shape[0], "Sample size must be equal across X and Y."
+    
+    sample_size = X.shape[0]
+    n_row_samples = jnp.array(500) if sample_size >= 2500 else jnp.floor(0.2 * sample_size).astype(int)
+    n_col_samples = (sample_size - n_row_samples).astype(int)
+    
+    key, subkey = random.split(key)
+    indices_rows = random.choice(key=subkey, a=sample_size, shape=(n_row_samples,), replace=False)
+
+    remaining_indices = jnp.setdiff1d(jnp.arange(sample_size), indices_rows)
+    key, subkey = random.split(key)
+    indices_columns = random.choice(key=subkey, a=remaining_indices, shape=(n_col_samples,), replace=False)
+    
     def information_imbalance(X, Y):
         """Function to compute the information imbalance from X to Y.
 
@@ -51,11 +64,9 @@ def build_information_imbalance(distance_fn):
         Returns:
             The value of the information imbalance from X to Y.
         """
-        assert X.shape[0] == Y.shape[0]
-
         M = X.shape[0]
-        d_X = pairwise_distances(distance_fn, X, X)
-        d_Y = pairwise_distances(distance_fn, Y, Y)
+        d_X = pairwise_distances(distance_fn, X[indices_rows], X[indices_columns])
+        d_Y = pairwise_distances(distance_fn, Y[indices_rows], Y[indices_columns])
         ranks, cards = batch_relative_ranks(d_X, d_Y)
         inf_imb = 2. * (jnp.sum(ranks) / jnp.sum(cards)) / (M - 2.)
         return inf_imb
