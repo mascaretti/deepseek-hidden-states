@@ -25,9 +25,9 @@ def collect_activations(input_path, n_tokens):
         for sentence in data:
             hidden_states = sentence['meta_info']['hidden_states'][0]
             for layer_idx, layer_tensor in enumerate(hidden_states.split(1, dim=0)):
-                all_hidden_states[layer_idx].append(layer_tensor.squeeze(0)[-n_tokens:, :])
+                all_hidden_states[layer_idx].append(layer_tensor[:, -n_tokens:, :])
                 
-    all_hidden_states = {layer_idx:torch.cat(layer_states, dim=0) for layer_idx, layer_states in enumerate(all_hidden_states)}
+    all_hidden_states = {str(layer_idx):torch.cat(layer_states, dim=0) for layer_idx, layer_states in enumerate(all_hidden_states)}
     return all_hidden_states
 
 
@@ -35,12 +35,12 @@ def main(input_path, output_path, n_tokens=10):
     hidden_states = collect_activations(input_path, n_tokens=n_tokens)
     for key in hidden_states.keys():
         print(key, hidden_states[key].shape)
-    save(hidden_states, output_path)
+    save_file(hidden_states, output_path)
 
 if __name__ == "__main__":
     
-    input_path = "/home/amascare/deepseek-hidden-states/llama_flickr_cpt_3/"
-    output_path = "/home/amascare/deepseek-hidden-states/llama_flickr_cpt_3.safetensors"
+    input_path = "/scratch/amascare/llama_flickr_cpt_1/"
+    output_path = "/scratch/amascare/llama/llama_flickr_cpt_1.safetensors"
     n_tokens = 10
 
     print("Input path: ", input_path, flush=True)
