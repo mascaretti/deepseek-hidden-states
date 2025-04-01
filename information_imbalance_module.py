@@ -6,12 +6,6 @@ import numpy as np
 from functools import partial
 from jax import random
 
-def binarize(a):
-    a = np.sign(a)
-    a[np.asarray(a == 0).nonzero()] = -1 # occasional zeros are set to -1
-    a = a.astype(np.int8)
-    return a
-
 def hamming_distance(x, y):
     return jnp.count_nonzero(x != y)
 
