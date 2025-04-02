@@ -1,3 +1,4 @@
+from collections import defaultdict
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -13,16 +14,39 @@ import torch
 
 import sys
 
-def main(input_path_A, input_path_B):
+def collect_data(input_path, filter_layer=None, n_tokens=40,  max_files=10):
+    files = list_folder(input_path, desc="chunk_")[:max_files]
 
-    activations_B = {}
-    with safe_open(input_path_B, framework="pt", device="cpu") as f:
-        for k in f.keys():
-            activations_B[k] = f.get_tensor(k)
+    all_hidden_states = defaultdict(list)
 
-    sample_size = activations_B["0"].shape[0]
-    n_layers = len(list(activations_B.keys()))
-    print(activations_B.keys())
+    for file in tqdm(files, desc="Collect File"):
+        data = pickle.load(open(input_path + "/" + file.name, 'rb'))
+
+        for _, sentence in enumerate(data):
+            hidden_states = sentence['meta_info']['hidden_states'][0]
+            assert hidden_states.shape[1] > n_tokens
+            hidden_states = hidden_states[:, :n_tokens]
+
+            for layer_idx, layer_tensor in enumerate(hidden_states.split(1, dim=0)):
+                if filter_layer is not None:
+                    if layer_idx!=filter_layer: continue
+
+                layer_tensor = layer_tensor.squeeze(0)
+                all_hidden_states[f"layer_{layer_idx}"].append(layer_tensor)
+
+    for layer, tensors in all_hidden_states.items():
+        all_hidden_states[layer] = torch.stack(tensors)
+        # print("Layer=", layer, "activations shape= ", all_hidden_states[layer].shape, flush=True)
+
+    return all_hidden_states
+
+def main(input_path_A, input_path_B, n_tokens):
+    all_activations_B = collect_data(input_path_B, n_tokens=n_tokens)
+    all_activations_A = collect_data(input_path_A, n_tokens=n_tokens)
+
+    sample_size = all_activations_B["layer_0"].shape[0]
+    n_layers = len(list(all_activations_B.keys()))
+    #print(activations_B.keys())
 
     key = jax.random.key(42)
     key, subkey = jax.random.split(key)
@@ -30,19 +54,19 @@ def main(input_path_A, input_path_B):
 
     inf_imb_matrix = []
 
-    row_indices = [str(i) for i in range(1, n_layers)]
-    col_indices = [str(i) for i in range(1, n_layers)]
+    rows = [f"layer_{i}" for i in range(1, n_layers)]
+    cols = [f"layer_{i}" for i in range(1, n_layers)]
     
-    for row_index in tqdm(row_indices, leave=False, desc="Computing row"):
-        with safe_open(input_path_A, framework="pt", device="cpu") as f:
-            activations_A = f.get_tensor(row_index)
+    for row in tqdm(rows, leave=False, desc="Computing row"):
+        activations_A = all_activations_A[row]
+
         row = []    
-        for b_idx in (pbar := tqdm(col_indices, desc="Computing column")):
+        for col in (pbar := tqdm(cols, desc="Computing column")):
             act_A = bf16_torch_to_jax(activations_A)
             act_A = flatten_tokens_features(act_A)
             act_A = binarize(act_A)
 
-            act_B = bf16_torch_to_jax(activations_B[b_idx])
+            act_B = bf16_torch_to_jax(all_activations_B[col])
             act_B = flatten_tokens_features(act_B)
             act_B = binarize(act_B)
 
@@ -56,15 +80,16 @@ def main(input_path_A, input_path_B):
     np.save(file="inf-imb-llama.npy", arr=inf_imb)
 
 if __name__ == "__main__":
-    input_path_A = "/scratch/amascare/llama/llama_flickr_cpt_1.safetensors"
-    input_path_B = "/scratch/amascare/llama/llama_flickr_cpt_3.safetensors"
+    input_path_A = "/home/laios/activations/flickr/deepseek_captions1"
+    input_path_B = "/home/laios/activations/flickr/deepseek_captions3"
 
-    n_tokens = 10
+    n_tokens = 8
 
     print("Input path A = ", input_path_A, flush=True)
     print("Input path B = ", input_path_B, flush=True)
     
     main(
         input_path_A=input_path_A,
-        input_path_B=input_path_B
+        input_path_B=input_path_B,
+        n_tokens=n_tokens
     )
