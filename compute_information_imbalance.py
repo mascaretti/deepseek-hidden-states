@@ -24,7 +24,7 @@ def collect_data(input_path, filter_layer=None, n_loaded_tokens=40, n_files=10):
 
         for _, sentence in enumerate(data):
             hidden_states = sentence['meta_info']['hidden_states'][0]
-            assert hidden_states.shape[1] > n_loaded_tokens
+            assert hidden_states.shape[1] >= n_loaded_tokens
             hidden_states = hidden_states[:, -n_loaded_tokens:]
 
             for layer_idx, layer_tensor in enumerate(hidden_states.split(1, dim=0)):
@@ -96,18 +96,21 @@ def main(input_path_A,
 if __name__ == "__main__":
     # input_path_A = "/home/laios/activations/flickr/deepseek_captions1"
     # input_path_B = "/home/laios/activations/flickr/deepseek_captions3"
-    input_path_A = "/home/laios/activations/opus_english_spanish/llama-8b/llama_english"
-    input_path_B = "/home/laios/activations/opus_english_spanish/llama-8b/llama_spanish"
+    # input_path_A = "/home/laios/activations/opus_english_spanish/llama-8b/llama_english"
+    # input_path_B = "/home/laios/activations/opus_english_spanish/llama-8b/llama_spanish"
+    input_path_A = "/home/laios/activations/opus_english_spanish/deepseek/deepseek_english"
+    input_path_B = "/home/laios/activations/opus_english_spanish/deepseek/deepseek_spanish"
 
-    n_loaded_tokens = 20
-    n_files = 10
-    n_tokens_list = [20,10]
+    n_loaded_tokens = 40
+    n_files = 500
+    n_tokens_list = np.arange(1,40+1,1,dtype=int)
+    model = 'deepseek'
     print("Input path A = ", input_path_A, flush=True)
     print("Input path B = ", input_path_B, flush=True)
     
     output_folder = makefolder(base=f'./results/',
                                create_folder=True,
-                               model='llama',
+                               model=model,
                                n_files=n_files,
                                )
     main(
