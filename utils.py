@@ -1,4 +1,4 @@
-import re
+import re,os
 from pathlib import Path
 import torch
 import jax.numpy as jnp
@@ -33,3 +33,19 @@ def binarize(a):
     a = jnp.sign(a).astype(jnp.int8)
     a = a.at[a == 0].set(-1)
     return a
+
+def makefolder(base='./',
+               create_folder=False,
+               precision=5,
+               **kwargs,
+               ):
+  folder = base
+  for key, value in kwargs.items():
+    if value != None:
+      if isinstance(value,float) == True:
+        folder += key + f'_{value:.{precision}f}/'
+      else:
+        folder += key + f'_{value}/'
+  if create_folder:
+    os.makedirs(folder,exist_ok=True)
+  return folder

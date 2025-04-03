@@ -6,7 +6,7 @@ from safetensors import safe_open
 from information_imbalance_module import L2_distance, build_information_imbalance, hamming_distance
 import jax
 import jax.numpy as jnp
-from utils import bf16_torch_to_jax, flatten_tokens_features, list_folder, binarize
+from utils import bf16_torch_to_jax, flatten_tokens_features, list_folder, binarize, makefolder
 import pickle
 from tqdm import tqdm
 from pathlib import Path
@@ -14,7 +14,7 @@ import torch
 
 import sys
 
-def collect_data(input_path, filter_layer=None, n_last_tokens=40, n_files=10):
+def collect_data(input_path, filter_layer=None, n_loaded_tokens=40, n_files=10):
     files = list_folder(input_path, desc="chunk_")[:n_files]
 
     all_hidden_states = defaultdict(list)
@@ -24,8 +24,8 @@ def collect_data(input_path, filter_layer=None, n_last_tokens=40, n_files=10):
 
         for _, sentence in enumerate(data):
             hidden_states = sentence['meta_info']['hidden_states'][0]
-            assert hidden_states.shape[1] > n_last_tokens
-            hidden_states = hidden_states[:, -n_last_tokens:]
+            assert hidden_states.shape[1] > n_loaded_tokens
+            hidden_states = hidden_states[:, -n_loaded_tokens:]
 
             for layer_idx, layer_tensor in enumerate(hidden_states.split(1, dim=0)):
                 if filter_layer is not None:
@@ -40,9 +40,15 @@ def collect_data(input_path, filter_layer=None, n_last_tokens=40, n_files=10):
 
     return all_hidden_states
 
-def main(input_path_A, input_path_B, n_last_tokens, n_files):
-    all_activations_B = collect_data(input_path_B, n_last_tokens=n_last_tokens, n_files=n_files)
-    all_activations_A = collect_data(input_path_A, n_last_tokens=n_last_tokens, n_files=n_files)
+def main(input_path_A, 
+         input_path_B, 
+         n_loaded_tokens, 
+         n_files,
+         n_tokens_list,
+         output_folder,
+         ):
+    all_activations_A = collect_data(input_path_A, n_loaded_tokens=n_loaded_tokens, n_files=n_files)
+    all_activations_B = collect_data(input_path_B, n_loaded_tokens=n_loaded_tokens, n_files=n_files)
 
     sample_size = all_activations_B["layer_0"].shape[0]
     n_layers = len(list(all_activations_B.keys()))
@@ -52,38 +58,40 @@ def main(input_path_A, input_path_B, n_last_tokens, n_files):
     key, subkey = jax.random.split(key)
     information_imbalance_fn = build_information_imbalance(key=subkey, sample_size=sample_size, distance_fn=hamming_distance)
 
-    inf_imb_matrix = []
-    reciprocal_inf_imb_matrix = []
-
     rows = [f"layer_{i}" for i in range(1, n_layers)]
     cols = [f"layer_{i}" for i in range(1, n_layers)]
-    
-    for layer_A in tqdm(rows, desc="Computing layer_A"):
-        activations_A = all_activations_A[layer_A]
 
-        row = []
-        reciprocal_row = []
-        for layer_B in (pbar := tqdm(cols, desc="Computing layer_B",leave=False)):
-            act_A = bf16_torch_to_jax(activations_A)
-            act_A = flatten_tokens_features(act_A)
-            act_A = binarize(act_A)
+    for n_tokens in tqdm(n_tokens_list,desc='Computing token'):
+        
+        inf_imb_matrix = []
+        reciprocal_inf_imb_matrix = []
+        
+        for layer_A in tqdm(rows, desc="Computing layer_A",leave=False):
+            activations_A = all_activations_A[layer_A]
 
-            act_B = bf16_torch_to_jax(all_activations_B[layer_B])
-            act_B = flatten_tokens_features(act_B)
-            act_B = binarize(act_B)
+            row = []
+            reciprocal_row = []
+            for layer_B in (pbar := tqdm(cols, desc="Computing layer_B",leave=False)):
+                act_A = bf16_torch_to_jax(activations_A[:,-n_tokens:,:])
+                act_A = flatten_tokens_features(act_A)
+                act_A = binarize(act_A)
 
-            inf_imb,reciprocal_inf_imb = information_imbalance_fn(act_A, act_B)
-            row.append(inf_imb.item())
-            reciprocal_row.append(reciprocal_inf_imb.item())
-            pbar.set_description(f"Computing layer_B (II(A-->B) {inf_imb:.4f} ; II(B-->A) {reciprocal_inf_imb:.4f})")
+                act_B = bf16_torch_to_jax(all_activations_B[layer_B][:,-n_tokens:,:])
+                act_B = flatten_tokens_features(act_B)
+                act_B = binarize(act_B)
 
-        inf_imb_matrix.append(row)
-        reciprocal_inf_imb_matrix.append(reciprocal_row)
+                inf_imb,reciprocal_inf_imb = information_imbalance_fn(act_A, act_B)
+                row.append(inf_imb.item())
+                reciprocal_row.append(reciprocal_inf_imb.item())
+                pbar.set_description(f"Computing layer_B (II(A-->B) {inf_imb:.4f} ; II(B-->A) {reciprocal_inf_imb:.4f})")
 
-    inf_imb = np.array(inf_imb_matrix)
-    reciprocal_inf_imb = np.array(reciprocal_inf_imb_matrix)
-    np.save(file="inf-imb-llama.npy", arr=inf_imb)
-    np.save(file="reciprocal-inf-imb-llama.npy", arr=reciprocal_inf_imb)
+            inf_imb_matrix.append(row)
+            reciprocal_inf_imb_matrix.append(reciprocal_row)
+
+        inf_imb = np.array(inf_imb_matrix)
+        reciprocal_inf_imb = np.array(reciprocal_inf_imb_matrix)
+        np.save(file=f"{output_folder}/n_tokens_{n_tokens}_AB.npy", arr=inf_imb)
+        np.save(file=f"{output_folder}/n_tokens_{n_tokens}_BA.npy", arr=reciprocal_inf_imb)
 
 if __name__ == "__main__":
     # input_path_A = "/home/laios/activations/flickr/deepseek_captions1"
@@ -91,14 +99,22 @@ if __name__ == "__main__":
     input_path_A = "/home/laios/activations/opus_english_spanish/llama-8b/llama_english"
     input_path_B = "/home/laios/activations/opus_english_spanish/llama-8b/llama_spanish"
 
-    n_last_tokens = 30
+    n_loaded_tokens = 20
     n_files = 10
+    n_tokens_list = [20,10]
     print("Input path A = ", input_path_A, flush=True)
     print("Input path B = ", input_path_B, flush=True)
     
+    output_folder = makefolder(base=f'./results/',
+                               create_folder=True,
+                               model='llama',
+                               n_files=n_files,
+                               )
     main(
         input_path_A=input_path_A,
         input_path_B=input_path_B,
-        n_last_tokens=n_last_tokens,
+        n_loaded_tokens=n_loaded_tokens,
         n_files=n_files,
+        n_tokens_list=n_tokens_list,
+        output_folder=output_folder,
     )
