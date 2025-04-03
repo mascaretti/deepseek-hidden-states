@@ -14,8 +14,8 @@ import torch
 
 import sys
 
-def collect_data(input_path, filter_layer=None, n_tokens=40,  max_files=10):
-    files = list_folder(input_path, desc="chunk_")[:max_files]
+def collect_data(input_path, filter_layer=None, n_last_tokens=40, n_files=10):
+    files = list_folder(input_path, desc="chunk_")[:n_files]
 
     all_hidden_states = defaultdict(list)
 
@@ -24,8 +24,8 @@ def collect_data(input_path, filter_layer=None, n_tokens=40,  max_files=10):
 
         for _, sentence in enumerate(data):
             hidden_states = sentence['meta_info']['hidden_states'][0]
-            assert hidden_states.shape[1] > n_tokens
-            hidden_states = hidden_states[:, :n_tokens]
+            assert hidden_states.shape[1] > n_last_tokens
+            hidden_states = hidden_states[:, -n_last_tokens:]
 
             for layer_idx, layer_tensor in enumerate(hidden_states.split(1, dim=0)):
                 if filter_layer is not None:
@@ -40,9 +40,9 @@ def collect_data(input_path, filter_layer=None, n_tokens=40,  max_files=10):
 
     return all_hidden_states
 
-def main(input_path_A, input_path_B, n_tokens):
-    all_activations_B = collect_data(input_path_B, n_tokens=n_tokens)
-    all_activations_A = collect_data(input_path_A, n_tokens=n_tokens)
+def main(input_path_A, input_path_B, n_last_tokens, n_files):
+    all_activations_B = collect_data(input_path_B, n_last_tokens=n_last_tokens, n_files=n_files)
+    all_activations_A = collect_data(input_path_A, n_last_tokens=n_last_tokens, n_files=n_files)
 
     sample_size = all_activations_B["layer_0"].shape[0]
     n_layers = len(list(all_activations_B.keys()))
@@ -53,43 +53,52 @@ def main(input_path_A, input_path_B, n_tokens):
     information_imbalance_fn = build_information_imbalance(key=subkey, sample_size=sample_size, distance_fn=hamming_distance)
 
     inf_imb_matrix = []
+    reciprocal_inf_imb_matrix = []
 
     rows = [f"layer_{i}" for i in range(1, n_layers)]
     cols = [f"layer_{i}" for i in range(1, n_layers)]
     
-    for row in tqdm(rows, leave=False, desc="Computing row"):
-        activations_A = all_activations_A[row]
+    for layer_A in tqdm(rows, desc="Computing layer_A"):
+        activations_A = all_activations_A[layer_A]
 
-        row = []    
-        for col in (pbar := tqdm(cols, desc="Computing column")):
+        row = []
+        reciprocal_row = []
+        for layer_B in (pbar := tqdm(cols, desc="Computing layer_B",leave=False)):
             act_A = bf16_torch_to_jax(activations_A)
             act_A = flatten_tokens_features(act_A)
             act_A = binarize(act_A)
 
-            act_B = bf16_torch_to_jax(all_activations_B[col])
+            act_B = bf16_torch_to_jax(all_activations_B[layer_B])
             act_B = flatten_tokens_features(act_B)
             act_B = binarize(act_B)
 
-            inf_imb = information_imbalance_fn(act_A, act_B)
+            inf_imb,reciprocal_inf_imb = information_imbalance_fn(act_A, act_B)
             row.append(inf_imb.item())
-            pbar.set_description(f"Computing column (II {inf_imb:.4f})")
+            reciprocal_row.append(reciprocal_inf_imb.item())
+            pbar.set_description(f"Computing layer_B (II(A-->B) {inf_imb:.4f} ; II(B-->A) {reciprocal_inf_imb:.4f})")
 
         inf_imb_matrix.append(row)
+        reciprocal_inf_imb_matrix.append(reciprocal_row)
 
     inf_imb = np.array(inf_imb_matrix)
+    reciprocal_inf_imb = np.array(reciprocal_inf_imb_matrix)
     np.save(file="inf-imb-llama.npy", arr=inf_imb)
+    np.save(file="reciprocal-inf-imb-llama.npy", arr=reciprocal_inf_imb)
 
 if __name__ == "__main__":
-    input_path_A = "/home/laios/activations/flickr/deepseek_captions1"
-    input_path_B = "/home/laios/activations/flickr/deepseek_captions3"
+    # input_path_A = "/home/laios/activations/flickr/deepseek_captions1"
+    # input_path_B = "/home/laios/activations/flickr/deepseek_captions3"
+    input_path_A = "/home/laios/activations/opus_english_spanish/llama-8b/llama_english"
+    input_path_B = "/home/laios/activations/opus_english_spanish/llama-8b/llama_spanish"
 
-    n_tokens = 8
-
+    n_last_tokens = 30
+    n_files = 10
     print("Input path A = ", input_path_A, flush=True)
     print("Input path B = ", input_path_B, flush=True)
     
     main(
         input_path_A=input_path_A,
         input_path_B=input_path_B,
-        n_tokens=n_tokens
+        n_last_tokens=n_last_tokens,
+        n_files=n_files,
     )

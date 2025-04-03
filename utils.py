@@ -29,6 +29,7 @@ def flatten_tokens_features(tensor):
     tensor = rearrange(tensor, 'batch tokens embed -> batch (tokens embed)')
     return tensor
 
-def binarize(a, eps=1e-6, dtype=jnp.int32):
-    a = jnp.sign(a + eps)
-    return a.astype(dtype)
+def binarize(a):
+    a = jnp.sign(a).astype(jnp.int8)
+    a = a.at[a == 0].set(-1)
+    return a
