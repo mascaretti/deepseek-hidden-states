@@ -12,7 +12,8 @@ from tqdm import tqdm
 from pathlib import Path
 import torch
 
-import sys
+import os
+import argparse
 
 def collect_data(input_path, filter_layer=None, n_loaded_tokens=40, n_files=10):
     files = list_folder(input_path, desc="chunk_")[:n_files]
@@ -40,26 +41,22 @@ def collect_data(input_path, filter_layer=None, n_loaded_tokens=40, n_files=10):
 
     return all_hidden_states
 
-def main(input_path_A, 
-         input_path_B, 
-         n_loaded_tokens, 
-         n_files,
-         n_tokens_list,
-         output_folder,
-         ):
-    all_activations_A = collect_data(input_path_A, n_loaded_tokens=n_loaded_tokens, n_files=n_files)
-    all_activations_B = collect_data(input_path_B, n_loaded_tokens=n_loaded_tokens, n_files=n_files)
-
+def compute_inf_imb_matrix(
+        all_activations_A, 
+        all_activations_B, 
+        n_tokens_list,
+        output_folder,
+        ):
     sample_size = all_activations_B["layer_0"].shape[0]
-    n_layers = len(list(all_activations_B.keys()))
-    #print(activations_B.keys())
 
     key = jax.random.key(42)
     key, subkey = jax.random.split(key)
     information_imbalance_fn = build_information_imbalance(key=subkey, sample_size=sample_size, distance_fn=hamming_distance)
 
-    rows = [f"layer_{i}" for i in range(1, n_layers)]
-    cols = [f"layer_{i}" for i in range(1, n_layers)]
+    n_layers_A = len(list(all_activations_A.keys()))
+    n_layers_B = len(list(all_activations_B.keys()))
+    rows = [f"layer_{i}" for i in range(1, n_layers_A)]
+    cols = [f"layer_{i}" for i in range(1, n_layers_B)]
 
     for n_tokens in tqdm(n_tokens_list,desc='Computing token'):
         
@@ -93,31 +90,44 @@ def main(input_path_A,
         np.save(file=f"{output_folder}/n_tokens_{n_tokens}_AB.npy", arr=inf_imb)
         np.save(file=f"{output_folder}/n_tokens_{n_tokens}_BA.npy", arr=reciprocal_inf_imb)
 
-if __name__ == "__main__":
-    # input_path_A = "/home/laios/activations/flickr/deepseek_captions1"
-    # input_path_B = "/home/laios/activations/flickr/deepseek_captions3"
-    # input_path_A = "/home/laios/activations/opus_english_spanish/llama-8b/llama_english"
-    # input_path_B = "/home/laios/activations/opus_english_spanish/llama-8b/llama_spanish"
-    input_path_A = "/home/laios/activations/opus_english_spanish/deepseek/deepseek_english"
-    input_path_B = "/home/laios/activations/opus_english_spanish/deepseek/deepseek_spanish"
+def main(
+        input_path_A,
+        input_path_B,
+        output_folder,
+        n_loaded_tokens,
+        n_files,
+):
+    n_tokens_list = np.arange(1, n_loaded_tokens+1, 1, dtype=int)
 
-    n_loaded_tokens = 40
-    n_files = 500
-    n_tokens_list = np.arange(1,40+1,1,dtype=int)
-    model = 'deepseek'
     print("Input path A = ", input_path_A, flush=True)
     print("Input path B = ", input_path_B, flush=True)
     
-    output_folder = makefolder(base=f'./results/',
-                               create_folder=True,
-                               model=model,
-                               n_files=n_files,
-                               )
-    main(
-        input_path_A=input_path_A,
-        input_path_B=input_path_B,
-        n_loaded_tokens=n_loaded_tokens,
-        n_files=n_files,
+    all_activations_A = collect_data(input_path_A, n_loaded_tokens=n_loaded_tokens, n_files=n_files)
+    all_activations_B = collect_data(input_path_B, n_loaded_tokens=n_loaded_tokens, n_files=n_files)
+
+    compute_inf_imb_matrix(
+        all_activations_A=all_activations_A,
+        all_activations_B=all_activations_B,
         n_tokens_list=n_tokens_list,
         output_folder=output_folder,
     )
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Compute Information Imbalance")
+    parser.add_argument("--input_path_A", type=str, required=True, help="Path to activations for dataset A")
+    parser.add_argument("--input_path_B", type=str, required=True, help="Path to activations for dataset B")
+    parser.add_argument("--output_folder", type=str, required=True, help="Path of the folder where to store the results")
+    args = parser.parse_args()
+    
+    Path(args.output_folder).mkdir(parents=True, exist_ok=True)
+
+    n_loaded_tokens = 40
+    n_files = 500
+
+    main(
+        input_path_A=args.input_path_A, 
+        input_path_B=args.input_path_B,
+        output_folder=args.output_folder,
+        n_loaded_tokens=n_loaded_tokens,
+        n_files=n_files,
+        )
