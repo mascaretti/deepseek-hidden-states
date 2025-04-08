@@ -1,0 +1,9 @@
+input_paths = {}
+input_paths["deepseek"] = {}
+input_paths["llama"] = {}
+input_paths["deepseek"]["english"] = "/home/laios/activations/opus_english_spanish/deepseek/deepseek_english"
+input_paths["deepseek"]["spanish"] = "/home/laios/activations/opus_english_spanish/deepseek/deepseek_spanish"
+input_paths["llama"]["english"] = "/home/laios/activations/opus_english_spanish/llama-8b/llama_english"
+input_paths["llama"]["spanish"] = "/home/laios/activations/opus_english_spanish/llama-8b/llama_spanish"
+input_paths["deepseek"]["german"] = f"/home/laios/activations/opus_german_hungarian/deepseek_german"
+input_paths["deepseek"]["hungarian"] = f"/home/laios/activations/opus_german_hungarian/deepseek_hungarian"
