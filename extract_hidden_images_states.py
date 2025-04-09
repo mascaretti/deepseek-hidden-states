@@ -46,26 +46,26 @@ def extract_image_hidden_states(model_name: str, dataset: Dataset, img_column: s
 
     print("Compute activations for images")
     for i in tqdm(range(total_iterations), desc="Processing image batch.", leave=False):
-        image_tkns = image_processor(images=ds[img_column][batch_size*i:batch_size*(i+1)], return_tensors="pt").to(device)
+        image_tkns = image_processor(images=dataset[img_column][batch_size*i:batch_size*(i+1)], return_tensors="pt").to(device)
         with torch.no_grad():
             image_output = image_model(**image_tkns, output_hidden_states=True)
         all_hidden_states = {}
         for j in range(0, n_layers):
-            all_hidden_states[f"layer_{j}"] = image_output["hidden_states"][j]
-        
-        with open(Path(output_directory, f"chunk_{batch_idx}.pkl"), "wb") as f:
+            all_hidden_states[f"layer_{j}"] = torch.sign(image_output["hidden_states"][j].cpu()).to(torch.int8) # To save space: move from torch.float32 to torch.int8
+        with open(Path(output_directory, f"chunk_{i}.pkl"), "wb") as f:
             pickle.dump(all_hidden_states, f)
 
 def main():
     subset_size = 2500
-    image_model_name = "openai/imagegpt-large"  
-    print(image_model_name, flush=True)
+    print(subset_size)
+    image_model_name = "facebook/dinov2-large"  ##"openai/imagegpt-large"  
+    print(image_model_name)
     dataset = load_from_disk("/home/datasets/flickr30k/")
-    print(len(dataset), flush=True)
+    print(len(dataset))
     batch_size = 10
 
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(DEVICE, flush=True)
+    print(DEVICE)
 
     extract_image_hidden_states(model_name=image_model_name, dataset=dataset, img_column='jpg', batch_size=batch_size, subset_size=subset_size, device=DEVICE, output_directory=Path("/home/laios/image-information-imbalance", "test", image_model_name.replace('/', '-')))
     
