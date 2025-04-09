@@ -9,11 +9,15 @@ from jax import random
 def hamming_distance(x, y):
     return jnp.count_nonzero(x != y)
 
-def L2_distance(x, y, significant_digits=2):
+def modified_L2_distance(x, y, significant_digits=2):
     u = (x-y)
     normalized_distance = jnp.sqrt(jnp.sum(u*u) / (jnp.sum(x*x) * jnp.sum(y*y)))
     scale = 10**significant_digits
     return (scale*normalized_distance).astype(jnp.int32)
+
+def L2_distance(x, y):
+    u = (x-y)
+    return jnp.sqrt(jnp.sum(u*u))
 
 def pairwise_distances(distance, xs, ys):
   return jax.vmap(lambda x: jax.vmap(lambda y: distance(x, y))(xs))(ys).T
@@ -26,15 +30,7 @@ def compute_relative_rank(x_dist, y_dist):
 
 batch_relative_ranks = jax.vmap(compute_relative_rank)
 
-def build_information_imbalance(key, sample_size, distance_fn):
-    """Construct function to compute the information imbalance between sets X and Y.
-
-    Args:
-       key: the JAX random key.
-       X: sets from which we compute the information imbalance.
-       Y: sets to which we compute the information imbalance.
-       distance_fn: function to compute the distance in spaces X and Y.
-    """
+def separate_samples(key, sample_size):
     n_row_samples = jnp.array(500) if sample_size >= 2500 else jnp.floor(0.2 * sample_size).astype(int)
     n_col_samples = (sample_size - n_row_samples).astype(int)
     
@@ -45,6 +41,19 @@ def build_information_imbalance(key, sample_size, distance_fn):
     key, subkey = random.split(key)
     indices_columns = random.choice(key=subkey, a=remaining_indices, shape=(n_col_samples,), replace=False)
     
+    return indices_rows,indices_columns
+
+def build_information_imbalance(key, sample_size, distance_fn):
+    """Construct function to compute the information imbalance between sets X and Y.
+
+    Args:
+       key: the JAX random key.
+       X: sets from which we compute the information imbalance.
+       Y: sets to which we compute the information imbalance.
+       distance_fn: function to compute the distance in spaces X and Y.
+    """
+    indices_rows,indices_columns = separate_samples(key,sample_size)
+
     def information_imbalance(X, Y):
         """Function to compute the information imbalance from X to Y.
 
@@ -66,3 +75,50 @@ def build_information_imbalance(key, sample_size, distance_fn):
         return inf_imb,reciprocal_inf_imb
     
     return jax.jit(information_imbalance)
+
+### Platonic-functions
+def _compute_neighbourhood_overlap(x_dist_row, y_dist_row,k):
+    x_rank = rankdata(x_dist_row, method="min")
+    y_rank = rankdata(y_dist_row, method="min")
+    x_nns = jnp.where(x_rank <= k,1,0).astype(jnp.int8)
+    y_nns = jnp.where(y_rank <= k,1,0).astype(jnp.int8)
+    return jnp.float32(jnp.bitwise_and(x_nns,y_nns).sum())/jnp.float32(k)
+
+def mapped_compute_neighbourhood_overlaps(k):
+    return jax.vmap(partial(_compute_neighbourhood_overlap,k=k))
+
+def build_mutual_k_NN_alignment(key, sample_size, distance_fn):
+    """
+    """
+    indices_rows,indices_columns = separate_samples(key,sample_size)
+
+    def mutual_k_NN_alignment(X,Y,k=10):
+        """
+
+        Args:
+            X: the origin space.
+            Y: the destination space.
+
+        Returns:
+         jitted function to output the mutual-k-NN-alignment
+        """
+        assert X.shape[0] == Y.shape[0], "Sample size must be equal across X and Y."
+        d_X = pairwise_distances(distance_fn, X[indices_rows], X[indices_columns])
+        d_Y = pairwise_distances(distance_fn, Y[indices_rows], Y[indices_columns])
+
+        compute_neighbourhood_overlaps = mapped_compute_neighbourhood_overlaps(k=k)
+        return compute_neighbourhood_overlaps(d_X,d_Y).mean()
+    
+    return jax.jit(mutual_k_NN_alignment)
+
+def debugging_mutual_k_NN_alignment(x_dist_row, y_dist_row,k=10):
+  """ if needed """
+  x_rank = rankdata(x_dist_row, method="min")
+  y_rank = rankdata(y_dist_row, method="min")
+  x_nns = jnp.where(x_rank <= k)[0]
+  y_nns = jnp.where(y_rank <= k)[0]
+  print(x_nns)
+  print(y_nns)
+  return jnp.float32(jnp.isin(x_nns,y_nns).sum())/jnp.float32(k)
+
+
