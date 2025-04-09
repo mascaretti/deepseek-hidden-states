@@ -51,7 +51,7 @@ def extract_image_hidden_states(model_name: str, dataset: Dataset, img_column: s
             image_output = image_model(**image_tkns, output_hidden_states=True)
         all_hidden_states = {}
         for j in range(0, n_layers):
-            all_hidden_states[f"layer_{j}"] = torch.sign(image_output["hidden_states"][j].cpu()).to(torch.int8) # To save space: move from torch.float32 to torch.int8
+            all_hidden_states[f"layer_{j}"] = image_output["hidden_states"][j]
         with open(Path(output_directory, f"chunk_{i}.pkl"), "wb") as f:
             pickle.dump(all_hidden_states, f)
 
