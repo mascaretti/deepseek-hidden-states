@@ -15,7 +15,9 @@ def modified_L2_distance(x, y, significant_digits=2):
     scale = 10**significant_digits
     return (scale*normalized_distance).astype(jnp.int32)
 
-def L2_distance(x, y):
+def normalized_L2_distance(x, y):
+    x /= jnp.linalg.norm(x)
+    y /= jnp.linalg.norm(y)
     u = (x-y)
     return jnp.sqrt(jnp.sum(u*u))
 
@@ -77,6 +79,12 @@ def build_information_imbalance(key, sample_size, distance_fn):
     return jax.jit(information_imbalance)
 
 ### Platonic-functions
+
+def get_quantiles(a,alphamin,alphamax):
+  qmin = jnp.quantile(a,q=alphamin,axis=1)
+  qmax = jnp.quantile(a,q=alphamax,axis=1)
+  return qmin,qmax
+
 def _compute_neighbourhood_overlap(x_dist_row, y_dist_row,k):
     x_rank = rankdata(x_dist_row, method="min")
     y_rank = rankdata(y_dist_row, method="min")

@@ -3,7 +3,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from safetensors import safe_open
-from information_imbalance_module import L2_distance, build_information_imbalance, hamming_distance
+from information_imbalance_module import (normalized_L2_distance, 
+                                          build_information_imbalance, 
+                                          hamming_distance, 
+                                          build_mutual_k_NN_alignment, 
+                                          get_quantiles)
 import jax
 import jax.numpy as jnp
 from utils import bf16_torch_to_jax, flatten_tokens_features, list_folder, binarize, makefolder
@@ -11,7 +15,7 @@ import pickle
 from tqdm import tqdm
 from pathlib import Path
 import torch
-
+from datapaths import *
 import sys
 
 
@@ -59,11 +63,11 @@ def main(input_path_A,
 
     sample_size = all_activations_B["layer_0"].shape[0]
     n_layers = len(list(all_activations_B.keys()))
-    #print(activations_B.keys())
 
     key = jax.random.key(42)
     key, subkey = jax.random.split(key)
     information_imbalance_fn = build_information_imbalance(key=subkey, sample_size=sample_size, distance_fn=hamming_distance)
+    mutual_k_aligmment_fn = build_mutual_k_NN_alignment(key=subkey, sample_size=sample_size, distance_fn=normalized_L2_distance)
 
     rows = [f"layer_{i}" for i in range(1, n_layers)]
     cols = [f"layer_{i}" for i in range(1, n_layers)]
@@ -72,69 +76,70 @@ def main(input_path_A,
         
         inf_imb_matrix = []
         reciprocal_inf_imb_matrix = []
+        alignment = np.zeros(shape=(len(rows),
+                                    len(cols))
+                                    )
         
+        A_counter = 0
         for layer_A in tqdm(rows, desc="Computing layer_A",leave=False):
             activations_A = all_activations_A[layer_A]
 
             row = []
             reciprocal_row = []
+
+            B_counter = 0 
             for layer_B in (pbar := tqdm(cols, desc="Computing layer_B",leave=False)):
+                
+                ### II 
                 act_A = bf16_torch_to_jax(activations_A[:,-n_tokens:,:])
-                act_A = flatten_tokens_features(act_A)
-                act_A = binarize(act_A)
-
                 act_B = bf16_torch_to_jax(all_activations_B[layer_B][:,-n_tokens:,:])
-                act_B = flatten_tokens_features(act_B)
-                act_B = binarize(act_B)
-
-                inf_imb,reciprocal_inf_imb = information_imbalance_fn(act_A, act_B)
+                inf_imb,reciprocal_inf_imb = information_imbalance_fn(binarize(flatten_tokens_features(act_A)), 
+                                                                      binarize(flatten_tokens_features(act_B))
+                                                                      )
                 row.append(inf_imb.item())
                 reciprocal_row.append(reciprocal_inf_imb.item())
                 pbar.set_description(f"Computing layer_B (II(A-->B) {inf_imb:.4f} ; II(B-->A) {reciprocal_inf_imb:.4f})")
+                
+                ### alignment
+                act_A = act_A.mean(axis=1)
+                act_B = act_B.mean(axis=1)
+                alphamin = 0.05
+                alphamax = 0.95
+                qmin_A,qmax_A = get_quantiles(act_A,alphamin,alphamax)
+                qmin_B,qmax_B = get_quantiles(act_B,alphamin,alphamax)
+                alignment[A_counter,B_counter] = mutual_k_aligmment_fn(jnp.clip(act_A.T,min=qmin_A,max=qmax_A).T,
+                                                                    jnp.clip(act_B.T,min=qmin_B,max=qmax_B).T,
+                                                                    ) # TODO clipping
+
+                B_counter += 1
 
             inf_imb_matrix.append(row)
             reciprocal_inf_imb_matrix.append(reciprocal_row)
+
+            A_counter += 1
 
         inf_imb = np.array(inf_imb_matrix)
         reciprocal_inf_imb = np.array(reciprocal_inf_imb_matrix)
         np.save(file=f"{output_folder}/n_tokens_{n_tokens}_AB.npy", arr=inf_imb)
         np.save(file=f"{output_folder}/n_tokens_{n_tokens}_BA.npy", arr=reciprocal_inf_imb)
-
+        np.save(file=f"{output_folder}/n_tokens_{n_tokens}_alignment.npy", arr=alignment)
 if __name__ == "__main__":
 
     mask = 2 # greater than zero
     n_loaded_tokens = 40 - mask  # the mask excludes final points and quoutes
     
     dbg = int(sys.argv[1])
-
-    # model = 'llama'
-    # languageA = 'english'
-    # languageB = 'spanish'
-
     model = sys.argv[2]
     languageA = sys.argv[3]
     languageB = sys.argv[4]
 
-    # languageA = 'german'
-    # languageB = 'hungarian'
-
-    input_paths = {}
-    input_paths["deepseek"] = {}
-    input_paths["llama"] = {}
-    input_paths["deepseek"]["english"] = "/home/laios/activations/opus_english_spanish/deepseek/deepseek_english"
-    input_paths["deepseek"]["spanish"] = "/home/laios/activations/opus_english_spanish/deepseek/deepseek_spanish"
-    input_paths["llama"]["english"] = "/home/laios/activations/opus_english_spanish/llama-8b/llama_english"
-    input_paths["llama"]["spanish"] = "/home/laios/activations/opus_english_spanish/llama-8b/llama_spanish"
-    input_paths["deepseek"]["german"] = f"/home/laios/activations/opus_{languageA}_{languageB}/deepseek_{languageA}"
-    input_paths["deepseek"]["hungarian"] = f"/home/laios/activations/opus_{languageA}_{languageB}/deepseek_{languageB}"
-
     if dbg == 0:
         n_files = 500
         # n_tokens_list = np.array([n_loaded_tokens,30,20,10,5,1,15,25,35])
-        n_tokens_list = np.array([2,3,4,6,7,8,9,11,12,13,14])
+        n_tokens_list = np.array(n_loaded_tokens)
     elif dbg == 1:
         n_files = 2
-        n_tokens_list = np.array([40,1])
+        n_tokens_list = np.array([n_loaded_tokens,1])
 
     input_path_A = input_paths[model][languageA]
     input_path_B = input_paths[model][languageB]
