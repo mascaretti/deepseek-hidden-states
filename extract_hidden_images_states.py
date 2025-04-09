@@ -15,61 +15,60 @@ from tqdm import tqdm
 import pickle
 import time
 
-def extract_image_hidden_states(model_name: str, dataset: Dataset, img_column: str, batch_size: int = 10, device: torch.device = None, output_directory=Path("/home/laios/image_captions_deepseek")):
+def extract_image_hidden_states(model_name: str, dataset: Dataset, img_column: str, subset_size: int = 2500, batch_size: int = 10, device: torch.device = None, output_directory=Path("/home/laios/image_captions_deepseek")):
+"""Extract (and store as side effect) the sign of the hidden states for an image transformer.
 
-    """Extract (and store as side effect) the sign of the hidden states for an image transformer.
-
-
-    Args:
+Args:
         model_name: The Hugging Face image transformer.
         dataset: The data to analyse.
         img_column: The relevant image column of the dataset.
+        subset_size: Number of samples to process.
         batch_size: The size of the batch to process.
         device: The relevant device, either CUDA or CPU.
         output_directory: Storing data.
-    """
+"""
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    image_processor = AutoImageProcessor.from_pretrained(model_name)
-    image_tokens = image_processor(images=dataset[img_column], return_tensors="pt")
-    image_tokens = Dataset.from_dict(image_tokens)
-    image_tokens.set_format(type='torch')
+    image_processor = AutoImageProcessor.from_pretrained(model_name, use_fast=True)
     image_model = AutoModel.from_pretrained(model_name)
+    image_model.to(device)
 
-    dataloader = DataLoader(image_tokens, batch_size=batch_size)
     output_directory.mkdir(exist_ok=True, parents=True)
 
     print(output_directory)
     print(device)
 
-    with torch.no_grad():
-        for batch_idx, batch in tqdm(enumerate(dataloader)):
-            inputs = {k: v.to(device) for k, v in batch.items()}
-            outputs = image_model(**inputs, output_hidden_states=True)
-            hidden_states = outputs.hidden_states
+    total_iterations = np.floor(subset_size / batch_size).astype(int)
+    print(f"Batch size: {batch_size}; Total iterations: {total_iterations}.")
+    
+    n_layers = image_model.config.num_hidden_layers + 1
 
-            all_hidden_states = {}
-            for layer_idx, layer_states in enumerate(hidden_states):
-                all_hidden_states[f"layer_{layer_idx}"] = layer_states.cpu()
-                print(all_hidden_states)
-
-            print(Path(output_directory, f"chunk_{batch_idx}.pkl"))
-            with open(Path(output_directory, f"chunk_{batch_idx}.pkl"), "wb") as f:
-                pickle.dump(all_hidden_states, f)
+    print("Compute activations for images")
+    for i in tqdm(range(total_iterations), desc="Processing image batch.", leave=False):
+        image_tkns = image_processor(images=ds[img_column][batch_size*i:batch_size*(i+1)], return_tensors="pt").to(device)
+        with torch.no_grad():
+            image_output = image_model(**image_tkns, output_hidden_states=True)
+        all_hidden_states = {}
+        for j in range(0, n_layers):
+            all_hidden_states[f"layer_{j}"] = image_output["hidden_states"][j]
+        
+        with open(Path(output_directory, f"chunk_{batch_idx}.pkl"), "wb") as f:
+            pickle.dump(all_hidden_states, f)
 
 def main():
-    subset_size = 5_000
-    image_model_name = "openai/imagegpt-large"
+    subset_size = 2500
+    image_model_name = "openai/imagegpt-large"  
     print(image_model_name, flush=True)
-    dataset = load_from_disk("/home/datasets/flickr30k/").select(np.arange(subset_size))
+    dataset = load_from_disk("/home/datasets/flickr30k/")
     print(len(dataset), flush=True)
     batch_size = 10
 
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(DEVICE, flush=True)
 
-    extract_image_hidden_states(model_name=image_model_name, dataset=dataset, img_column='jpg', batch_size=batch_size, device=DEVICE, output_directory=Path("/home/laios/imagegpt_activations"))
+    extract_image_hidden_states(model_name=image_model_name, dataset=dataset, img_column='jpg', batch_size=batch_size, subset_size=subset_size, device=DEVICE, output_directory=Path("/home/laios/image-information-imbalance", "test", image_model_name.replace('/', '-')))
     
 if __name__ == "__main__":
     main()
+
