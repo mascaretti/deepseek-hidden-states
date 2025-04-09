@@ -16,9 +16,9 @@ import pickle
 import time
 
 def extract_image_hidden_states(model_name: str, dataset: Dataset, img_column: str, subset_size: int = 2500, batch_size: int = 10, device: torch.device = None, output_directory=Path("/home/laios/image_captions_deepseek")):
-"""Extract (and store as side effect) the sign of the hidden states for an image transformer.
+    """Extract (and store as side effect) the sign of the hidden states for an image transformer.
 
-Args:
+    Args:
         model_name: The Hugging Face image transformer.
         dataset: The data to analyse.
         img_column: The relevant image column of the dataset.
@@ -26,7 +26,7 @@ Args:
         batch_size: The size of the batch to process.
         device: The relevant device, either CUDA or CPU.
         output_directory: Storing data.
-"""
+    """
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
