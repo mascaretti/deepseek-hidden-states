@@ -88,9 +88,9 @@ def get_quantiles(a,alphamin,alphamax):
 def _compute_neighbourhood_overlap(x_dist_row, y_dist_row,k):
     x_rank = rankdata(x_dist_row, method="min")
     y_rank = rankdata(y_dist_row, method="min")
-    x_nns = jnp.where(x_rank <= k,1,0).astype(jnp.int8)
+    x_nns = jnp.where(x_rank <= k,1,0).astype(jnp.int8) # due to degeneracies there might be more than k points here
     y_nns = jnp.where(y_rank <= k,1,0).astype(jnp.int8)
-    return jnp.float32(jnp.bitwise_and(x_nns,y_nns).sum())/jnp.float32(k)
+    return jnp.float32(jnp.bitwise_and(x_nns,y_nns).sum())/((x_nns.sum()+y_nns.sum())/2) # defined like this, it is always <= 1.
 
 def mapped_compute_neighbourhood_overlaps(k):
     return jax.vmap(partial(_compute_neighbourhood_overlap,k=k))
@@ -128,5 +128,3 @@ def debugging_mutual_k_NN_alignment(x_dist_row, y_dist_row,k=10):
   print(x_nns)
   print(y_nns)
   return jnp.float32(jnp.isin(x_nns,y_nns).sum())/jnp.float32(k)
-
-
