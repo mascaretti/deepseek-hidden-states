@@ -121,8 +121,8 @@ if __name__ == "__main__":
     
     Path(args.output_folder).mkdir(parents=True, exist_ok=True)
 
-    n_loaded_tokens = 40
-    n_files = 500
+    n_loaded_tokens = 9
+    n_files = 50
 
     main(
         input_path_A=args.input_path_A, 

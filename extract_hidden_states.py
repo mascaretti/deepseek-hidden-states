@@ -11,24 +11,32 @@ def batch_generator(lst, batch_size):
         yield lst[i:i + batch_size]
 
 def main(batch_size=30):
-    #file_path = "/home/laios/Data/Text/tokens/corpus_Helsinki-NLP/opus_books/LLM_A_Llama3/model_A_id_0/languageA_English/min_token_length_40/max_token_length_50/source.txt"
-    file_path = "/home/laios/Data/Text/tokens/corpus_Helsinki-NLP/opus_books/LLM_A_Llama3/model_A_id_0/LLM_B_Llama3/model_B_id_0/languageA_English/languageB_Spanish/min_token_length_40/max_token_length_50/target.txt"
-    output_folder_path = "./deepseek_spanish" #os.path.splitext(file_path)[0]  # removes .txt extension
+    cpts = [1, 3, 5]
+    file_paths = [f"/home/datasets/flickr_csv/flickr_cpt_{cpt}.txt" for cpt in cpts]
+    output_folder_path = f"/home/laios/llama_flickr_cpt_all" #os.path.splitext(file_path)[0]  # removes .txt extension
+    
+    captions = []
+    for file_path in file_paths:
+        print(file_path)
+        with open(file_path, "r") as f:
+            caption = [line.strip() for line in f]
+        captions.append(caption)
 
-    with open(file_path, "r") as f:
-        prompts = [line.strip() for line in f]
+    prompts = []
+    for i in range(len(captions[0])):
+        prompts.append(captions[0][i] + " " + captions[1][i] + " " + captions[2][i])
+    
 
     # Create an LLM.
     NODE_RANK = int(os.environ["SLURM_NODEID"])
     llm = sgl.Engine(
-        model_path="/home/rende/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-V3/snapshots/86518964eaef84e3fdd98e9861759a1384f9c29d",
-        tp_size=16,
+        model_path="/home/mascaretti/.cache/huggingface/hub/models--meta-llama--Llama-3.1-8B/snapshots/d04e592bb4f6aa9cfee91e2e20afa771667e1d4b",
+        tp_size=1,
         return_hidden_states=True,
-        nnodes=2,
+        nnodes=1,
         dist_init_addr="10.149.146.53:8000",
         node_rank=NODE_RANK,
-        grammar_backend="xgrammar",
-        disable_radix_cache=True,
+        disable_radix_cache=True
     ) 
 
     sampling_params = {

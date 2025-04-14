@@ -1,17 +1,21 @@
 #!/bin/bash
-#SBATCH --nodes=2
+#SBATCH --mail-type=NONE
+#SBATCH --mail-user=amascare@sissa.it
+#SBATCH --nodes=1
+#SBATCH --job-name=dino
+#SBATCH --mem=500GB
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=10
+#SBATCH --gpus=1
+#SBATCH --gpus-per-node=1
+#SBATCH --gpus-per-task=1
 #SBATCH --time=24:00:00
-#SBATCH --ntasks-per-node=1
-#SBATCH --gres=gpu:8
-#SBATCH --output=./log_output/%x.o%j              # Standard output
-#SBATCH --error=./log_output/%x.o%j               # Standard error
+#SBATCH --error=logs/%x-%j.err
+#SBATCH --output=logs/%x-%j.out
 
+source /home/$USER/mysglang/bin/activate
+## source /home/$USER/myjax/bin/activate
+cd /home/$USER/deepseek-hidden-states
 
-source /home/rende/mysglang/bin/activate
-
-cd /home/rende/deepseek-hidden-states
-
-srun --ntasks=2 --nodes=2 python3 extract_hidden_states.py
-
-
-# srun --ntasks=2 --nodes=2 python3 -m sglang.launch_server --model /home/rende/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-V3/snapshots/86518964eaef84e3fdd98e9861759a1384f9c29d --trust-remote-code --tp 16 --dist-init-addr 10.149.146.53:8000 --nnodes 2 --grammar-backend xgrammar --node-rank $SLURM_NODEID
+srun python3 extract_hidden_states.py
+## srun python3 compute_information_imbalance_images.py --input_path_A '/home/laios/activations/flickr/deepseek_captions5/' --input_path_B '/home/laios/image-information-imbalance/facebook-dinov2-large/' --output_folder '/home/laios/image-information-imbalance/dino-cpt-5/'
