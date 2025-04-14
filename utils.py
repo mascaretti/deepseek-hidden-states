@@ -34,6 +34,20 @@ def binarize(a):
     a = a.at[a == 0].set(-1)
     return a
 
+def get_quantiles(a,alphamin,alphamax):
+  qmin = jnp.quantile(a,q=alphamin,axis=1)
+  qmax = jnp.quantile(a,q=alphamax,axis=1)
+  return qmin,qmax
+
+def clip(act_A,act_B):
+    alphamin = 0.05
+    alphamax = 0.95
+    qmin_A,qmax_A = get_quantiles(act_A,alphamin,alphamax)
+    qmin_B,qmax_B = get_quantiles(act_B,alphamin,alphamax)
+    act_A = jnp.clip(act_A.T,min=qmin_A,max=qmax_A).T
+    act_B = jnp.clip(act_B.T,min=qmin_B,max=qmax_B).T
+    return act_A,act_B
+
 def makefolder(base='./',
                create_folder=False,
                precision=5,
