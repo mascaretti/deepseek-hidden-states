@@ -83,18 +83,13 @@ def build_information_imbalance(key, sample_size, distance_fn, k=1):
         inf_imb = 2. * (jnp.sum(relative_ranks) / jnp.sum(num_neighbours)) / (num_samples - 1.)
 
         reciprocal_ranks, reciprocal_num_neighbours = mapped_relative_ranks(k)(ranks_Y,ranks_X)
-        reciprocal_inf_imb = 2. * (jnp.sum(reciprocal_ranks) / jnp.sum(reciprocal_num_neighbours)) / (num_samples - 1.)
+        reciprocal_inf_imb = 2. * (jnp.sum(reciprocal_ranks) / jnp.sum(reciprocal_num_neighbours)) / (num_samples - 1.) / k
 
         return inf_imb,reciprocal_inf_imb
     
     return jax.jit(information_imbalance)
 
 ### Platonic-functions
-
-def get_quantiles(a,alphamin,alphamax):
-  qmin = jnp.quantile(a,q=alphamin,axis=1)
-  qmax = jnp.quantile(a,q=alphamax,axis=1)
-  return qmin,qmax
 
 def _compute_neighbourhood_overlap(x_rank, y_rank,k):
     x_nns = jnp.where(x_rank <= k,1,0).astype(jnp.int8) # due to degeneracies there might be more than k points here
@@ -144,8 +139,8 @@ def build_mutual_k_NN_alignment(key, sample_size, distance_fn, k=10):
         num_neighbors_Y) = mapped_compute_neighbourhood_overlaps(k)(ranks_X,ranks_Y)
 
         alignment = alignment.mean()
-        inf_imb_XY = 2. * (jnp.sum(relative_ranks_XY) / jnp.sum(num_neighbors_X)) / (num_samples - 1.)
-        inf_imb_YX = 2. * (jnp.sum(relative_ranks_YX) / jnp.sum(num_neighbors_Y)) / (num_samples - 1.)
+        inf_imb_XY = 2. * (jnp.sum(relative_ranks_XY) / jnp.sum(num_neighbors_X)) / (num_samples - 1.) / k
+        inf_imb_YX = 2. * (jnp.sum(relative_ranks_YX) / jnp.sum(num_neighbors_Y)) / (num_samples - 1.) / k
 
         return alignment, inf_imb_XY, inf_imb_YX
     

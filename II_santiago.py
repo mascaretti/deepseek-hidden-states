@@ -1,5 +1,8 @@
-import sys
+import sys,os
 sys.path.append('../')
+dbg = int(sys.argv[1])
+if dbg:
+    os.environ["JAX_PLATFORMS"] = "cpu"
 from collections import defaultdict
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,11 +12,16 @@ from information_imbalance_module import (normalized_L2_distance,
                                           build_information_imbalance, 
                                           hamming_distance, 
                                           build_mutual_k_NN_alignment, 
-                                          get_quantiles,
                                           )
 import jax
 import jax.numpy as jnp
-from utils import bf16_torch_to_jax, flatten_tokens_features, list_folder, binarize, makefolder
+from utils import (bf16_torch_to_jax, 
+                   flatten_tokens_features, 
+                   list_folder, 
+                   binarize, 
+                   clip,
+                   makefolder,
+                   )
 import pickle
 from tqdm import tqdm
 from pathlib import Path
@@ -60,11 +68,10 @@ def main(input_path_A,
          n_tokens_list,
          k_list,
          output_folder0,
-         avg_tokens_II,
-         avg_tokens_A,
+         avg_flags,
+         Nbits_list,
          diagonal_constraint,
          ):
-    
     all_activations_A = collect_data(input_path_A, n_loaded_tokens=n_loaded_tokens, n_files=n_files,mask=mask,)
     all_activations_B = collect_data(input_path_B, n_loaded_tokens=n_loaded_tokens, n_files=n_files,mask=mask,)
 
@@ -77,106 +84,97 @@ def main(input_path_A,
     rows = [f"layer_{i}" for i in range(1, n_layers)]
     cols = [f"layer_{i}" for i in range(1, n_layers)]
 
-    for n_tokens in n_tokens_list:
+    for n_tokens_id, n_tokens in enumerate(n_tokens_list):
         print(f'{n_tokens=}')
-        for k_id,k in enumerate(k_list):
+        for k_id, k in enumerate(k_list):
             print(f'{k=}')
-            information_imbalance_fn = build_information_imbalance(key=subkey, 
-                                                                sample_size=sample_size, 
-                                                                distance_fn=hamming_distance,
-                                                                k=k)
-            mutual_k_aligmment_fn = build_mutual_k_NN_alignment(key=subkey, 
-                                                                sample_size=sample_size, 
-                                                                distance_fn=normalized_L2_distance,
-                                                                k=k)
-            
-            inf_imb_matrix = np.zeros(shape=(len(rows),len(cols)))
-            reciprocal_inf_imb_matrix = np.zeros(shape=inf_imb_matrix.shape)
-            alignment = np.zeros(shape=(len(rows),
-                                        len(cols))
-                                        )
-            clipping_inf_imb = np.zeros(shape=(2,len(rows),len(cols)))
-            
-            for A_counter,layer_A in enumerate(rows):
-                activations_A = all_activations_A[layer_A]
+            for Nbits_id, Nbits in enumerate(Nbits_list):
+                print(f'{Nbits=}')
 
-                for B_counter,layer_B in enumerate(cols):
-                    if diagonal_constraint == 1 and layer_B != layer_A:
-                        continue
-                    
-                    act_A = bf16_torch_to_jax(activations_A[:,-n_tokens:,:])
-                    act_B = bf16_torch_to_jax(all_activations_B[layer_B][:,-n_tokens:,:])
-                    
-                    ### binarizing 
-                    # start_II = time()
-                    if avg_tokens_II == 1:
-                        II_act_A = binarize(act_A.mean(axis=1))
-                        II_act_B = binarize(act_B.mean(axis=1))
-                    else:
-                        II_act_A = binarize(flatten_tokens_features(act_A))
-                        II_act_B = binarize(flatten_tokens_features(act_B))
-                    inf_imb,reciprocal_inf_imb = information_imbalance_fn(II_act_A,II_act_B)
+                distance_fn = hamming_distance if Nbits else normalized_L2_distance 
+                mutual_k_aligmment_fn = build_mutual_k_NN_alignment(key=subkey, 
+                                                                    sample_size=sample_size, 
+                                                                    distance_fn=distance_fn,
+                                                                    k=k)
+                
+                alignment = np.zeros(shape=(len(rows),
+                                            len(cols))
+                                            )
+                inf_imb = np.zeros(shape=(2,len(rows),len(cols)))
+                
+                for A_counter,layer_A in enumerate(rows):
+                    activations_A = all_activations_A[layer_A]
 
-                    # print(f'{(time()-start_II)/60.} m')
-                    inf_imb_matrix[A_counter,B_counter] = inf_imb.item()
-                    reciprocal_inf_imb_matrix[A_counter,B_counter] = reciprocal_inf_imb.item()
-                    
-                    ### clipping 
-                    if avg_tokens_A:
-                        act_A = act_A.mean(axis=1)
-                        act_B = act_B.mean(axis=1)
-                    else:
-                        act_A = flatten_tokens_features(act_A)
-                        act_B = flatten_tokens_features(act_B)
+                    for B_counter,layer_B in enumerate(cols):
+                        activations_B = all_activations_B[layer_B]
 
-                    alphamin = 0.05
-                    alphamax = 0.95
-                    qmin_A,qmax_A = get_quantiles(act_A,alphamin,alphamax)
-                    qmin_B,qmax_B = get_quantiles(act_B,alphamin,alphamax)
-                    
-                    act_A = jnp.clip(act_A.T,min=qmin_A,max=qmax_A).T
-                    act_B = jnp.clip(act_B.T,min=qmin_B,max=qmax_B).T
+                        if diagonal_constraint == 1 and layer_B != layer_A:
+                            continue
+                        
+                        act_A = bf16_torch_to_jax(activations_A[:,-n_tokens:,:])
+                        act_B = bf16_torch_to_jax(activations_B[:,-n_tokens:,:])
+                        
+                        for avg_tokens in avg_flags:
+                            if avg_tokens == 1:
+                                act_A = act_A.mean(axis=1,keepdims=True)
+                                act_B = act_B.mean(axis=1,keepdims=True)
 
-                    (alignment[A_counter,B_counter],
-                     clipping_inf_imb[0,A_counter,B_counter],
-                     clipping_inf_imb[1,A_counter,B_counter]) = mutual_k_aligmment_fn(act_A,act_B)
+                            act_A = flatten_tokens_features(act_A)
+                            act_B = flatten_tokens_features(act_B)
 
-            output_folder = makefolder(base=output_folder0,
-                                    create_folder=True,
-                                    k=k,
-                                    )
-            np.save(file=f"{output_folder}/n_tokens_{n_tokens}_avg_{avg_tokens_II}_AB.npy", arr=inf_imb_matrix)
-            np.save(file=f"{output_folder}/n_tokens_{n_tokens}_avg_{avg_tokens_II}_BA.npy", arr=reciprocal_inf_imb_matrix)
-            np.save(file=f"{output_folder}/n_tokens_{n_tokens}_avg_{avg_tokens_A}_alignment.npy", arr=alignment)
-            np.save(file=f"{output_folder}/n_tokens_{n_tokens}_avg_{avg_tokens_A}_clipping_AB.npy", arr=clipping_inf_imb[0])
-            np.save(file=f"{output_folder}/n_tokens_{n_tokens}_avg_{avg_tokens_A}_clipping_BA.npy", arr=clipping_inf_imb[1])
+                            if Nbits == 1:
+                                act_A = binarize(act_A)
+                                act_B = binarize(act_B)
+                            else:
+                                act_A, act_B = clip(act_A,act_B)
+
+                            (alignment[A_counter,B_counter],
+                            inf_imb[0,A_counter,B_counter],
+                            inf_imb[1,A_counter,B_counter]) = mutual_k_aligmment_fn(act_A,act_B)
+                            
+                    output_folder = makefolder(base=output_folder0,
+                                            create_folder=True,
+                                            k=k,
+                                            Nbits=Nbits,
+                                            )
+                    # np.save(file=f"{output_folder}/n_tokens_{n_tokens}_avg_{avg_tokens_II}_AB.npy", arr=inf_imb_matrix)
+                    # np.save(file=f"{output_folder}/n_tokens_{n_tokens}_avg_{avg_tokens_II}_BA.npy", arr=reciprocal_inf_imb_matrix)
+                    np.save(file=f"{output_folder}/n_tokens_{n_tokens}_avg_{avg_tokens}_alignment.npy", arr=alignment)
+                    np.save(file=f"{output_folder}/n_tokens_{n_tokens}_avg_{avg_tokens}_AB.npy", arr=inf_imb[0])
+                    np.save(file=f"{output_folder}/n_tokens_{n_tokens}_avg_{avg_tokens}_BA.npy", arr=inf_imb[1])
 
         
 if __name__ == "__main__":
 
     mask = 2 # greater than zero
-    min_token_length = 40
+    min_token_length = 100
     n_loaded_tokens = min_token_length - mask  # the mask excludes final points and quotes
-    diagonal_constraint = 1
 
     parser = argparse.ArgumentParser(description="II")
     parser.add_argument("dbg",type=int)
     parser.add_argument("model",type=str)
     parser.add_argument("languageA",type=str)
     parser.add_argument("languageB",type=str)
-    parser.add_argument("avg_tokens_II",type=int)
-    parser.add_argument("avg_tokens_A",type=int)
     args = parser.parse_args()
 
     if args.dbg == 0:
         n_files = 500
         # n_tokens_list = np.array([n_loaded_tokens,30,20,10,5,1,15,25,35])
-        n_tokens_list = np.array([20])
-        k_list = [1,10]
+        n_tokens_list = np.array([n_loaded_tokens])
+        k_list = [10]
+        Nbits_list = [1,0]
+        avg_flags = [0]
+        diagonal_constraint = 0
+
     elif args.dbg == 1:
         n_files = 2
-        n_tokens_list = np.array([20,1])
-        k_list = [1,2]
+        n_tokens_list = np.array([100])
+        k_list = [10]
+        Nbits_list = [0,1]
+        avg_flags = [0]
+        diagonal_constraint = 1
+
+    print(f'{diagonal_constraint=}')
 
     input_path_A = input_paths[args.model][args.languageA][str(min_token_length)]
     input_path_B = input_paths[args.model][args.languageB][str(min_token_length)]
@@ -200,7 +198,7 @@ if __name__ == "__main__":
         n_tokens_list=n_tokens_list,
         k_list=k_list,
         output_folder0=output_folder0,
-        avg_tokens_II=args.avg_tokens_II,
-        avg_tokens_A=args.avg_tokens_A,
+        avg_flags=avg_flags,
+        Nbits_list=Nbits_list,
         diagonal_constraint=diagonal_constraint,
     )
