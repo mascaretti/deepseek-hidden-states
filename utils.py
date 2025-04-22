@@ -39,14 +39,25 @@ def get_quantiles(a,alphamin,alphamax):
   qmax = jnp.quantile(a,q=alphamax,axis=1)
   return qmin,qmax
 
-def clip(act_A,act_B):
+def clip(act):
     alphamin = 0.05
     alphamax = 0.95
-    qmin_A,qmax_A = get_quantiles(act_A,alphamin,alphamax)
-    qmin_B,qmax_B = get_quantiles(act_B,alphamin,alphamax)
-    act_A = jnp.clip(act_A.T,min=qmin_A,max=qmax_A).T
-    act_B = jnp.clip(act_B.T,min=qmin_B,max=qmax_B).T
-    return act_A,act_B
+    
+    if len(act.shape)==3:
+      reshape = True
+    else:
+      reshape = False
+
+    if reshape:
+      B,T,E = act.shape
+      act = jnp.reshape(act,shape=(B,T*E))
+      
+    qmin,qmax = get_quantiles(act,alphamin,alphamax)
+    act = jnp.clip(act.T,min=qmin,max=qmax).T
+
+    if reshape:
+      act = jnp.reshape(act,shape=(B,T,E))
+    return act
 
 def makefolder(base='./',
                create_folder=False,
@@ -63,3 +74,18 @@ def makefolder(base='./',
   if create_folder:
     os.makedirs(folder,exist_ok=True)
   return folder
+
+def get_acronym(language):
+  if language == 'spanish':
+    acronym = 'es'
+  elif language == 'german':
+     acronym = 'de'
+  elif language == 'italian':
+    acronym = 'it'
+  elif language == 'english':
+    acronym = 'en'
+  elif language == 'russian':
+    acronym = 'ru'
+  elif language == 'hungarian':
+    acronym = 'hu'
+  return acronym
