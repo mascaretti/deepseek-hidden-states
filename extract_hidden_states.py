@@ -11,21 +11,16 @@ def batch_generator(lst, batch_size):
         yield lst[i:i + batch_size]
 
 def main(batch_size=30):
-    cpts = [1, 3, 5]
-    file_paths = [f"/home/datasets/flickr_csv/flickr_cpt_{cpt}.txt" for cpt in cpts]
-    output_folder_path = f"/home/laios/llama_flickr_cpt_all" #os.path.splitext(file_path)[0]  # removes .txt extension
-    
-    captions = []
-    for file_path in file_paths:
-        print(file_path)
-        with open(file_path, "r") as f:
-            caption = [line.strip() for line in f]
-        captions.append(caption)
+    cpt = 2
+    file_path = f"/home/datasets/flickr_csv/flickr_cpt_{cpt}.txt"
+    print(file_path)
+    output_folder_path = f"/home/laios/llama_flickr_cpt_{cpt}"
+    print(output_folder_path)
 
-    prompts = []
-    for i in range(len(captions[0])):
-        prompts.append(captions[0][i] + " " + captions[1][i] + " " + captions[2][i])
-    
+    with open(file_path, "r") as f:
+        prompts = [line.strip() for line in f]
+
+    print(torch.cuda.is_available())
 
     # Create an LLM.
     NODE_RANK = int(os.environ["SLURM_NODEID"])
@@ -35,8 +30,7 @@ def main(batch_size=30):
         return_hidden_states=True,
         nnodes=1,
         dist_init_addr="10.149.146.53:8000",
-        node_rank=NODE_RANK,
-        disable_radix_cache=True
+        node_rank=NODE_RANK
     ) 
 
     sampling_params = {

@@ -1,0 +1,35 @@
+Subset size: 2500
+n_files_b: 250
+Input path A =  /home/laios/activations/flickr/deepseek_captions5/
+Input path B =  /home/laios/image-information-imbalance/openai-imagegpt-large
+Output:  /home/laios/image-information-imbalance/igpt-cpt-5
+0
+100
+200
+300
+400
+500
+600
+700
+800
+900
+1000
+1100
+1200
+1300
+1400
+1500
+1600
+1700
+1800
+1900
+2000
+2100
+2200
+2300
+2400
+2500
+torch.Size([2500, 9, 7168])
+Sample size A: 2500
+Sample size B: 2500
+Sample size:  2500

@@ -1,0 +1,50 @@
+/home/mascaretti/mysglang/lib/python3.9/site-packages/transformers/models/auto/image_processing_auto.py:590: FutureWarning: The image_processor_class argument is deprecated and will be removed in v4.42. Please use `slow_image_processor_class`, or `fast_image_processor_class` instead
+  warnings.warn(
+/home/mascaretti/mysglang/lib/python3.9/site-packages/transformers/models/auto/image_processing_auto.py:590: FutureWarning: The image_processor_class argument is deprecated and will be removed in v4.42. Please use `slow_image_processor_class`, or `fast_image_processor_class` instead
+  warnings.warn(
+/home/mascaretti/mysglang/lib/python3.9/site-packages/transformers/models/auto/image_processing_auto.py:590: FutureWarning: The image_processor_class argument is deprecated and will be removed in v4.42. Please use `slow_image_processor_class`, or `fast_image_processor_class` instead
+  warnings.warn(
+Loading safetensors checkpoint shards:   0% Completed | 0/4 [00:00<?, ?it/s]
+Loading safetensors checkpoint shards:  25% Completed | 1/4 [01:36<04:49, 96.59s/it]
+Loading safetensors checkpoint shards:  50% Completed | 2/4 [02:56<02:54, 87.02s/it]
+Loading safetensors checkpoint shards:  75% Completed | 3/4 [04:31<01:30, 90.66s/it]
+Loading safetensors checkpoint shards: 100% Completed | 4/4 [04:55<00:00, 64.31s/it]
+Loading safetensors checkpoint shards: 100% Completed | 4/4 [04:55<00:00, 73.95s/it]
+
+  0%|          | 0/23 [00:00<?, ?it/s]  4%|▍         | 1/23 [00:13<05:03, 13.80s/it]  9%|▊         | 2/23 [00:14<02:04,  5.93s/it] 13%|█▎        | 3/23 [00:14<01:06,  3.31s/it] 17%|█▋        | 4/23 [00:14<00:39,  2.08s/it] 22%|██▏       | 5/23 [00:14<00:24,  1.39s/it] 26%|██▌       | 6/23 [00:15<00:17,  1.04s/it] 30%|███       | 7/23 [00:15<00:12,  1.31it/s] 35%|███▍      | 8/23 [00:15<00:08,  1.72it/s] 39%|███▉      | 9/23 [00:15<00:06,  2.15it/s] 43%|████▎     | 10/23 [00:15<00:05,  2.57it/s] 48%|████▊     | 11/23 [00:16<00:04,  2.89it/s] 52%|█████▏    | 12/23 [00:16<00:03,  3.20it/s] 57%|█████▋    | 13/23 [00:16<00:02,  3.46it/s] 61%|██████    | 14/23 [00:16<00:02,  3.89it/s] 65%|██████▌   | 15/23 [00:17<00:01,  4.24it/s] 70%|██████▉   | 16/23 [00:17<00:01,  4.40it/s] 74%|███████▍  | 17/23 [00:17<00:01,  3.91it/s] 78%|███████▊  | 18/23 [00:17<00:01,  4.27it/s] 83%|████████▎ | 19/23 [00:17<00:00,  4.41it/s] 87%|████████▋ | 20/23 [00:18<00:00,  4.67it/s] 91%|█████████▏| 21/23 [00:18<00:00,  4.89it/s] 96%|█████████▌| 22/23 [00:18<00:00,  5.06it/s]100%|██████████| 23/23 [00:18<00:00,  5.27it/s]100%|██████████| 23/23 [00:18<00:00,  1.23it/s]
+[2025-04-09 00:09:50 TP0] Scheduler hit an exception: Traceback (most recent call last):
+  File "/home/mascaretti/sglang/python/sglang/srt/managers/scheduler.py", line 1816, in run_scheduler_process
+    scheduler = Scheduler(server_args, port_args, gpu_id, tp_rank, dp_rank)
+  File "/home/mascaretti/sglang/python/sglang/srt/managers/scheduler.py", line 345, in __init__
+    self.grammar_backend = create_grammar_backend(
+  File "/home/mascaretti/sglang/python/sglang/srt/constrained/base_grammar_backend.py", line 86, in create_grammar_backend
+    from sglang.srt.constrained.xgrammar_backend import XGrammarGrammarBackend
+  File "/home/mascaretti/sglang/python/sglang/srt/constrained/xgrammar_backend.py", line 20, in <module>
+    from xgrammar import (
+  File "/home/mascaretti/mysglang/lib/python3.9/site-packages/xgrammar/__init__.py", line 1, in <module>
+    from . import testing
+  File "/home/mascaretti/mysglang/lib/python3.9/site-packages/xgrammar/testing.py", line 11, in <module>
+    from .matcher import GrammarMatcher, bitmask_dtype
+  File "/home/mascaretti/mysglang/lib/python3.9/site-packages/xgrammar/matcher.py", line 13, in <module>
+    from .kernels import apply_token_bitmask_inplace_kernels
+  File "/home/mascaretti/mysglang/lib/python3.9/site-packages/xgrammar/kernels/__init__.py", line 12, in <module>
+    from .apply_token_bitmask_inplace_cuda import apply_token_bitmask_inplace_cuda
+  File "/home/mascaretti/mysglang/lib/python3.9/site-packages/xgrammar/kernels/apply_token_bitmask_inplace_cuda.py", line 54, in <module>
+    _load_torch_ops()
+  File "/home/mascaretti/mysglang/lib/python3.9/site-packages/xgrammar/kernels/apply_token_bitmask_inplace_cuda.py", line 42, in _load_torch_ops
+    torch.utils.cpp_extension.load_inline(
+  File "/home/mascaretti/mysglang/lib/python3.9/site-packages/torch/utils/cpp_extension.py", line 1646, in load_inline
+    return _jit_compile(
+  File "/home/mascaretti/mysglang/lib/python3.9/site-packages/torch/utils/cpp_extension.py", line 1721, in _jit_compile
+    _write_ninja_file_and_build_library(
+  File "/home/mascaretti/mysglang/lib/python3.9/site-packages/torch/utils/cpp_extension.py", line 1810, in _write_ninja_file_and_build_library
+    extra_ldflags = _prepare_ldflags(
+  File "/home/mascaretti/mysglang/lib/python3.9/site-packages/torch/utils/cpp_extension.py", line 1899, in _prepare_ldflags
+    if (not os.path.exists(_join_cuda_home(extra_lib_dir)) and
+  File "/home/mascaretti/mysglang/lib/python3.9/site-packages/torch/utils/cpp_extension.py", line 2416, in _join_cuda_home
+    raise OSError('CUDA_HOME environment variable is not set. '
+OSError: CUDA_HOME environment variable is not set. Please set it to your CUDA install root.
+
+[2025-04-09 00:09:50] Received sigquit from a child proces. It usually means the child failed.
+srun: error: dgx01: task 0: Killed
+srun: Force Terminated StepId=13610.0

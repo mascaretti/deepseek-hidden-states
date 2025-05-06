@@ -1,0 +1,5 @@
+Subset size: 2500
+n_files_b: 250
+Input path A =  /home/laios/activations/flickr/deepseek_captions3/
+Input path B =  /home/laios/image-information-imbalance/openai-imagegpt-large
+Output:  /home/laios/image-information-imbalance/igpt-cpt-3
