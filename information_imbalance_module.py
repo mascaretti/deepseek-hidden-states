@@ -25,8 +25,8 @@ def pairwise_distances(distance, xs, ys):
   return jax.vmap(lambda x: jax.vmap(lambda y: distance(x, y))(xs))(ys).T
 
 def compute_ranks(x_dist,y_dist):
-    x_rank = rankdata(x_dist, method="min")
-    y_rank = rankdata(y_dist, method="min")
+    x_rank = rankdata(x_dist, method="average")
+    y_rank = rankdata(y_dist, method="average")
     return x_rank,y_rank
 mapped_compute_ranks = jax.vmap(compute_ranks)
 
@@ -73,17 +73,16 @@ def build_information_imbalance(key, sample_size, distance_fn, k=1):
             The value of the information imbalance from X to Y.
         """
         assert X.shape[0] == Y.shape[0], "Sample size must be equal across X and Y."
-        num_samples = X.shape[0]
 
         d_X = pairwise_distances(distance_fn, X[indices_rows], X[indices_columns])
         d_Y = pairwise_distances(distance_fn, Y[indices_rows], Y[indices_columns])
         ranks_X,ranks_Y = mapped_compute_ranks(d_X,d_Y)
 
         relative_ranks,num_neighbours = mapped_relative_ranks(k)(ranks_X,ranks_Y)
-        inf_imb = 2. * (jnp.sum(relative_ranks) / jnp.sum(num_neighbours)) / (num_samples - 1.)
+        inf_imb = 2. * (jnp.sum(relative_ranks) / jnp.sum(num_neighbours)) / (len(indices_columns) - 1.)
 
         reciprocal_ranks, reciprocal_num_neighbours = mapped_relative_ranks(k)(ranks_Y,ranks_X)
-        reciprocal_inf_imb = 2. * (jnp.sum(reciprocal_ranks) / jnp.sum(reciprocal_num_neighbours)) / (num_samples - 1.)
+        reciprocal_inf_imb = 2. * (jnp.sum(reciprocal_ranks) / jnp.sum(reciprocal_num_neighbours)) / (len(indices_columns) - 1.)
 
         return inf_imb,reciprocal_inf_imb
     
@@ -114,7 +113,9 @@ def build_mutual_k_NN_alignment(key, sample_size, distance_fn, k=10):
     """
     """
     indices_rows,indices_columns = separate_samples(key,sample_size)
-
+    jax.debug.print("r: {}", len(indices_rows))
+    jax.debug.print("c: {}", len(indices_columns))
+    
     def mutual_k_NN_alignment(X,Y,k=k):
         """
 
@@ -125,8 +126,7 @@ def build_mutual_k_NN_alignment(key, sample_size, distance_fn, k=10):
         Returns:
          jitted function to output the mutual-k-NN-alignment
         """
-        num_samples = X.shape[0]
-        assert num_samples == Y.shape[0], "Sample size must be equal across X and Y."
+        assert X.shape[0] == Y.shape[0], "Sample size must be equal across X and Y."
         
         d_X = pairwise_distances(distance_fn, X[indices_rows], X[indices_columns])
         d_Y = pairwise_distances(distance_fn, Y[indices_rows], Y[indices_columns])
@@ -139,8 +139,8 @@ def build_mutual_k_NN_alignment(key, sample_size, distance_fn, k=10):
         num_neighbors_Y) = mapped_compute_neighbourhood_overlaps(k)(ranks_X,ranks_Y)
 
         alignment = alignment.mean()
-        inf_imb_XY = 2. * (jnp.sum(relative_ranks_XY) / jnp.sum(num_neighbors_X)) / (num_samples - 1.)
-        inf_imb_YX = 2. * (jnp.sum(relative_ranks_YX) / jnp.sum(num_neighbors_Y)) / (num_samples - 1.)
+        inf_imb_XY = 2. * (jnp.sum(relative_ranks_XY) / jnp.sum(num_neighbors_X)) / (len(indices_columns) - 1.)
+        inf_imb_YX = 2. * (jnp.sum(relative_ranks_YX) / jnp.sum(num_neighbors_Y)) / (len(indices_columns) - 1.)
 
         return alignment, inf_imb_XY, inf_imb_YX
     
