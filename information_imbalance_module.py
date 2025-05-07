@@ -60,9 +60,9 @@ def build_information_imbalance(key, sample_size, distance_fn):
         d_X = pairwise_distances(distance_fn, X[indices_rows], X[indices_columns])
         d_Y = pairwise_distances(distance_fn, Y[indices_rows], Y[indices_columns])
         ranks, cards = batch_relative_ranks(d_X, d_Y)
-        inf_imb = 2. * (jnp.sum(ranks) / jnp.sum(cards)) / (M - 1.)
+        inf_imb = 2. * (jnp.sum(ranks) / jnp.sum(cards)) / (n_col_samples - 1.)
         reciprocal_ranks, reciprocal_cards = batch_relative_ranks(d_Y, d_X)
-        reciprocal_inf_imb = 2. * (jnp.sum(reciprocal_ranks) / jnp.sum(reciprocal_cards)) / (M - 1.)
+        reciprocal_inf_imb = 2. * (jnp.sum(reciprocal_ranks) / jnp.sum(reciprocal_cards)) / (n_col_samples - 1.)
         return inf_imb,reciprocal_inf_imb
     
     return jax.jit(information_imbalance)
