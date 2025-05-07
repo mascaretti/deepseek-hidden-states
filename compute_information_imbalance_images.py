@@ -68,6 +68,7 @@ def compute_inf_imb_matrix(
         all_activations_A, 
         all_activations_B, 
         n_tokens_list,
+        tokens_img_list,
         output_folder,
         ):
     sample_size = all_activations_A["layer_0"].shape[0]
@@ -84,7 +85,7 @@ def compute_inf_imb_matrix(
     rows = [f"layer_{i}" for i in range(1, n_layers_A)]
     cols = [f"layer_{i}" for i in range(1, n_layers_B)]
 
-    for n_tokens in tqdm(n_tokens_list, desc='Computing token'):
+    for n_tokens_img in tqdm(tokens_img_list, desc='Computing token'):
         
         inf_imb_matrix = []
         reciprocal_inf_imb_matrix = []
@@ -95,11 +96,11 @@ def compute_inf_imb_matrix(
             row = []
             reciprocal_row = []
             for layer_B in (pbar := tqdm(cols, desc="Computing layer_B",leave=False)):
-                act_A = bf16_torch_to_jax(activations_A[:,-n_tokens:,:])
+                act_A = bf16_torch_to_jax(activations_A[:, -9: ,:])
                 act_A = flatten_tokens_features(act_A)
                 act_A = binarize(act_A)
 
-                act_B = jnp.array(all_activations_B[layer_B])
+                act_B = jnp.array(all_activations_B[layer_B][:, -n_tokens_img:, :])
                 act_B = flatten_tokens_features(act_B)
                 act_B = binarize(act_B)
 
@@ -137,6 +138,8 @@ def main(
     
     all_activations_B = collect_images(input_path_B, n_files=n_files_b)
     sample_size_B = all_activations_B["layer_0"].shape[0]
+    n_tokens_img = all_activations_B["layer_0"].shape[1]
+    tokens_img_list = np.arange(1, n_tokens_img + 1, 100)
     print(f"Sample size B: {sample_size_B}")
     print(all_activations_B.keys())
 
@@ -144,6 +147,7 @@ def main(
         all_activations_A=all_activations_A,
         all_activations_B=all_activations_B,
         n_tokens_list=n_tokens_list,
+        tokens_img_list=tokens_img_list,
         output_folder=output_folder,
     )
 

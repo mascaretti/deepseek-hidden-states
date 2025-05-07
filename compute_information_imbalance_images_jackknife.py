@@ -181,9 +181,9 @@ if __name__ == "__main__":
     Path(args.output_folder).mkdir(parents=True, exist_ok=True)
 
     n_loaded_tokens = 9
-    subset_size_a = 5000
-    resample_size=1500
-    replicas=10
+    subset_size_a = 2500
+    resample_size=1000
+    replicas=5
     n_files_b = int(subset_size_a / 10)
     print(f"Subset size: {subset_size_a}")
     print(f"n_files_b: {n_files_b}")
