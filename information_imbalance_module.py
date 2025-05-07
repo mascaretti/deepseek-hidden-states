@@ -113,8 +113,6 @@ def build_mutual_k_NN_alignment(key, sample_size, distance_fn, k=10):
     """
     """
     indices_rows,indices_columns = separate_samples(key,sample_size)
-    jax.debug.print("r: {}", len(indices_rows))
-    jax.debug.print("c: {}", len(indices_columns))
     
     def mutual_k_NN_alignment(X,Y,k=k):
         """
