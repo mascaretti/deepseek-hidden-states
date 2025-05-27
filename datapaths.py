@@ -30,7 +30,6 @@ input_paths["llama"]["english"]["spanish"]["source"]['40'] = "/home/laios/activa
 input_paths["llama"]["english"]["spanish"]["target"]['40'] = "/home/laios/activations/opus_english_spanish/llama-8b/llama_spanish"
 input_paths["llama"]["english"]["spanish"]["source"]['100'] = "/home/laios/activations/opus_english_spanish/llama-8b/tokens_100_200/llama_english_100"
 input_paths["llama"]["english"]["spanish"]["target"]['100'] = "/home/laios/activations/opus_english_spanish/llama-8b/tokens_100_200/llama_spanish_100"
-# input_paths["llama"]["random"]['40'] = "/home/laios/llama_random"
 
 input_paths["deepseek"]["spanish"]["italian"]["source"]['40'] = "/home/laios/activations/opus_spanish_italian/deepseek_source"
 input_paths["deepseek"]["spanish"]["italian"]["target"]['40'] = "/home/laios/activations/opus_spanish_italian/deepseek_target"

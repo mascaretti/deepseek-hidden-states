@@ -29,15 +29,27 @@ import torch
 from datapaths import *
 import argparse
 
+def take_last_hidden_states(hidden_states,mask,n_loaded_tokens):
+    return hidden_states[:, -n_loaded_tokens-mask:-mask]
+
+def take_first_hidden_states(hidden_states,mask,n_loaded_tokens):
+    return hidden_states[:, mask:n_loaded_tokens+mask]
+
 def collect_data(input_path, 
                  n_loaded_tokens, 
                  n_files,
                  mask,
+                 take_last,
                  filter_layer=None, 
                  ):
     files = list_folder(input_path, desc="chunk_")[:n_files]
 
     all_hidden_states = defaultdict(list)
+    
+    if take_last:
+        slice_hidden_states = take_last_hidden_states
+    else:
+        slice_hidden_states = take_first_hidden_states
 
     for file in tqdm(files, desc="Collect File"):
         data = pickle.load(open(input_path + "/" + file.name, 'rb'))
@@ -45,8 +57,7 @@ def collect_data(input_path,
         for _, sentence in enumerate(data):
             hidden_states = sentence['meta_info']['hidden_states'][0]
             assert hidden_states.shape[1] >= n_loaded_tokens
-            hidden_states = hidden_states[:, -n_loaded_tokens-mask:-mask]            
-
+            hidden_states = slice_hidden_states(hidden_states,mask,n_loaded_tokens)            
             for layer_idx, layer_tensor in enumerate(hidden_states.split(1, dim=0)):
                 if filter_layer is not None:
                     if layer_idx!=filter_layer: continue
@@ -71,9 +82,15 @@ def main(input_path_A,
         #  avg_flags,
          Nbits_list,
         #  diagonal_constraint,
+        take_last,
          ):
     
-    all_activations_A = collect_data(input_path_A, n_loaded_tokens=n_loaded_tokens, n_files=n_files,mask=mask,)
+    all_activations_A = collect_data(input_path_A, 
+                                     n_loaded_tokens=n_loaded_tokens, 
+                                     n_files=n_files,
+                                     mask=mask,
+                                     take_last=take_last,
+                                     )
     all_activations_B = all_activations_A
 
     sample_size = all_activations_B["layer_0"].shape[0]
@@ -105,17 +122,16 @@ def main(input_path_A,
                                           n_loaded_tokens))
                 
                 for A_counter,layer_A in enumerate(rows):
+                    layer_B = layer_A
 
                     for delta_t_id,delta_t in enumerate(np.arange(1,n_loaded_tokens+1,dtype=int)):
                         aux = -delta_t+1
                         if aux == 0:
                             aux = None
-                                                    
                         act_A = all_activations_A[layer_A][:,-1:None,:]
-                        act_A = bf16_torch_to_jax(act_A)
-
-                        layer_B = layer_A
                         act_B = all_activations_B[layer_B][:,-delta_t:aux,:]
+
+                        act_A = bf16_torch_to_jax(act_A)
                         act_B = bf16_torch_to_jax(act_B)
                         
                         act_A = flatten_tokens_features(act_A)
@@ -153,16 +169,16 @@ if __name__ == "__main__":
     parser.add_argument("dbg",type=int)
     parser.add_argument("min_token_length",type=int)
     parser.add_argument("modelA",type=str)
-    parser.add_argument("languageA",type=str)
-    # parser.add_argument("languageB",type=str)
+    parser.add_argument("language",type=str)
     args = parser.parse_args()
 
     mask = 2 # greater than zero
     n_loaded_tokens = args.min_token_length - mask  # the mask excludes final points and quotes
+    take_last = 1
 
     if args.dbg == 0:
         n_files = 500
-        seed_list = np.arange(0,10,dtype=int)
+        seed_list = np.arange(0,5,dtype=int)
         k_list = [10]
         Nbits_list = [1,0]
         avg_flags = [0]
@@ -174,16 +190,24 @@ if __name__ == "__main__":
         Nbits_list = [0,1]
         avg_flags = [0]
 
-    input_path_A = input_paths[args.modelA][args.languageA][str(args.min_token_length)]
+    if args.language == "english":
+        input_path_A = input_paths[args.modelA][args.language]["spanish"]["source"][str(args.min_token_length)]
+    if args.language == "spanish":
+        input_path_A = input_paths[args.modelA]["english"][args.language]["target"][str(args.min_token_length)]
+    if args.language == "italian":
+        input_path_A = input_paths[args.modelA]["english"][args.language]["target"][str(args.min_token_length)]
+    
+
     print("Input path A = ", input_path_A, flush=True)
     
     output_folder0 = makefolder(base=f'./results/santiago/',
                                create_folder=True,
+                               take_last=take_last,
                                modelA=args.modelA,
                                modelB=args.modelA,
                                n_files=n_files,
                                min_token_length=args.min_token_length,
-                               languageA=args.languageA,
+                               languageA=args.language,
                                mask=mask,
                                )
     main(
@@ -195,4 +219,5 @@ if __name__ == "__main__":
         k_list=k_list,
         output_folder0=output_folder0,
         Nbits_list=Nbits_list,
+        take_last=take_last,
     )

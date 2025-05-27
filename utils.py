@@ -5,6 +5,11 @@ import jax.numpy as jnp
 
 from einops import rearrange
 
+depths = {"deepseek":61,
+          "llama":32}
+emb_dims = {"deepseek":7168,
+          "llama":4096}
+
 def extract_index(file):
     match = re.search(r'chunk_(\d+)\.pkl', file.name)
     return int(match.group(1)) if match else float('inf')  # push non-matching files to the end

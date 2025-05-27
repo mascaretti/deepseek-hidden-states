@@ -291,5 +291,7 @@ pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/linux,macos,emacs,visualstudiocode,python
 
-
-results/
+results
+results/santiago/
+token-axis-II/results/
+log_output

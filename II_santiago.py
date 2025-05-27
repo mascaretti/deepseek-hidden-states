@@ -1,20 +1,20 @@
+from datetime import datetime
+now = datetime.now()
+print(now.strftime("%Y-%m-%d %H:%M:%S"))
+
 import sys,os
 sys.path.append('../')
-dbg = int(sys.argv[1])
-if dbg:
-    os.environ["JAX_PLATFORMS"] = "cpu"
+# dbg = int(sys.argv[1])
+# if dbg:
+#     os.environ["JAX_PLATFORMS"] = "cpu"
 from collections import defaultdict
 import numpy as np
-import matplotlib.pyplot as plt
 
-from safetensors import safe_open
 from information_imbalance_module import (normalized_L2_distance, 
-                                          build_information_imbalance, 
                                           hamming_distance, 
                                           build_mutual_k_NN_alignment, 
                                           )
 import jax
-import jax.numpy as jnp
 from utils import (bf16_torch_to_jax, 
                    flatten_tokens_features, 
                    list_folder, 
@@ -24,19 +24,68 @@ from utils import (bf16_torch_to_jax,
                    )
 import pickle
 from tqdm import tqdm
-from pathlib import Path
 import torch
 from datapaths import *
 import argparse
+
+
+
+def reshuffle_batch_axis(act, key):
+    """
+    Reshuffles the activations along the batch axis.
+
+    Args:
+        act (jnp.ndarray): Activation matrix of shape (batch_size, ...).
+        key (jax.random.PRNGKey): A PRNG key for randomness.
+
+    Returns:
+        jnp.ndarray: Shuffled activations.
+    """
+    batch_size = act.shape[0]
+    perm = jax.random.permutation(key, batch_size)
+    return act[perm]
+
+import jax
+import jax.numpy as jnp
+
+def reshuffle_batch_and_tokens(act, key):
+    """
+    Reshuffles the activations along the batch and token axes independently.
+
+    Args:
+        act (jnp.ndarray): Activation tensor of shape (batch_size, seq_len, ...).
+        key (jax.random.PRNGKey): A PRNG key for randomness.
+
+    Returns:
+        jnp.ndarray: Shuffled activations.
+    """
+    key_batch, key_token = jax.random.split(key)
+    
+    # Shuffle batch
+    batch_size = act.shape[0]
+    batch_perm = jax.random.permutation(key_batch, batch_size)
+    act = act[batch_perm]
+    
+    # Shuffle tokens
+    seq_len = act.shape[1]
+    token_perm = jax.random.permutation(key_token, seq_len)
+    act = act[:, token_perm]
+    
+    return act
+
+
 
 def collect_data(input_path, 
                  filter_layer=None, 
                  n_loaded_tokens=40, 
                  n_files=10,
-                 mask=0,
+                 mask=None,
+                #  seed=42,
                  ):
+    
     files = list_folder(input_path, desc="chunk_")[:n_files]
-
+    # n_total_files = len(files)
+    # print(f"There are {n_total_files} in total", flush=True)
     all_hidden_states = defaultdict(list)
 
     for file in tqdm(files, desc="Collect File"):
@@ -45,7 +94,7 @@ def collect_data(input_path,
         for _, sentence in enumerate(data):
             hidden_states = sentence['meta_info']['hidden_states'][0]
             assert hidden_states.shape[1] >= n_loaded_tokens
-            hidden_states = hidden_states[:, -n_loaded_tokens-mask:-mask]            
+            hidden_states = hidden_states[:, -n_loaded_tokens-mask:-mask]
 
             for layer_idx, layer_tensor in enumerate(hidden_states.split(1, dim=0)):
                 if filter_layer is not None:
@@ -71,120 +120,184 @@ def main(input_path_A,
          avg_flags,
          Nbits_list,
          diagonal_constraint,
+         seed_list,
+         n_subsamples,
+         batch_shuffle,
          ):
-    all_activations_A = collect_data(input_path_A, n_loaded_tokens=n_loaded_tokens, n_files=n_files,mask=mask,)
-    all_activations_B = collect_data(input_path_B, n_loaded_tokens=n_loaded_tokens, n_files=n_files,mask=mask,)
+    
+    all_activations_A = collect_data(input_path_A,
+                                     n_loaded_tokens=n_loaded_tokens, 
+                                     n_files=n_files,
+                                     mask=mask,
+                                     )
+    all_activations_B = collect_data(input_path_B,
+                                     n_loaded_tokens=n_loaded_tokens, 
+                                     n_files=n_files,
+                                     mask=mask,
+                                     )
+    
 
-    sample_size = all_activations_B["layer_0"].shape[0]
+    total_sample_size = all_activations_B["layer_0"].shape[0]
+
+    #dbg:
+    print(f'{total_sample_size=}', flush=True)
+    print(f'{n_subsamples=}', flush=True)
+
     n_layers = len(list(all_activations_B.keys()))
 
-    key = jax.random.key(42)
-    key, subkey = jax.random.split(key)
+    key_distances = jax.random.key(42)
+    key_distances, subkey_distances = jax.random.split(key_distances)
+
+    A_batch_key = jax.random.key(101)
+    B_batch_key = jax.random.key(102)
 
     rows = [f"layer_{i}" for i in range(1, n_layers)]
     cols = [f"layer_{i}" for i in range(1, n_layers)]
 
-    for n_tokens_id, n_tokens in enumerate(n_tokens_list):
-        print(f'{n_tokens=}')
-        for k_id, k in enumerate(k_list):
-            print(f'{k=}')
-            for Nbits_id, Nbits in enumerate(Nbits_list):
-                print(f'{Nbits=}')
+    for jack_seed_id,jack_seed in enumerate(seed_list):
+        jack_key = jax.random.key(jack_seed)
+        jack_indices = jax.random.choice(key=jack_key,a=total_sample_size,shape=(n_subsamples,),replace=False)
+        print(f"{jack_seed=}")
 
-                distance_fn = hamming_distance if Nbits else normalized_L2_distance 
-                mutual_k_aligmment_fn = build_mutual_k_NN_alignment(key=subkey, 
-                                                                    sample_size=sample_size, 
-                                                                    distance_fn=distance_fn,
-                                                                    k=k)
-                
-                alignment = np.zeros(shape=(len(rows),
-                                            len(cols))
-                                            )
-                inf_imb = np.zeros(shape=(2,len(rows),len(cols)))
-                
-                for A_counter,layer_A in enumerate(rows):
-                    activations_A = all_activations_A[layer_A]
+        for n_tokens_id, n_tokens in enumerate(n_tokens_list):
+            print(f'{n_tokens=}')
+            for k_id, k in enumerate(k_list):
+                print(f'{k=}')
+                for Nbits_id, Nbits in enumerate(Nbits_list):
+                    print(f'{Nbits=}')
 
-                    for B_counter,layer_B in enumerate(cols):
-                        activations_B = all_activations_B[layer_B]
+                    distance_fn = hamming_distance if Nbits else normalized_L2_distance 
+                    mutual_k_aligmment_fn = build_mutual_k_NN_alignment(key=subkey_distances, 
+                                                                        sample_size=n_subsamples, 
+                                                                        distance_fn=distance_fn,
+                                                                        k=k)
+                    
+                    for avg_tokens in avg_flags:
+                        print(f'{avg_tokens=}')
+                        alignment = np.zeros(shape=(len(rows),
+                                                    len(cols))
+                                                    )
+                        inf_imb = np.zeros(shape=(2,len(rows),len(cols)))
 
-                        if diagonal_constraint == 1 and layer_B != layer_A:
-                            continue
-                        
-                        act_A = bf16_torch_to_jax(activations_A[:,-n_tokens:,:])
-                        act_B = bf16_torch_to_jax(activations_B[:,-n_tokens:,:])
-                        
-                        for avg_tokens in avg_flags:
-                            if avg_tokens == 1:
-                                act_A = act_A.mean(axis=1,keepdims=True)
-                                act_B = act_B.mean(axis=1,keepdims=True)
+                        for A_counter,layer_A in enumerate(rows):
+                            activations_A = all_activations_A[layer_A]
 
-                            act_A = flatten_tokens_features(act_A)
-                            act_B = flatten_tokens_features(act_B)
+                            for B_counter,layer_B in enumerate(cols):
+                                activations_B = all_activations_B[layer_B]
 
-                            if Nbits == 1:
-                                act_A = binarize(act_A)
-                                act_B = binarize(act_B)
-                            else:
-                                act_A, act_B = clip(act_A,act_B)
+                                if diagonal_constraint == 1 and layer_B != layer_A:
+                                    continue
 
-                            (alignment[A_counter,B_counter],
-                            inf_imb[0,A_counter,B_counter],
-                            inf_imb[1,A_counter,B_counter]) = mutual_k_aligmment_fn(act_A,act_B)
-                            
-                    output_folder = makefolder(base=output_folder0,
-                                            create_folder=True,
-                                            k=k,
-                                            Nbits=Nbits,
-                                            )
-                    # np.save(file=f"{output_folder}/n_tokens_{n_tokens}_avg_{avg_tokens_II}_AB.npy", arr=inf_imb_matrix)
-                    # np.save(file=f"{output_folder}/n_tokens_{n_tokens}_avg_{avg_tokens_II}_BA.npy", arr=reciprocal_inf_imb_matrix)
-                    np.save(file=f"{output_folder}/n_tokens_{n_tokens}_avg_{avg_tokens}_alignment.npy", arr=alignment)
-                    np.save(file=f"{output_folder}/n_tokens_{n_tokens}_avg_{avg_tokens}_AB.npy", arr=inf_imb[0])
-                    np.save(file=f"{output_folder}/n_tokens_{n_tokens}_avg_{avg_tokens}_BA.npy", arr=inf_imb[1])
+                                act_A = bf16_torch_to_jax(activations_A[:,-n_tokens:,:])
+                                act_B = bf16_torch_to_jax(activations_B[:,-n_tokens:,:])
+                                
+                                act_A = jax.numpy.take(act_A, jack_indices, axis=0)
+                                act_B = jax.numpy.take(act_B, jack_indices, axis=0)
+
+                                if batch_shuffle == 1:
+                                    act_B = reshuffle_batch_and_tokens(act_B, B_batch_key)
+
+                                if Nbits == 1:
+                                    if avg_tokens == 1:
+                                        act_A = act_A.mean(axis=1,keepdims=True)
+                                        act_B = act_B.mean(axis=1,keepdims=True)
+                                    act_A = binarize(act_A)
+                                    act_B = binarize(act_B)
+
+                                elif Nbits == 0:
+                                    act_A = clip(act_A)
+                                    act_B = clip(act_B)
+                                    if avg_tokens == 1:
+                                        act_A = act_A.mean(axis=1,keepdims=True)
+                                        act_B = act_B.mean(axis=1,keepdims=True)
+
+                                act_A = flatten_tokens_features(act_A)
+                                act_B = flatten_tokens_features(act_B)
+
+                                (alignment[A_counter,B_counter],
+                                inf_imb[0,A_counter,B_counter],
+                                inf_imb[1,A_counter,B_counter]) = mutual_k_aligmment_fn(act_A,act_B)
+                                
+                        output_folder = makefolder(base=output_folder0,
+                                                create_folder=True,
+                                                k=k,
+                                                Nbits=Nbits,
+                                                seed=jack_seed,
+                                                )
+                        np.save(file=f"{output_folder}/n_tokens_{n_tokens}_avg_{avg_tokens}_alignment.npy", arr=alignment)
+                        np.save(file=f"{output_folder}/n_tokens_{n_tokens}_avg_{avg_tokens}_AB.npy", arr=inf_imb[0])
+                        np.save(file=f"{output_folder}/n_tokens_{n_tokens}_avg_{avg_tokens}_BA.npy", arr=inf_imb[1])
 
         
 if __name__ == "__main__":
 
-    mask = 2 # greater than zero
-    min_token_length = 100
-    n_loaded_tokens = min_token_length - mask  # the mask excludes final points and quotes
 
     parser = argparse.ArgumentParser(description="II")
     parser.add_argument("dbg",type=int)
-    parser.add_argument("model",type=str)
+    parser.add_argument("min_token_length",type=int)
+    parser.add_argument("modelA",type=str)
+    parser.add_argument("modelB",type=str)
     parser.add_argument("languageA",type=str)
     parser.add_argument("languageB",type=str)
     args = parser.parse_args()
 
-    if args.dbg == 0:
-        n_files = 500
-        # n_tokens_list = np.array([n_loaded_tokens,30,20,10,5,1,15,25,35])
-        n_tokens_list = np.array([n_loaded_tokens])
-        k_list = [10]
-        Nbits_list = [1,0]
-        avg_flags = [0]
-        diagonal_constraint = 0
+    mask = 2 # greater than zero
+    n_loaded_tokens = args.min_token_length - mask  # the mask excludes final points and quotes
+    seed_list = [0,1,2,3,4]
 
-    elif args.dbg == 1:
-        n_files = 2
-        n_tokens_list = np.array([100])
+    if args.dbg == 0:
+        batch_shuffle = 0
+        n_files = 500
+        n_subsamples = 2500
+        if args.min_token_length == 40:
+            n_tokens_list = np.array([n_loaded_tokens,30,20,10,5,1,15,25,35])
+        elif args.min_token_length == 100:
+            n_tokens_list = np.array([1,5,10,20,30,40,50,60,70,80,90,n_loaded_tokens])
         k_list = [10]
         Nbits_list = [0,1]
+        avg_flags = [0,1]
+        diagonal_constraint = 1
+
+    elif args.dbg == 1:
+        batch_shuffle = 0
+        n_files = 2
+        n_subsamples = 10
+        n_tokens_list = np.array([2])
+        k_list = [10]
+        Nbits_list = [0,1]
+        avg_flags = [0,1]
+        diagonal_constraint = 1
+    
+    if args.dbg == 2:
+        batch_shuffle = 1
+        n_files = 500
+        n_subsamples = 2500
+        if args.min_token_length == 40:
+            n_tokens_list = np.array([20])
+        elif args.min_token_length == 100:
+            n_tokens_list = np.array([10])
+        k_list = [10]
+        Nbits_list = [1]
         avg_flags = [0]
         diagonal_constraint = 1
 
+    print(f'{k_list=}')
+    print(f'{Nbits_list=}')
+    print(f'{avg_flags=}')
     print(f'{diagonal_constraint=}')
 
-    input_path_A = input_paths[args.model][args.languageA][str(min_token_length)]
-    input_path_B = input_paths[args.model][args.languageB][str(min_token_length)]
+    input_path_A = input_paths[args.modelA][args.languageA][args.languageB]["source"][str(args.min_token_length)]
+    input_path_B = input_paths[args.modelB][args.languageA][args.languageB]["source"][str(args.min_token_length)]
     print("Input path A = ", input_path_A, flush=True)
     print("Input path B = ", input_path_B, flush=True)
     
     output_folder0 = makefolder(base=f'./results/santiago/',
                                create_folder=True,
-                               model=args.model,
+                               batch_shuffle=batch_shuffle,
+                               modelA=args.modelA,
+                               modelB=args.modelB,
                                n_files=n_files,
+                               min_token_length=args.min_token_length,
                                languageA=args.languageA,
                                languageB=args.languageB,
                                mask=mask,
@@ -201,4 +314,7 @@ if __name__ == "__main__":
         avg_flags=avg_flags,
         Nbits_list=Nbits_list,
         diagonal_constraint=diagonal_constraint,
+        seed_list=seed_list,
+        n_subsamples=n_subsamples,
+        batch_shuffle=batch_shuffle,
     )
