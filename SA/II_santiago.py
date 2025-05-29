@@ -4,9 +4,9 @@ print(now.strftime("%Y-%m-%d %H:%M:%S"))
 
 import sys,os
 sys.path.append('../')
-# dbg = int(sys.argv[1])
-# if dbg:
-#     os.environ["JAX_PLATFORMS"] = "cpu"
+dbg = int(sys.argv[1])
+if dbg:
+    os.environ["JAX_PLATFORMS"] = "cpu"
 from collections import defaultdict
 import numpy as np
 
@@ -84,8 +84,6 @@ def collect_data(input_path,
                  ):
     
     files = list_folder(input_path, desc="chunk_")[:n_files]
-    # n_total_files = len(files)
-    # print(f"There are {n_total_files} in total", flush=True)
     all_hidden_states = defaultdict(list)
 
     for file in tqdm(files, desc="Collect File"):
@@ -143,7 +141,8 @@ def main(input_path_A,
     print(f'{total_sample_size=}', flush=True)
     print(f'{n_subsamples=}', flush=True)
 
-    n_layers = len(list(all_activations_B.keys()))
+    n_layers_A = len(list(all_activations_A.keys()))
+    n_layers_B = len(list(all_activations_B.keys()))
 
     key_distances = jax.random.key(42)
     key_distances, subkey_distances = jax.random.split(key_distances)
@@ -151,8 +150,8 @@ def main(input_path_A,
     A_batch_key = jax.random.key(101)
     B_batch_key = jax.random.key(102)
 
-    rows = [f"layer_{i}" for i in range(1, n_layers)]
-    cols = [f"layer_{i}" for i in range(1, n_layers)]
+    rows = [f"layer_{i}" for i in range(1, n_layers_A)]
+    cols = [f"layer_{i}" for i in range(1, n_layers_B)]
 
     for jack_seed_id,jack_seed in enumerate(seed_list):
         jack_key = jax.random.key(jack_seed)
@@ -187,7 +186,6 @@ def main(input_path_A,
 
                                 if diagonal_constraint == 1 and layer_B != layer_A:
                                     continue
-
                                 act_A = bf16_torch_to_jax(activations_A[:,-n_tokens:,:])
                                 act_B = bf16_torch_to_jax(activations_B[:,-n_tokens:,:])
                                 
@@ -241,6 +239,7 @@ if __name__ == "__main__":
     parser.add_argument("languageB",type=str)
     args = parser.parse_args()
 
+    batch_size = 10
     mask = 2 # greater than zero
     n_loaded_tokens = args.min_token_length - mask  # the mask excludes final points and quotes
     seed_list = [0,1,2,3,4]
@@ -256,7 +255,7 @@ if __name__ == "__main__":
         k_list = [10]
         Nbits_list = [0,1]
         avg_flags = [0,1]
-        diagonal_constraint = 1
+        diagonal_constraint = 0
 
     elif args.dbg == 1:
         batch_shuffle = 0
@@ -266,28 +265,25 @@ if __name__ == "__main__":
         k_list = [10]
         Nbits_list = [0,1]
         avg_flags = [0,1]
-        diagonal_constraint = 1
+        diagonal_constraint = 0
     
-    if args.dbg == 2:
-        batch_shuffle = 1
-        n_files = 500
-        n_subsamples = 2500
-        if args.min_token_length == 40:
-            n_tokens_list = np.array([20])
-        elif args.min_token_length == 100:
-            n_tokens_list = np.array([10])
+    if args.dbg == 2: # llama vs deepseek
+        batch_shuffle = 0
+        n_files = 200
+        n_subsamples = n_files//2 * batch_size
+        n_tokens_list = np.array([1])
         k_list = [10]
-        Nbits_list = [1]
+        Nbits_list = [0,1]
         avg_flags = [0]
-        diagonal_constraint = 1
+        diagonal_constraint = 0
 
     print(f'{k_list=}')
     print(f'{Nbits_list=}')
     print(f'{avg_flags=}')
     print(f'{diagonal_constraint=}')
 
-    input_path_A = input_paths[args.modelA][args.languageA][args.languageB]["source"][str(args.min_token_length)]
-    input_path_B = input_paths[args.modelB][args.languageA][args.languageB]["source"][str(args.min_token_length)]
+    input_path_A = input_paths[args.modelA][args.languageA][args.languageB]["source"]['20']
+    input_path_B = input_paths[args.modelB][args.languageA][args.languageB]["source"]['40']
     print("Input path A = ", input_path_A, flush=True)
     print("Input path B = ", input_path_B, flush=True)
     

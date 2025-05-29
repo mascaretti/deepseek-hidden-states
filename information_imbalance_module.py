@@ -25,8 +25,8 @@ def pairwise_distances(distance, xs, ys):
   return jax.vmap(lambda x: jax.vmap(lambda y: distance(x, y))(xs))(ys).T
 
 def compute_ranks(x_dist,y_dist):
-    x_rank = rankdata(x_dist, method="average")
-    y_rank = rankdata(y_dist, method="average")
+    x_rank = rankdata(x_dist, method="min")
+    y_rank = rankdata(y_dist, method="min")
     return x_rank,y_rank
 mapped_compute_ranks = jax.vmap(compute_ranks)
 
