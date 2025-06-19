@@ -20,9 +20,8 @@ def batch_generator(lst, batch_size):
         yield lst[i:i + batch_size]
 
 def main(batch_size=10):
-    #file_path = "/home/laios/Data/Text/tokens/corpus_Helsinki-NLP/opus_books/LLM_A_Llama3/model_A_id_0/languageA_English/min_token_length_40/max_token_length_50/source.txt"
-    file_path = "/home/laios/Data/Text/tokens/corpus_Helsinki-NLP/opus_books/LLMs_deepseek-deepseek/languages_English-Spanish/min_token_length_40/max_token_length_50/source.txt"
-    output_folder_path = "./llama_english_from_deepseek_tokenization" #os.path.splitext(file_path)[0]  # removes .txt extension
+    file_path = "/home/laios/Data/Text/tokens/corpus_Helsinki-NLP/opus_books/LLMs_deepseek-deepseek/languages_English-Spanish/min_token_length_40/max_token_length_50/target.txt"
+    output_folder_path = "./llama_spanish_from_deepseek_tokenization" #os.path.splitext(file_path)[0]  # removes .txt extension
 
     with open(file_path, "r") as f:
         prompts = [line.strip() for line in f]

@@ -27,6 +27,7 @@ input_paths["deepseek"]["english"]["spanish"]["source"]['100'] = "/home/laios/ac
 input_paths["deepseek"]["english"]["spanish"]["target"]['100'] = "/home/laios/activations/opus_english_spanish/deepseek/100_200_tokens/deepseek_target"
 
 input_paths["llama"]["english"]["spanish"]["source"]['20'] = "/home/laios/deepseek-hidden-states/SA/extract_activations/llama_english_from_deepseek_tokenization"
+input_paths["llama"]["english"]["spanish"]["target"]['20'] = "/home/laios/deepseek-hidden-states/SA/extract_activations/llama_spanish_from_deepseek_tokenization"
 
 input_paths["llama"]["english"]["spanish"]["source"]['40'] = "/home/laios/activations/opus_english_spanish/llama-8b/llama_english"
 input_paths["llama"]["english"]["spanish"]["target"]['40'] = "/home/laios/activations/opus_english_spanish/llama-8b/llama_spanish"

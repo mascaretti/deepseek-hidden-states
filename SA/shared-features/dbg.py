@@ -33,18 +33,20 @@ import argparse
 from II_santiago import collect_data
 from time import time
 
+### HIGH DIMENSIONAL REGIME: Nfeatures / Nsamples = 0.1, 0.01
+### LOW DIMENSIONAL REGIME: Nfeatures / Nsamples = 10, 100
 
 start = time()
 N_list = jnp.arange(10,100,5,dtype=int)
 N_list = jnp.concatenate(jnp.array([N_list,
                                     jnp.arange(100,1000,50,dtype=int)])
                         )
-Ns_list = [1000]
 seed_list = np.arange(0, 10,dtype=int)
-Nbits_list = [1]
+Nbits_list = [0]
 k_II = 1
 
 for Nbits_id,Nbits in enumerate(Nbits_list):
+
     for Ns_id,Ns in enumerate(Ns_list):
         distance_fn = normalized_L2_distance if Nbits == 0 else hamming_distance
         key = jax.random.key(42)
@@ -58,8 +60,7 @@ for Nbits_id,Nbits in enumerate(Nbits_list):
             print(f'{N=}',flush=True)                                                      
             for seed in seed_list:
                 X = np.random.normal(loc=0, scale=1, size=(Ns, N))
-                k = N   # Number of additional random features
-                random_features = np.random.normal(loc=0, scale=1, size=(Ns,k))
+                random_features = np.random.normal(loc=0, scale=1, size=(Ns,N))
                 Y = np.concatenate((random_features,X), axis=1)
                 if Nbits == 1:
                     Y = binarize(Y)

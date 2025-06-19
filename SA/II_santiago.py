@@ -13,6 +13,7 @@ import numpy as np
 from information_imbalance_module import (normalized_L2_distance, 
                                           hamming_distance, 
                                           build_mutual_k_NN_alignment, 
+                                          build_information_imbalance
                                           )
 import jax
 from utils import (bf16_torch_to_jax, 
@@ -27,6 +28,7 @@ from tqdm import tqdm
 import torch
 from datapaths import *
 import argparse
+from time import time
 
 
 
@@ -45,8 +47,41 @@ def reshuffle_batch_axis(act, key):
     perm = jax.random.permutation(key, batch_size)
     return act[perm]
 
-import jax
-import jax.numpy as jnp
+
+def reduce_list_half_preserve_extremes(lst):
+    """
+    Reduces the input list to approximately half its original size,
+    preserving the first and last elements, and sampling uniformly
+    from the intermediate elements.
+    
+    Parameters:
+    -----------
+    lst : list
+        The input list to reduce.
+    
+    Returns:
+    --------
+    list
+        A reduced list with approximately half the points,
+        preserving the first and last elements.
+    """
+    N = len(lst)
+    if N <= 2:
+        return lst.copy()
+    
+    half_N = max(N // 2, 2)
+    num_points_to_sample = half_N - 2
+    
+    new_lst = [lst[0]]
+    
+    if num_points_to_sample > 0:
+        # Calculate the indices to sample from intermediates
+        step = (N - 2) / (num_points_to_sample + 1)
+        intermediate_indices = [int(round(1 + i * step)) for i in range(num_points_to_sample)]
+        new_lst.extend([lst[i] for i in intermediate_indices])
+    
+    new_lst.append(lst[-1])
+    return new_lst
 
 def reshuffle_batch_and_tokens(act, key):
     """
@@ -122,6 +157,7 @@ def main(input_path_A,
          n_subsamples,
          batch_shuffle,
          ):
+    start_time = time()
     
     all_activations_A = collect_data(input_path_A,
                                      n_loaded_tokens=n_loaded_tokens, 
@@ -153,6 +189,10 @@ def main(input_path_A,
     rows = [f"layer_{i}" for i in range(1, n_layers_A)]
     cols = [f"layer_{i}" for i in range(1, n_layers_B)]
 
+    if diagonal_constraint == 0:
+        cols = reduce_list_half_preserve_extremes(cols)
+        rows = reduce_list_half_preserve_extremes(rows)
+
     for jack_seed_id,jack_seed in enumerate(seed_list):
         jack_key = jax.random.key(jack_seed)
         jack_indices = jax.random.choice(key=jack_key,a=total_sample_size,shape=(n_subsamples,),replace=False)
@@ -166,10 +206,14 @@ def main(input_path_A,
                     print(f'{Nbits=}')
 
                     distance_fn = hamming_distance if Nbits else normalized_L2_distance 
-                    mutual_k_aligmment_fn = build_mutual_k_NN_alignment(key=subkey_distances, 
-                                                                        sample_size=n_subsamples, 
-                                                                        distance_fn=distance_fn,
-                                                                        k=k)
+                    # mutual_k_aligmment_fn = build_mutual_k_NN_alignment(key=subkey_distances, 
+                    #                                                     sample_size=n_subsamples, 
+                    #                                                     distance_fn=distance_fn,
+                    #                                                     k=k)
+                    information_imbalance_fn = build_information_imbalance(key=subkey_distances, 
+                                                                           sample_size=n_subsamples, 
+                                                                           distance_fn=distance_fn, 
+                                                                           k=k)
                     
                     for avg_tokens in avg_flags:
                         print(f'{avg_tokens=}')
@@ -212,9 +256,12 @@ def main(input_path_A,
                                 act_A = flatten_tokens_features(act_A)
                                 act_B = flatten_tokens_features(act_B)
 
-                                (alignment[A_counter,B_counter],
-                                inf_imb[0,A_counter,B_counter],
-                                inf_imb[1,A_counter,B_counter]) = mutual_k_aligmment_fn(act_A,act_B)
+                                # (alignment[A_counter,B_counter],
+                                # inf_imb[0,A_counter,B_counter],
+                                # inf_imb[1,A_counter,B_counter]) = mutual_k_aligmment_fn(act_A,act_B)
+                                (inf_imb[0,A_counter,B_counter],
+                                inf_imb[1,A_counter,B_counter]) = information_imbalance_fn(act_A,act_B)
+
                                 
                         output_folder = makefolder(base=output_folder0,
                                                 create_folder=True,
@@ -222,9 +269,10 @@ def main(input_path_A,
                                                 Nbits=Nbits,
                                                 seed=jack_seed,
                                                 )
-                        np.save(file=f"{output_folder}/n_tokens_{n_tokens}_avg_{avg_tokens}_alignment.npy", arr=alignment)
+                        # np.save(file=f"{output_folder}/n_tokens_{n_tokens}_avg_{avg_tokens}_alignment.npy", arr=alignment)
                         np.save(file=f"{output_folder}/n_tokens_{n_tokens}_avg_{avg_tokens}_AB.npy", arr=inf_imb[0])
                         np.save(file=f"{output_folder}/n_tokens_{n_tokens}_avg_{avg_tokens}_BA.npy", arr=inf_imb[1])
+    print(f'this took {(time()-start_time)/60.} m ')
 
         
 if __name__ == "__main__":
@@ -233,8 +281,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="II")
     parser.add_argument("dbg",type=int)
     parser.add_argument("min_token_length",type=int)
-    parser.add_argument("modelA",type=str)
+    parser.add_argument("modelA",type=str) # llama or deepseek
     parser.add_argument("modelB",type=str)
+    parser.add_argument("aux_A",type=str) # source or target
+    parser.add_argument("aux_B",type=str)
     parser.add_argument("languageA",type=str)
     parser.add_argument("languageB",type=str)
     args = parser.parse_args()
@@ -242,7 +292,7 @@ if __name__ == "__main__":
     batch_size = 10
     mask = 2 # greater than zero
     n_loaded_tokens = args.min_token_length - mask  # the mask excludes final points and quotes
-    seed_list = [0,1,2,3,4]
+    seed_list = [0]
 
     if args.dbg == 0:
         batch_shuffle = 0
@@ -261,7 +311,7 @@ if __name__ == "__main__":
         batch_shuffle = 0
         n_files = 2
         n_subsamples = 10
-        n_tokens_list = np.array([2])
+        n_tokens_list = np.array([1])
         k_list = [10]
         Nbits_list = [0,1]
         avg_flags = [0,1]
@@ -270,10 +320,10 @@ if __name__ == "__main__":
     if args.dbg == 2: # llama vs deepseek
         batch_shuffle = 0
         n_files = 200
-        n_subsamples = n_files//2 * batch_size
-        n_tokens_list = np.array([1])
-        k_list = [10]
-        Nbits_list = [0,1]
+        n_subsamples = n_files * batch_size 
+        n_tokens_list = np.array([10,20])
+        k_list = [10] 
+        Nbits_list = [1,0]
         avg_flags = [0]
         diagonal_constraint = 0
 
@@ -282,8 +332,8 @@ if __name__ == "__main__":
     print(f'{avg_flags=}')
     print(f'{diagonal_constraint=}')
 
-    input_path_A = input_paths[args.modelA][args.languageA][args.languageB]["source"]['20']
-    input_path_B = input_paths[args.modelB][args.languageA][args.languageB]["source"]['40']
+    input_path_A = input_paths[args.modelA][args.languageA][args.languageB][args.aux_A]['20']
+    input_path_B = input_paths[args.modelB][args.languageA][args.languageB][args.aux_B]['40']
     print("Input path A = ", input_path_A, flush=True)
     print("Input path B = ", input_path_B, flush=True)
     
@@ -292,6 +342,8 @@ if __name__ == "__main__":
                                batch_shuffle=batch_shuffle,
                                modelA=args.modelA,
                                modelB=args.modelB,
+                               aux_A=args.aux_A,
+                               aux_B=args.aux_B,
                                n_files=n_files,
                                min_token_length=args.min_token_length,
                                languageA=args.languageA,
