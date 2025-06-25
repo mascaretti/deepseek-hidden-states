@@ -44,10 +44,9 @@ def get_quantiles(a,alphamin,alphamax):
   qmax = jnp.quantile(a,q=alphamax,axis=1)
   return qmin,qmax
 
-def clip(act):
-    alphamin = 0.05
-    alphamax = 0.95
-    
+def clip(act,
+         alphamin = 0.05,
+         alphamax = 0.95):
     if len(act.shape)==3:
       reshape = True
     else:

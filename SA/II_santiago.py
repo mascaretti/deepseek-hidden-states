@@ -1,3 +1,7 @@
+import jax
+jax.config.update("jax_enable_x64", True)
+import jax.numpy as jnp
+
 from datetime import datetime
 now = datetime.now()
 print(now.strftime("%Y-%m-%d %H:%M:%S"))
@@ -15,7 +19,6 @@ from information_imbalance_module import (normalized_L2_distance,
                                           build_mutual_k_NN_alignment, 
                                           build_information_imbalance
                                           )
-import jax
 from utils import (bf16_torch_to_jax, 
                    flatten_tokens_features, 
                    list_folder, 
@@ -189,7 +192,7 @@ def main(input_path_A,
     rows = [f"layer_{i}" for i in range(1, n_layers_A)]
     cols = [f"layer_{i}" for i in range(1, n_layers_B)]
 
-    if diagonal_constraint == 0:
+    if 1:
         cols = reduce_list_half_preserve_extremes(cols)
         rows = reduce_list_half_preserve_extremes(rows)
 
@@ -206,14 +209,14 @@ def main(input_path_A,
                     print(f'{Nbits=}')
 
                     distance_fn = hamming_distance if Nbits else normalized_L2_distance 
-                    # mutual_k_aligmment_fn = build_mutual_k_NN_alignment(key=subkey_distances, 
-                    #                                                     sample_size=n_subsamples, 
-                    #                                                     distance_fn=distance_fn,
-                    #                                                     k=k)
-                    information_imbalance_fn = build_information_imbalance(key=subkey_distances, 
-                                                                           sample_size=n_subsamples, 
-                                                                           distance_fn=distance_fn, 
-                                                                           k=k)
+                    mutual_k_aligmment_fn = build_mutual_k_NN_alignment(key=subkey_distances, 
+                                                                        sample_size=n_subsamples, 
+                                                                        distance_fn=distance_fn,
+                                                                        k=k)
+                    # information_imbalance_fn = build_information_imbalance(key=subkey_distances, 
+                    #                                                        sample_size=n_subsamples, 
+                    #                                                        distance_fn=distance_fn, 
+                    #                                                        k=k)
                     
                     for avg_tokens in avg_flags:
                         print(f'{avg_tokens=}')
@@ -237,7 +240,8 @@ def main(input_path_A,
                                 act_B = jax.numpy.take(act_B, jack_indices, axis=0)
 
                                 if batch_shuffle == 1:
-                                    act_B = reshuffle_batch_and_tokens(act_B, B_batch_key)
+                                    print(f'batch_shuffling!!! B')
+                                    act_B = reshuffle_batch_axis(act_B, B_batch_key)
 
                                 if Nbits == 1:
                                     if avg_tokens == 1:
@@ -247,8 +251,8 @@ def main(input_path_A,
                                     act_B = binarize(act_B)
 
                                 elif Nbits == 0:
-                                    act_A = clip(act_A)
-                                    act_B = clip(act_B)
+                                    act_A = clip(act_A).astype(jnp.double)# promote them to double to break massive degeneracies due to small precision
+                                    act_B = clip(act_B).astype(jnp.double)
                                     if avg_tokens == 1:
                                         act_A = act_A.mean(axis=1,keepdims=True)
                                         act_B = act_B.mean(axis=1,keepdims=True)
@@ -256,11 +260,12 @@ def main(input_path_A,
                                 act_A = flatten_tokens_features(act_A)
                                 act_B = flatten_tokens_features(act_B)
 
-                                # (alignment[A_counter,B_counter],
-                                # inf_imb[0,A_counter,B_counter],
-                                # inf_imb[1,A_counter,B_counter]) = mutual_k_aligmment_fn(act_A,act_B)
-                                (inf_imb[0,A_counter,B_counter],
-                                inf_imb[1,A_counter,B_counter]) = information_imbalance_fn(act_A,act_B)
+                                (alignment[A_counter,B_counter],
+                                inf_imb[0,A_counter,B_counter],
+                                inf_imb[1,A_counter,B_counter]) = mutual_k_aligmment_fn(act_A,act_B)
+                                # (inf_imb[0,A_counter,B_counter],
+                                # inf_imb[1,A_counter,B_counter]) = information_imbalance_fn(act_A,act_B)
+                                print(f'{layer_A=};{layer_B=};{inf_imb[0,A_counter,B_counter],inf_imb[1,A_counter,B_counter]}')
 
                                 
                         output_folder = makefolder(base=output_folder0,
@@ -269,7 +274,7 @@ def main(input_path_A,
                                                 Nbits=Nbits,
                                                 seed=jack_seed,
                                                 )
-                        # np.save(file=f"{output_folder}/n_tokens_{n_tokens}_avg_{avg_tokens}_alignment.npy", arr=alignment)
+                        np.save(file=f"{output_folder}/n_tokens_{n_tokens}_avg_{avg_tokens}_alignment.npy", arr=alignment)
                         np.save(file=f"{output_folder}/n_tokens_{n_tokens}_avg_{avg_tokens}_AB.npy", arr=inf_imb[0])
                         np.save(file=f"{output_folder}/n_tokens_{n_tokens}_avg_{avg_tokens}_BA.npy", arr=inf_imb[1])
     print(f'this took {(time()-start_time)/60.} m ')
@@ -317,22 +322,22 @@ if __name__ == "__main__":
         avg_flags = [0,1]
         diagonal_constraint = 0
     
-    if args.dbg == 2: # llama vs deepseek
+    if args.dbg == 2: 
         batch_shuffle = 0
         n_files = 200
-        n_subsamples = n_files * batch_size 
-        n_tokens_list = np.array([10,20])
+        n_subsamples = n_files * batch_size
+        n_tokens_list = np.array([20])
         k_list = [10] 
         Nbits_list = [1,0]
         avg_flags = [0]
-        diagonal_constraint = 0
+        diagonal_constraint = 1
 
     print(f'{k_list=}')
     print(f'{Nbits_list=}')
     print(f'{avg_flags=}')
     print(f'{diagonal_constraint=}')
 
-    input_path_A = input_paths[args.modelA][args.languageA][args.languageB][args.aux_A]['20']
+    input_path_A = input_paths[args.modelA][args.languageA][args.languageB][args.aux_A]['40']
     input_path_B = input_paths[args.modelB][args.languageA][args.languageB][args.aux_B]['40']
     print("Input path A = ", input_path_A, flush=True)
     print("Input path B = ", input_path_B, flush=True)

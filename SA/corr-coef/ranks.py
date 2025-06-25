@@ -1,3 +1,6 @@
+import jax
+jax.config.update("jax_enable_x64", True)
+
 from datetime import datetime
 now = datetime.now()
 print(now.strftime("%Y-%m-%d %H:%M:%S"))
@@ -6,24 +9,29 @@ import sys,os
 sys.path.append('../')
 sys.path.append('../../')
 
+from utils import (bf16_torch_to_jax, 
+                flatten_tokens_features, 
+                list_folder, 
+                binarize, 
+                clip,
+                makefolder,
+                depths,
+                emb_dims,
+                )
+from collections import defaultdict
+import numpy as np
+import pickle
+from tqdm import tqdm
+import torch
+
 if __name__ == "__main__":
     # dbg = int(sys.argv[1])
     # if dbg == 1:
     #     os.environ["JAX_PLATFORMS"] = "cpu"
-    from collections import defaultdict
-    import numpy as np
+
 
     from geometry import *
-    import jax
-    from utils import (bf16_torch_to_jax, 
-                    flatten_tokens_features, 
-                    list_folder, 
-                    binarize, 
-                    clip,
-                    makefolder,
-                    depths,
-                    emb_dims,
-                    )
+
     import pickle
     from tqdm import tqdm
     import torch
@@ -173,6 +181,8 @@ def main_ranks(
                         act_A = bf16_torch_to_jax(activations_A[:,-n_tokens:,:])
                         act_B = bf16_torch_to_jax(activations_B[:,-n_tokens:,:])
 
+                        # print(f'batch_shuffling!!! B')
+                        # act_A = reshuffle_batch_axis(act_A, key_distances)
 
                         if Nbits == 1:
                             if avg_tokens == 1:
@@ -182,15 +192,15 @@ def main_ranks(
                             act_B = binarize(act_B)
 
                         elif Nbits == 0:
-                            act_A = clip(act_A)
-                            act_B = clip(act_B)
+                            act_A = clip(act_A).astype(jnp.double) # promote them to double to break massive degeneracies due to small precision
+                            act_B = clip(act_B).astype(jnp.double)
                             if avg_tokens == 1:
                                 act_A = act_A.mean(axis=1,keepdims=True)
                                 act_B = act_B.mean(axis=1,keepdims=True)
 
                         act_A = flatten_tokens_features(act_A)
                         act_B = flatten_tokens_features(act_B)
-
+                    
                         ranks = get_ranks(act_A,act_B)
                         ranks_folder = makefolder(base=output_folder0+'ranks/',
                                                     create_folder=True,
@@ -212,8 +222,10 @@ def main_observables(layers_A,layers_B,Nbits_list,n_tokens_list,avg_flags,diagon
     II_fn = build_information_imbalance(k=1)
 
     for Nbits_id,Nbits in enumerate(Nbits_list):
+        print(f'{Nbits=}')
         for avg_id,avg_tokens in enumerate(avg_flags):
             for n_tokens_id,n_tokens in enumerate(n_tokens_list):
+                print(f'{n_tokens=}')
                 for A_counter,layer_A in enumerate(layers_A):
                     for B_counter,layer_B in enumerate(layers_B):
                         if diagonal_constraint == 1 and layer_B != layer_A:
@@ -280,20 +292,20 @@ if __name__ == "__main__":
         diagonal_constraint = 1
 
     elif args.dbg == 1:
-        n_files = 100
+        n_files = 30
         n_tokens_list = np.array([20])
         # k_list = [10]
-        Nbits_list = [0]
+        Nbits_list = [0,1]
         avg_flags = [0]
         diagonal_constraint = 1
     
     if args.dbg == 2: # llama vs deepseek
         n_files = 200
-        n_tokens_list = np.array([10,20])
+        n_tokens_list = np.array([1,2,5])
         # k_list = [10] 
-        Nbits_list = [1,0]
+        Nbits_list = [0,1]
         avg_flags = [0]
-        diagonal_constraint = 0
+        diagonal_constraint = 1
 
     # print(f'{k_list=}')
     print(f'{Nbits_list=}')
