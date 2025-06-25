@@ -135,6 +135,7 @@ def main_ranks(
          avg_flags,
          Nbits_list,
          diagonal_constraint,
+         method,
          ):
     start_time = time()
     
@@ -164,7 +165,8 @@ def main_ranks(
             distance_fn = hamming_distance if Nbits else normalized_L2_distance 
             get_ranks = build_get_ranks(key=subkey_distances, 
                                         sample_size=total_sample_size, 
-                                        distance_fn=distance_fn, 
+                                        distance_fn=distance_fn,
+                                        method=method,
                                         )
             
             for avg_tokens in avg_flags:
@@ -271,6 +273,7 @@ if __name__ == "__main__":
     batch_size = 10
     mask = 2 # greater than zero
     n_loaded_tokens = args.min_token_length - mask  # the mask excludes final points and quotes
+    method = "min"
 
 
     layers_A = list(range(1,depths[args.modelA] + 1))
@@ -301,7 +304,7 @@ if __name__ == "__main__":
     
     if args.dbg == 2: # llama vs deepseek
         n_files = 200
-        n_tokens_list = np.array([1,2,5])
+        n_tokens_list = np.array([20])
         # k_list = [10] 
         Nbits_list = [0,1]
         avg_flags = [0]
@@ -344,6 +347,7 @@ if __name__ == "__main__":
             avg_flags=avg_flags,
             Nbits_list=Nbits_list,
             diagonal_constraint=diagonal_constraint,
+            method=method,
         )
     if args.compute_observables_flag:
         main_observables(layers_A,layers_B,Nbits_list,n_tokens_list,avg_flags,diagonal_constraint)

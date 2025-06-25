@@ -28,13 +28,15 @@ def L2_distance(x, y):
 def pairwise_distances(distance, xs, ys):
   return jax.vmap(lambda x: jax.vmap(lambda y: distance(x, y))(xs))(ys).T
 
-def compute_ranks(x_dist,y_dist):
-    x_rank = rankdata(x_dist, method="average")
-    y_rank = rankdata(y_dist, method="average")
+def compute_ranks(x_dist,y_dist,method):
+    x_rank = rankdata(x_dist, method=method)
+    y_rank = rankdata(y_dist, method=method)
     return x_rank,y_rank
-mapped_compute_ranks = jax.vmap(compute_ranks)
 
-def build_get_ranks(key, sample_size, distance_fn,):
+def mapped_compute_ranks(method):
+    return jax.vmap(partial(compute_ranks,method=method))
+
+def build_get_ranks(key, sample_size, distance_fn,method):
     """
 
     Args:
@@ -42,13 +44,14 @@ def build_get_ranks(key, sample_size, distance_fn,):
        X: sets from which we compute the information imbalance.
        Y: sets to which we compute the information imbalance.
        distance_fn: function to compute the distance in spaces X and Y.
+       method: "max" for correlation coefficient, "min" for II and neighborhood overlap. 
     """
     indices_rows,indices_columns = separate_samples(key,sample_size)
     def _get_ranks(X, Y):
         assert X.shape[0] == Y.shape[0], "Sample size must be equal across X and Y."
         d_X = pairwise_distances(distance_fn, X[indices_rows], X[indices_columns])
         d_Y = pairwise_distances(distance_fn, Y[indices_rows], Y[indices_columns])
-        return mapped_compute_ranks(d_X,d_Y)
+        return mapped_compute_ranks(method)(d_X,d_Y)
     
     return jax.jit(_get_ranks)
 
@@ -61,11 +64,11 @@ def mapped_relative_ranks(k):
     return jax.vmap(partial(get_relative_ranks,k=k))
 
 def separate_samples(key, sample_size):
-    # n_row_samples = int(sample_size // 2)
-    # n_col_samples = int(sample_size - n_row_samples)
+    n_row_samples = int(sample_size // 2)
+    n_col_samples = int(sample_size - n_row_samples)
     
-    n_row_samples = jnp.array(500) if sample_size >= 2500 else jnp.floor(0.2 * sample_size).astype(int)
-    n_col_samples = (sample_size - n_row_samples).astype(int)
+    # n_row_samples = jnp.array(500) if sample_size >= 2500 else jnp.floor(0.2 * sample_size).astype(int)
+    # n_col_samples = (sample_size - n_row_samples).astype(int)
 
     
     key, subkey = random.split(key)
@@ -137,9 +140,7 @@ def build_mutual_k_NN_alignment(k=10):
     
     return jax.jit(mutual_k_NN_alignment)
 
-
 ### Correlation coefficient 
-
 
 ### without ties:
 def relative_ranks(ranks):
@@ -173,3 +174,6 @@ def get_xis_ties(r,l):
     """
     xis = 1-r.shape[0]*jnp.abs(jnp.diff(r,axis=1)).sum(axis=1) / (l*(l.shape[0]-l)).sum(axis=1) / 2
     return xis
+
+def build_corr_coeff():
+    return
