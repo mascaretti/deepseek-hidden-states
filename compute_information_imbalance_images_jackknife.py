@@ -51,15 +51,16 @@ def collect_data(input_path, filter_layer=None, n_loaded_tokens=9, subset_size=3
     print(all_hidden_states["layer_0"].shape)
     return all_hidden_states
 
-def collect_images(input_path, n_files):
+def collect_images(input_path, n_files, last_tokens):
     files = list_folder(input_path, desc="chunk_")[:n_files]
     all_hidden_states = defaultdict(list)
     for file in tqdm(files, desc="Collect images"):
         batch_activations = CPU_Unpickler(open(Path(input_path, file.name), 'rb')).load()
         for layer_key in batch_activations.keys():
-            all_hidden_states[layer_key].append(batch_activations[layer_key])
+            all_hidden_states[layer_key].append(batch_activations[layer_key][:, -last_tokens:, :])
     for layer, tensors in all_hidden_states.items():
         all_hidden_states[layer] = torch.cat(tensors, dim=0)
+        print(all_hidden_states[layer].shape)
     return all_hidden_states
 
 
@@ -87,6 +88,8 @@ def compute_inf_imb_matrix(
         curr_inf_imb_matrix = []
         curr_reciprocal_inf_imb_matrix = []
 
+        print(all_activations_A.keys())
+        print(all_activations_B.keys())
         n_layers_A = len(list(all_activations_A.keys()))
         n_layers_B = len(list(all_activations_B.keys()))
         rows = [f"layer_{i}" for i in range(1, n_layers_A)]
@@ -158,7 +161,7 @@ def main(
     print(f"Sample size A: {sample_size_A}")
    
     print(f"N_files_b: {n_files_b}")
-    all_activations_B = collect_images(input_path_B, n_files=n_files_b)
+    all_activations_B = collect_images(input_path_B, n_files=n_files_b, last_tokens=50)
     sample_size_B = all_activations_B["layer_0"].shape[0]
     print(f"Sample size B: {sample_size_B}")
 
@@ -181,8 +184,8 @@ if __name__ == "__main__":
     Path(args.output_folder).mkdir(parents=True, exist_ok=True)
 
     n_loaded_tokens = 9
-    subset_size_a = 2500
-    resample_size=1000
+    subset_size_a = 3000
+    resample_size = 1500
     replicas=5
     n_files_b = int(subset_size_a / 10)
     print(f"Subset size: {subset_size_a}")

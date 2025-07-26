@@ -9,11 +9,8 @@ from jax import random
 def hamming_distance(x, y):
     return jnp.count_nonzero(x != y)
 
-def L2_distance(x, y, significant_digits=2):
-    u = (x-y)
-    normalized_distance = jnp.sqrt(jnp.sum(u*u) / (jnp.sum(x*x) * jnp.sum(y*y)))
-    scale = 10**significant_digits
-    return (scale*normalized_distance).astype(jnp.int32)
+def L2_distance(x, y):
+    return jnp.linalg.norm(x=x - y, ord=None)
 
 def pairwise_distances(distance, xs, ys):
   return jax.vmap(lambda x: jax.vmap(lambda y: distance(x, y))(xs))(ys).T
@@ -66,3 +63,43 @@ def build_information_imbalance(key, sample_size, distance_fn):
         return inf_imb,reciprocal_inf_imb
     
     return jax.jit(information_imbalance)
+
+
+def build_information_matrix(key, sample_size, distance_fn):
+    """Construct function to compute the information imbalance between sets X and Y.
+
+    Args:
+       key: the JAX random key.
+       X: sets from which we compute the information imbalance.
+       Y: sets to which we compute the information imbalance.
+       distance_fn: function to compute the distance in spaces X and Y.
+    """
+    n_row_samples = jnp.floor(0.2 * sample_size).astype(int)
+    n_col_samples = (sample_size - n_row_samples).astype(int)
+    
+    key, subkey = random.split(key)
+    indices_rows = random.choice(key=subkey, a=sample_size, shape=(n_row_samples,), replace=False)
+
+    remaining_indices = jnp.setdiff1d(jnp.arange(sample_size), indices_rows)
+    key, subkey = random.split(key)
+    indices_columns = random.choice(key=subkey, a=remaining_indices, shape=(n_col_samples,), replace=False)
+    
+    def information_matrix(X, Y):
+        """Function to compute the information imbalance from X to Y.
+
+        Args:
+            X: the origin space.
+            Y: the destination space.
+
+        Returns:
+            The value of the information imbalance from X to Y.
+        """
+        assert X.shape[0] == Y.shape[0], "Sample size must be equal across X and Y."
+        M = X.shape[0]
+        d_X = pairwise_distances(distance_fn, X[indices_rows], X[indices_columns])
+        d_Y = pairwise_distances(distance_fn, Y[indices_rows], Y[indices_columns])
+        ranks, cards = batch_relative_ranks(d_X, d_Y)
+        reciprocal_ranks, reciprocal_cards = batch_relative_ranks(d_Y, d_X)
+        return {'ranks':ranks, 'cards':cards, 'r_ranks':reciprocal_ranks, 'r_cards':reciprocal_cards}
+    
+    return jax.jit(information_matrix)

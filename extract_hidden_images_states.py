@@ -56,9 +56,9 @@ def extract_image_hidden_states(model_name: str, dataset: Dataset, img_column: s
             pickle.dump(all_hidden_states, f)
 
 def main():
-    subset_size = 10000
+    subset_size = 5
     print(subset_size)
-    image_model_name = ["openai/imagegpt-large", "facebook/dinov2-large"][1]  
+    image_model_name = ["openai/imagegpt-large", "facebook/dinov2-large", "openai/clip-vit-large-patch14"][2]  
     print(image_model_name)
     dataset = load_from_disk("/home/datasets/flickr30k/")
     print(len(dataset))
@@ -67,7 +67,7 @@ def main():
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(DEVICE)
 
-    extract_image_hidden_states(model_name=image_model_name, dataset=dataset, img_column='jpg', batch_size=batch_size, subset_size=subset_size, device=DEVICE, output_directory=Path("/home/laios/image-information-imbalance", image_model_name.replace('/', '-')))
+    extract_image_hidden_states(model_name=image_model_name, dataset=dataset, img_column='jpg', batch_size=batch_size, subset_size=subset_size, device=DEVICE, output_directory=Path("/home/laios/hundred/image-information-imbalance", image_model_name.replace('/', '-')))
     
 if __name__ == "__main__":
     main()

@@ -114,8 +114,8 @@ def compute_inf_imb_matrix(
 
         inf_imb = np.array(inf_imb_matrix)
         reciprocal_inf_imb = np.array(reciprocal_inf_imb_matrix)
-        np.save(file=f"{output_folder}/n_tokens_{n_tokens}_textimage.npy", arr=inf_imb)
-        np.save(file=f"{output_folder}/n_tokens_{n_tokens}_imagetext.npy", arr=reciprocal_inf_imb)
+        np.save(file=f"{output_folder}/img_tokens_{n_tokens_img}_textimage.npy", arr=inf_imb)
+        np.save(file=f"{output_folder}/img_tokens_{n_tokens_img}_imagetext.npy", arr=reciprocal_inf_imb)
 
 def main(
         input_path_A,
@@ -139,7 +139,7 @@ def main(
     all_activations_B = collect_images(input_path_B, n_files=n_files_b)
     sample_size_B = all_activations_B["layer_0"].shape[0]
     n_tokens_img = all_activations_B["layer_0"].shape[1]
-    tokens_img_list = np.arange(1, n_tokens_img + 1, 100)
+    tokens_img_list = np.arange(1, n_tokens_img + 1, 10)
     print(f"Sample size B: {sample_size_B}")
     print(all_activations_B.keys())
 
@@ -161,7 +161,7 @@ if __name__ == "__main__":
     Path(args.output_folder).mkdir(parents=True, exist_ok=True)
 
     n_loaded_tokens = 9
-    subset_size_a = 2500
+    subset_size_a = 1000
     n_files_b = int(subset_size_a / 10)
     print(f"Subset size: {subset_size_a}")
     print(f"n_files_b: {n_files_b}")
