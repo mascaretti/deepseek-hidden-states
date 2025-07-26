@@ -1,6 +1,8 @@
 # Created by https://www.toptal.com/developers/gitignore/api/linux,macos,emacs,visualstudiocode,python
 # Edit at https://www.toptal.com/developers/gitignore?templates=linux,macos,emacs,visualstudiocode,python
 
+*.pickle
+
 ### Emacs ###
 # -*- mode: gitignore; -*-
 *~
