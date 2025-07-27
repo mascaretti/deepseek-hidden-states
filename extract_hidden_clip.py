@@ -42,8 +42,10 @@ def extract_image_hidden_states(model_name: str, dataset: Dataset, subset_size: 
     total_iterations = np.floor(subset_size / batch_size).astype(int)
     print(f"Batch size: {batch_size}; Total iterations: {total_iterations}.")
     
-    n_layers = clip_model.config.vision_config.num_hidden_layers + 1
 
+    ## n_layers = clip_model.config.vision_config.num_hidden_layers + 1
+    n_layers = clip_model.config.text_config.num_hidden_layers + 1
+    
     print("Compute activations for images")
     for i in tqdm(range(total_iterations), desc="Processing image batch.", leave=False):
         clip_inputs = clip_processor(
@@ -58,8 +60,9 @@ def extract_image_hidden_states(model_name: str, dataset: Dataset, subset_size: 
             clip_output = clip_model(**clip_inputs, output_hidden_states=True)
         all_hidden_states = {}
         for j in range(0, n_layers):
-            all_hidden_states[f"layer_{j}"] = clip_output.vision_model_output.hidden_states[j]
-        with open(Path(output_directory, f"image-chunk_{i}.pkl"), "wb") as f:
+            all_hidden_states[f"layer_{j}"] = clip_output.text_model_output.hidden_states[j]
+            ## all_hidden_states[f"layer_{j}"] = clip_output.vision_model_output.hidden_states[j]
+        with open(Path(output_directory, "text", f"chunk_{i}.pkl"), "wb") as f:
             pickle.dump(all_hidden_states, f)
 
 def main():

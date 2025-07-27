@@ -1,0 +1,24 @@
+Running DinoV2 vs CLIP image comparison
+=========================================
+Job started at: Sun Jul 27 12:33:56 PM CEST 2025
+Running on node: dgx01
+Job ID: 19714
+Array Task ID: 3
+Comparison: dino_clip_image
+Model A: dino (/home/laios/image-information-imbalance/facebook-dinov2-large)
+Model B: clip_image (/home/laios/image-information-imbalance/openai-clip-vit-large-patch14)
+Output: /home/laios/image-information-imbalance/results/dino-clip-image-ranks
+=========================================
+Comparison type: dino_clip_image
+Model A: dino
+Model B: clip_image
+Output: /home/laios/image-information-imbalance/results/dino-clip-image-ranks
+Image model data shape: torch.Size([50, 200, 1024])
+CLIP image data shape: torch.Size([50, 200, 1024])
+Sample size A: 50
+Sample size B: 50
+Initial key: Array((), dtype=key<fry>) overlaying:
+[ 0 42]
+Sample size:  50
+Layer A: layer_24
+Job failed with exit code: 1

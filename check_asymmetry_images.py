@@ -52,11 +52,12 @@ def collect_data(input_path, filter_layer=None, n_loaded_tokens=9, subset_size=3
     print(all_hidden_states["layer_0"].shape)
     return all_hidden_states
 
-def collect_images(input_path, n_files, last_tokens):
-    files = list_folder(input_path, desc="image-chunk_")[:n_files]
+def collect_images(input_path, n_files, last_tokens, desc="chunk_"):
+    files = list_folder(input_path, desc=desc)[:n_files]
     all_hidden_states = defaultdict(list)
     for file in tqdm(files, desc="Collect images"):
-        batch_activations = CPU_Unpickler(open(Path(input_path, file.name), 'rb')).load()
+        with open(Path(input_path, file.name), 'rb') as f:
+            batch_activations = CPU_Unpickler(f).load()
         for layer_key in batch_activations.keys():
             all_hidden_states[layer_key].append(batch_activations[layer_key][:, -last_tokens:, :])
     for layer, tensors in all_hidden_states.items():
@@ -86,11 +87,16 @@ def compute_inf_imb_matrix(
     key, subkey = jax.random.split(key)
     information_matrix_fn = build_information_matrix(key=subkey, sample_size=sample_size, distance_fn=hamming_distance)
 
-    layer_A = "layer_52"
+    print("=== PROCESSING A ===")
+    layer_A = "layer_24"
     print(f"Layer A: {layer_A}")
-    act_A = all_activations_A[layer_A]
+    print("Convert to Jax...")
+    act_A = jnp.array(all_activations_A[layer_A])
+    print("Flatten...")
     act_A = flatten_tokens_features(act_A)
+    print("Binarise...")
     act_A = binarize(act_A)
+    print("=== DONE ===")
 
     for layer_B in (pbar := tqdm(cols, desc="Computing layer_B",leave=False)):
         act_B = jnp.array(all_activations_B[layer_B])
@@ -98,7 +104,6 @@ def compute_inf_imb_matrix(
         act_B = binarize(act_B)
 
         inf_imb = information_matrix_fn(act_A, act_B)
-        print(inf_imb)
         save_file(inf_imb, Path(output_folder, f"{layer_B}.safetensors"))
         
 
@@ -118,7 +123,7 @@ def main(
     print(f"Sample size A: {sample_size_A}")
    
     print(f"N_files_b: {n_files_b}")
-    all_activations_B = collect_images(input_path_B, n_files=n_files_b, last_tokens=200)
+    all_activations_B = collect_images(input_path_B, n_files=n_files_b, last_tokens=200, desc="image-chunk_")
     sample_size_B = all_activations_B["layer_0"].shape[0]
     print(f"Sample size B: {sample_size_B}")
 
@@ -127,6 +132,7 @@ def main(
         all_activations_B=all_activations_B,
         output_folder=output_folder
     )
+    print(f"Stored results in {output_folder}...") 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Compute Information Imbalance")

@@ -1,0 +1,25 @@
+ERROR: Unable to locate a modulefile for 'cuda/11.8'
+Running DeepSeek vs CLIP text comparison
+=========================================
+Job started at: Sat Jul 26 11:04:51 PM CEST 2025
+Running on node: dgx01
+Job ID: 19693
+Array Task ID: 1
+Comparison: deepseek_clip_text
+Model A: deepseek (/home/laios/activations/flickr/deepseek_all)
+Model B: clip_text (/home/laios/image-information-imbalance/openai-clip-vit-large-patch14)
+Output: /home/laios/image-information-imbalance/results/deepseek-clip-text-ranks
+=========================================
+Comparison type: deepseek_clip_text
+Model A: deepseek
+Model B: clip_text
+Output: /home/laios/image-information-imbalance/results/deepseek-clip-text-ranks
+DeepSeek data shape: torch.Size([5000, 9, 7168])
+CLIP text data shape: torch.Size([5000, 30, 768])
+Sample size A: 5000
+Sample size B: 5000
+Initial key: Array((), dtype=key<fry>) overlaying:
+[ 0 42]
+Sample size:  5000
+Layer A: layer_52
+Job failed with exit code: 1

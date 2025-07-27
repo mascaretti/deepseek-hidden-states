@@ -52,8 +52,8 @@ def collect_data(input_path, filter_layer=None, n_loaded_tokens=9, subset_size=3
     print(all_hidden_states["layer_0"].shape)
     return all_hidden_states
 
-def collect_images(input_path, n_files, last_tokens):
-    files = list_folder(input_path, desc="chunk_")[:n_files]
+def collect_images(input_path, n_files, last_tokens, desc="chunk_"):
+    files = list_folder(input_path, desc=desc)[:n_files]
     all_hidden_states = defaultdict(list)
     for file in tqdm(files, desc="Collect images"):
         batch_activations = CPU_Unpickler(open(Path(input_path, file.name), 'rb')).load()
@@ -100,7 +100,6 @@ def compute_inf_imb_matrix(
         act_B = binarize(act_B)
 
         inf_imb = information_matrix_fn(act_A, act_B)
-        print(inf_imb)
         save_file(inf_imb, Path(output_folder, f"{layer_B}.safetensors"))
         
 
@@ -121,9 +120,13 @@ def main(
     print(f"Tokens: {n_text_tokens}")
    
     print(f"N_files_b: {n_files_b}")
-    all_activations_B = collect_images(input_path_B, n_files=n_files_b, last_tokens=200)
-    sample_size_B = all_activations_B["layer_0"].shape[0]
-    print(f"Sample size B: {sample_size_B}")
+    all_activations_B = collect_images(input_path_B, n_files=n_files_b, last_tokens=200, desc="image-chunk_")
+    try:
+        sample_size_B = all_activations_B["layer_0"].shape[0]
+        print(f"Sample size B: {sample_size_B}")
+    except AttributeError:
+        sample_size_B = len(all_activations_B["layer_0"])
+        print(f"Sample size B: {sample_size_B}")
 
     compute_inf_imb_matrix(
         all_activations_A=all_activations_A,

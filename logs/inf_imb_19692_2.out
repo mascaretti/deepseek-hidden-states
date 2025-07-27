@@ -1,0 +1,34 @@
+ERROR: Unable to locate a modulefile for 'cuda/11.8'
+Running CLIP text vs CLIP image comparison
+=========================================
+Job started at: Sat Jul 26 11:04:51 PM CEST 2025
+Running on node: dgx01
+Job ID: 19694
+Array Task ID: 2
+Comparison: clip_text_image
+Model A: clip_text (/home/laios/image-information-imbalance/openai-clip-vit-large-patch14)
+Model B: clip_image (/home/laios/image-information-imbalance/openai-clip-vit-large-patch14)
+Output: /home/laios/image-information-imbalance/results/clip-text-image-ranks
+=========================================
+Comparison type: clip_text_image
+Model A: clip_text
+Model B: clip_image
+Output: /home/laios/image-information-imbalance/results/clip-text-image-ranks
+CLIP text data shape: torch.Size([5000, 30, 768])
+CLIP image data shape: torch.Size([5000, 200, 1024])
+Sample size A: 5000
+Sample size B: 5000
+Initial key: Array((), dtype=key<fry>) overlaying:
+[ 0 42]
+Sample size:  5000
+Layer A: layer_11
+Results saved to: /home/laios/image-information-imbalance/results/clip-text-image-ranks
+Job completed successfully at: Sat Jul 26 11:47:40 PM CEST 2025
+Starting bootstrap analysis...
+Loading data from: /home/laios/image-information-imbalance/results/clip-text-image-ranks
+Number of layers: 25
+Bootstrap replicas: 500
+Bootstrap size: 500
+Bootstrap analysis completed
+=========================================
+All processing completed at: Sat Jul 26 11:47:40 PM CEST 2025

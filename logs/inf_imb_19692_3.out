@@ -1,0 +1,34 @@
+ERROR: Unable to locate a modulefile for 'cuda/11.8'
+Running DinoV2 vs CLIP image comparison
+=========================================
+Job started at: Sat Jul 26 11:47:41 PM CEST 2025
+Running on node: dgx02
+Job ID: 19692
+Array Task ID: 3
+Comparison: dino_clip_image
+Model A: dino (/home/laios/image-information-imbalance/facebook-dinov2-large)
+Model B: clip_image (/home/laios/image-information-imbalance/openai-clip-vit-large-patch14)
+Output: /home/laios/image-information-imbalance/results/dino-clip-image-ranks
+=========================================
+Comparison type: dino_clip_image
+Model A: dino
+Model B: clip_image
+Output: /home/laios/image-information-imbalance/results/dino-clip-image-ranks
+Image model data shape: torch.Size([5000, 200, 1024])
+CLIP image data shape: torch.Size([5000, 200, 1024])
+Sample size A: 5000
+Sample size B: 5000
+Initial key: Array((), dtype=key<fry>) overlaying:
+[ 0 42]
+Sample size:  5000
+Layer A: layer_24
+Results saved to: /home/laios/image-information-imbalance/results/dino-clip-image-ranks
+Job completed successfully at: Sun Jul 27 12:40:30 AM CEST 2025
+Starting bootstrap analysis...
+Loading data from: /home/laios/image-information-imbalance/results/dino-clip-image-ranks
+Number of layers: 25
+Bootstrap replicas: 500
+Bootstrap size: 500
+Bootstrap analysis completed
+=========================================
+All processing completed at: Sun Jul 27 12:40:30 AM CEST 2025

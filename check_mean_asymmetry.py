@@ -56,7 +56,8 @@ def collect_images(input_path, n_files):
     files = list_folder(input_path, desc="chunk_")[:n_files]
     all_hidden_states = defaultdict(list)
     for file in tqdm(files, desc="Collect images"):
-        batch_activations = CPU_Unpickler(open(Path(input_path, file.name), 'rb')).load()
+        with open(Path(input_path, file.name), 'rb') as f:
+            batch_activations = CPU_Unpickler(f).load()
         for layer_key in batch_activations.keys():
             all_hidden_states[layer_key].append(torch.mean(batch_activations[layer_key], axis=1))
     for layer, tensors in all_hidden_states.items():

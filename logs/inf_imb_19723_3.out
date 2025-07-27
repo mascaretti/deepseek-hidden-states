@@ -1,0 +1,53 @@
+Running DinoV2 vs CLIP image comparison
+=========================================
+Job started at: Sun Jul 27 12:36:57 PM CEST 2025
+Running on node: dgx01
+Job ID: 19723
+Array Task ID: 3
+Comparison: dino_clip_image
+Model A: dino (/home/laios/image-information-imbalance/facebook-dinov2-large)
+Model B: clip_image (/home/laios/image-information-imbalance/openai-clip-vit-large-patch14)
+Output: /home/laios/image-information-imbalance/results/dino-clip-image-ranks
+=========================================
+Comparison type: dino_clip_image
+Model A: dino
+Model B: clip_image
+Output: /home/laios/image-information-imbalance/results/dino-clip-image-ranks
+Image model data shape: torch.Size([50, 200, 1024])
+CLIP image data shape: torch.Size([50, 200, 1024])
+Sample size A: 50
+Sample size B: 50
+Initial key: Array((), dtype=key<fry>) overlaying:
+[ 0 42]
+Sample size:  50
+Layer A: layer_24
+==== DEBUG ========
+Has attribute: True
+torch.float32
+Job completed successfully at: Sun Jul 27 12:37:06 PM CEST 2025
+Starting bootstrap analysis...
+Loading data from: /home/laios/image-information-imbalance/results/dino-clip-image-ranks
+Number of layers: 24
+Bootstrap replicas: 5
+Bootstrap size: 10
+Number of rows (origins): 10
+Sample size: 50
+
+Mean Information Imbalance:
+Forward (dino → clip_image): [0.93157895 0.93157895 0.97368421 1.04210526 0.94210526 0.70526316
+ 0.64736842 0.58947368 0.35263158 0.32105263 0.25263158 0.25789474
+ 0.24210526 0.19473684 0.12105263 0.12631579 0.05789474 0.11052632
+ 0.12105263 0.16315789 0.16315789 0.25263158 0.20526316 0.20526316]
+Backward (clip_image → dino): [1.21578947 1.20526316 1.13157895 1.16315789 1.03684211 0.82631579
+ 0.89473684 0.71578947 0.68421053 0.41052632 0.25263158 0.25263158
+ 0.24210526 0.16842105 0.17894737 0.18421053 0.12105263 0.13157895
+ 0.12105263 0.41052632 0.61052632 0.2        0.33157895 0.08947368]
+
+Performing bootstrap analysis...
+
+Results saved to: /home/laios/image-information-imbalance/results/bootstrap
+Forward: dino_clip_image_52.npy
+Backward: clip_image_dino_52.npy
+Bootstrap analysis completed
+=========================================
+All processing completed at: Sun Jul 27 12:37:06 PM CEST 2025

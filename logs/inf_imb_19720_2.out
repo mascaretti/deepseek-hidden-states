@@ -1,0 +1,12 @@
+Running CLIP text vs CLIP image comparison
+=========================================
+Job started at: Sun Jul 27 12:36:18 PM CEST 2025
+Running on node: dgx01
+Job ID: 19722
+Array Task ID: 2
+Comparison: clip_text_image
+Model A: clip_text (/home/laios/image-information-imbalance/openai-clip-vit-large-patch14)
+Model B: clip_image (/home/laios/image-information-imbalance/openai-clip-vit-large-patch14)
+Output: /home/laios/image-information-imbalance/results/clip-text-image-ranks
+=========================================
+Job failed with exit code: 1

@@ -1,0 +1,56 @@
+Running CLIP text vs CLIP image comparison
+=========================================
+Job started at: Sun Jul 27 12:53:31 PM CEST 2025
+Running on node: dgx01
+Job ID: 19746
+Array Task ID: 2
+Comparison: clip_text_image
+Model A: clip_text (/home/laios/image-information-imbalance/openai-clip-vit-large-patch14)
+Model B: clip_image (/home/laios/image-information-imbalance/openai-clip-vit-large-patch14)
+Output: /home/laios/image-information-imbalance/results/clip-text-image-ranks
+=========================================
+Comparison type: clip_text_image
+Model A: clip_text
+Model B: clip_image
+Output: /home/laios/image-information-imbalance/results/clip-text-image-ranks
+CLIP text data shape: torch.Size([5000, 30, 768])
+CLIP image data shape: torch.Size([5000, 200, 1024])
+Sample size A: 5000
+Sample size B: 5000
+Initial key: Array((), dtype=key<fry>) overlaying:
+[ 0 42]
+Sample size:  5000
+Layer A: layer_12
+dtype of activations_A is: torch.float32
+*** COMPARISON TYPE: text_image ***
+Text comparison...
+Creating array...
+dtype of act_A: float32
+Results saved to: /home/laios/image-information-imbalance/results/clip-text-image-ranks
+Job completed successfully at: Sun Jul 27 01:00:37 PM CEST 2025
+Starting bootstrap analysis...
+Loading data from: /home/laios/image-information-imbalance/results/clip-text-image-ranks
+Number of layers: 24
+Bootstrap replicas: 500
+Bootstrap size: 500
+Number of rows (origins): 1000
+Sample size: 5000
+
+Mean Information Imbalance:
+Forward (clip_text → clip_image): [0.85455066 0.82643162 0.80913492 0.80123644 0.80849629 0.79925087
+ 0.79732852 0.77502184 0.74705114 0.73463548 0.71367077 0.69324314
+ 0.67336454 0.63128032 0.60950376 0.56580678 0.49606644 0.46952083
+ 0.45775475 0.47130829 0.53555086 0.51078027 0.44113101 0.49656818]
+Backward (clip_image → clip_text): [0.85527879 0.79661281 0.82355699 0.80811806 0.80499961 0.76870085
+ 0.76862807 0.72600508 0.67020237 0.63380143 0.57656368 0.56925016
+ 0.5437924  0.52925513 0.47481741 0.44688628 0.40335587 0.35945618
+ 0.33949692 0.36064636 0.40476032 0.35324162 0.31529265 0.35565083]
+
+Performing bootstrap analysis...
+
+Results saved to: /home/laios/image-information-imbalance/results/bootstrap
+Forward: clip_text_clip_image_52.npy
+Backward: clip_image_clip_text_52.npy
+Bootstrap analysis completed
+=========================================
+All processing completed at: Sun Jul 27 01:00:37 PM CEST 2025
