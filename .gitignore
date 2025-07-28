@@ -2,6 +2,8 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=linux,macos,emacs,visualstudiocode,python
 
 *.pickle
+*.pdf
+*.png
 
 ### Emacs ###
 # -*- mode: gitignore; -*-
