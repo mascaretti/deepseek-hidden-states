@@ -1,0 +1,272 @@
+========================================
+OVERNIGHT MULTI-LAYER ANALYSIS (SLURM)
+Job ID: 19748
+Node: dgx01
+Started at: Sun Jul 27 09:37:05 PM CEST 2025
+========================================
+ERROR: Unable to locate a modulefile for 'python/3.9'
+ERROR: Unable to locate a modulefile for 'cuda/11.8'
+========================================
+OVERNIGHT MULTI-LAYER ANALYSIS
+Started at: Sun Jul 27 09:37:05 PM CEST 2025
+========================================
+
+Running analyses for all model pairs...
+
+----------------------------------------
+Processing: deepseek_clip_text
+Time: Sun Jul 27 09:37:05 PM CEST 2025
+----------------------------------------
+Running information imbalance computation...
+Running DinoV2 vs CLIP image comparison
+Subset size: 5000
+Layers: early,middle,semantic
+
+Loading DinoV2...
+Traceback (most recent call last):
+  File "/home/mascaretti/deepseek-hidden-states/temp_deepseek_clip_text.py", line 276, in <module>
+    main_multi_layer()
+  File "/home/mascaretti/deepseek-hidden-states/temp_deepseek_clip_text.py", line 154, in main_multi_layer
+    all_activations_A = collect_deepseek_data(
+TypeError: collect_deepseek_data() got an unexpected keyword argument 'n_files'
+Running bootstrap analysis...
+DinoV2 Multi-layer Bootstrap Analysis
+==================================================
+Input: /home/laios/image-information-imbalance/results/deepseek_clip_text-multilayer-5000
+Output: /home/laios/image-information-imbalance/results/bootstrap/deepseek_clip_text-multilayer
+Sample size: 5000
+Target model layers: 13
+Traceback (most recent call last):
+  File "/home/mascaretti/deepseek-hidden-states/bootstrap_multilayer.py", line 183, in <module>
+    main()
+  File "/home/mascaretti/deepseek-hidden-states/bootstrap_multilayer.py", line 172, in main
+    results = process_multilayer_results(
+  File "/home/mascaretti/deepseek-hidden-states/bootstrap_multilayer.py", line 85, in process_multilayer_results
+    layer_dirs = [d for d in multilayer_dir.iterdir() if d.is_dir() and "layer" in d.name]
+  File "/home/mascaretti/deepseek-hidden-states/bootstrap_multilayer.py", line 85, in <listcomp>
+    layer_dirs = [d for d in multilayer_dir.iterdir() if d.is_dir() and "layer" in d.name]
+  File "/cm/local/apps/python3/lib/python3.9/pathlib.py", line 1160, in iterdir
+    for name in self._accessor.listdir(self):
+FileNotFoundError: [Errno 2] No such file or directory: '/home/laios/image-information-imbalance/results/deepseek_clip_text-multilayer-5000'
+✓ Completed deepseek_clip_text
+
+----------------------------------------
+Processing: deepseek_clip_image
+Time: Sun Jul 27 09:37:07 PM CEST 2025
+----------------------------------------
+Running information imbalance computation...
+Running DinoV2 vs CLIP image comparison
+Subset size: 5000
+Layers: early,middle,semantic
+
+Loading DinoV2...
+Traceback (most recent call last):
+  File "/home/mascaretti/deepseek-hidden-states/temp_deepseek_clip_image.py", line 276, in <module>
+    main_multi_layer()
+  File "/home/mascaretti/deepseek-hidden-states/temp_deepseek_clip_image.py", line 154, in main_multi_layer
+    all_activations_A = collect_deepseek_data(
+TypeError: collect_deepseek_data() got an unexpected keyword argument 'n_files'
+Running bootstrap analysis...
+DinoV2 Multi-layer Bootstrap Analysis
+==================================================
+Input: /home/laios/image-information-imbalance/results/deepseek_clip_image-multilayer-5000
+Output: /home/laios/image-information-imbalance/results/bootstrap/deepseek_clip_image-multilayer
+Sample size: 5000
+Target model layers: 25
+Traceback (most recent call last):
+  File "/home/mascaretti/deepseek-hidden-states/bootstrap_multilayer.py", line 183, in <module>
+    main()
+  File "/home/mascaretti/deepseek-hidden-states/bootstrap_multilayer.py", line 172, in main
+    results = process_multilayer_results(
+  File "/home/mascaretti/deepseek-hidden-states/bootstrap_multilayer.py", line 85, in process_multilayer_results
+    layer_dirs = [d for d in multilayer_dir.iterdir() if d.is_dir() and "layer" in d.name]
+  File "/home/mascaretti/deepseek-hidden-states/bootstrap_multilayer.py", line 85, in <listcomp>
+    layer_dirs = [d for d in multilayer_dir.iterdir() if d.is_dir() and "layer" in d.name]
+  File "/cm/local/apps/python3/lib/python3.9/pathlib.py", line 1160, in iterdir
+    for name in self._accessor.listdir(self):
+FileNotFoundError: [Errno 2] No such file or directory: '/home/laios/image-information-imbalance/results/deepseek_clip_image-multilayer-5000'
+✓ Completed deepseek_clip_image
+
+----------------------------------------
+Processing: deepseek_dino
+Time: Sun Jul 27 09:37:09 PM CEST 2025
+----------------------------------------
+Running information imbalance computation...
+Running DinoV2 vs CLIP image comparison
+Subset size: 5000
+Layers: early,middle,semantic
+
+Loading DinoV2...
+Traceback (most recent call last):
+  File "/home/mascaretti/deepseek-hidden-states/temp_deepseek_dino.py", line 276, in <module>
+    main_multi_layer()
+  File "/home/mascaretti/deepseek-hidden-states/temp_deepseek_dino.py", line 154, in main_multi_layer
+    all_activations_A = collect_deepseek_data(
+TypeError: collect_deepseek_data() got an unexpected keyword argument 'n_files'
+Running bootstrap analysis...
+DinoV2 Multi-layer Bootstrap Analysis
+==================================================
+Input: /home/laios/image-information-imbalance/results/deepseek_dino-multilayer-5000
+Output: /home/laios/image-information-imbalance/results/bootstrap/deepseek_dino-multilayer
+Sample size: 5000
+Target model layers: 25
+Traceback (most recent call last):
+  File "/home/mascaretti/deepseek-hidden-states/bootstrap_multilayer.py", line 183, in <module>
+    main()
+  File "/home/mascaretti/deepseek-hidden-states/bootstrap_multilayer.py", line 172, in main
+    results = process_multilayer_results(
+  File "/home/mascaretti/deepseek-hidden-states/bootstrap_multilayer.py", line 85, in process_multilayer_results
+    layer_dirs = [d for d in multilayer_dir.iterdir() if d.is_dir() and "layer" in d.name]
+  File "/home/mascaretti/deepseek-hidden-states/bootstrap_multilayer.py", line 85, in <listcomp>
+    layer_dirs = [d for d in multilayer_dir.iterdir() if d.is_dir() and "layer" in d.name]
+  File "/cm/local/apps/python3/lib/python3.9/pathlib.py", line 1160, in iterdir
+    for name in self._accessor.listdir(self):
+FileNotFoundError: [Errno 2] No such file or directory: '/home/laios/image-information-imbalance/results/deepseek_dino-multilayer-5000'
+✓ Completed deepseek_dino
+
+----------------------------------------
+Processing: clip_text_clip_image
+Time: Sun Jul 27 09:37:11 PM CEST 2025
+----------------------------------------
+Running information imbalance computation...
+Running DinoV2 vs CLIP image comparison
+Subset size: 5000
+Layers: early,middle,last
+
+Loading DinoV2...
+Traceback (most recent call last):
+  File "/home/mascaretti/deepseek-hidden-states/temp_clip_text_clip_image.py", line 276, in <module>
+    main_multi_layer()
+  File "/home/mascaretti/deepseek-hidden-states/temp_clip_text_clip_image.py", line 154, in main_multi_layer
+    all_activations_A = collect_deepseek_data(
+TypeError: collect_deepseek_data() got an unexpected keyword argument 'n_files'
+Running bootstrap analysis...
+DinoV2 Multi-layer Bootstrap Analysis
+==================================================
+Input: /home/laios/image-information-imbalance/results/clip_text_clip_image-multilayer-5000
+Output: /home/laios/image-information-imbalance/results/bootstrap/clip_text_clip_image-multilayer
+Sample size: 5000
+Target model layers: 25
+Traceback (most recent call last):
+  File "/home/mascaretti/deepseek-hidden-states/bootstrap_multilayer.py", line 183, in <module>
+    main()
+  File "/home/mascaretti/deepseek-hidden-states/bootstrap_multilayer.py", line 172, in main
+    results = process_multilayer_results(
+  File "/home/mascaretti/deepseek-hidden-states/bootstrap_multilayer.py", line 85, in process_multilayer_results
+    layer_dirs = [d for d in multilayer_dir.iterdir() if d.is_dir() and "layer" in d.name]
+  File "/home/mascaretti/deepseek-hidden-states/bootstrap_multilayer.py", line 85, in <listcomp>
+    layer_dirs = [d for d in multilayer_dir.iterdir() if d.is_dir() and "layer" in d.name]
+  File "/cm/local/apps/python3/lib/python3.9/pathlib.py", line 1160, in iterdir
+    for name in self._accessor.listdir(self):
+FileNotFoundError: [Errno 2] No such file or directory: '/home/laios/image-information-imbalance/results/clip_text_clip_image-multilayer-5000'
+✓ Completed clip_text_clip_image
+
+----------------------------------------
+Processing: dino_clip_image
+Time: Sun Jul 27 09:37:13 PM CEST 2025
+----------------------------------------
+Running information imbalance computation...
+Running DinoV2 vs CLIP image comparison
+Subset size: 5000
+Layers: early,middle,last
+
+Loading DinoV2...
+Traceback (most recent call last):
+  File "/home/mascaretti/deepseek-hidden-states/temp_dino_clip_image.py", line 276, in <module>
+    main_multi_layer()
+  File "/home/mascaretti/deepseek-hidden-states/temp_dino_clip_image.py", line 154, in main_multi_layer
+    all_activations_A = collect_deepseek_data(
+TypeError: collect_deepseek_data() got an unexpected keyword argument 'n_files'
+Running bootstrap analysis...
+DinoV2 Multi-layer Bootstrap Analysis
+==================================================
+Input: /home/laios/image-information-imbalance/results/dino_clip_image-multilayer-5000
+Output: /home/laios/image-information-imbalance/results/bootstrap/dino_clip_image-multilayer
+Sample size: 5000
+Target model layers: 25
+Traceback (most recent call last):
+  File "/home/mascaretti/deepseek-hidden-states/bootstrap_multilayer.py", line 183, in <module>
+    main()
+  File "/home/mascaretti/deepseek-hidden-states/bootstrap_multilayer.py", line 172, in main
+    results = process_multilayer_results(
+  File "/home/mascaretti/deepseek-hidden-states/bootstrap_multilayer.py", line 85, in process_multilayer_results
+    layer_dirs = [d for d in multilayer_dir.iterdir() if d.is_dir() and "layer" in d.name]
+  File "/home/mascaretti/deepseek-hidden-states/bootstrap_multilayer.py", line 85, in <listcomp>
+    layer_dirs = [d for d in multilayer_dir.iterdir() if d.is_dir() and "layer" in d.name]
+  File "/cm/local/apps/python3/lib/python3.9/pathlib.py", line 1160, in iterdir
+    for name in self._accessor.listdir(self):
+FileNotFoundError: [Errno 2] No such file or directory: '/home/laios/image-information-imbalance/results/dino_clip_image-multilayer-5000'
+✓ Completed dino_clip_image
+
+========================================
+Step 3: Generating all plots...
+========================================
+Information Imbalance Plotting
+==================================================
+Results directory: /home/laios/image-information-imbalance/results
+Output directory: /home/mascaretti/deepseek-hidden-states/plots/multilayer
+
+Creating individual comparison plots...
+
+Processing deepseek_clip_text...
+Saved: /home/mascaretti/deepseek-hidden-states/plots/multilayer/deepseek_clip_text_plot
+
+Processing clip_text_clip_image...
+Saved: /home/mascaretti/deepseek-hidden-states/plots/multilayer/clip_text_clip_image_plot
+
+Processing dino_clip_image...
+Saved: /home/mascaretti/deepseek-hidden-states/plots/multilayer/dino_clip_image_plot
+
+Processing deepseek_dino...
+Saved: /home/mascaretti/deepseek-hidden-states/plots/multilayer/deepseek_dino_plot
+
+Creating 2x2 summary grid with bootstrap bands...
+Saved: /home/mascaretti/deepseek-hidden-states/plots/multilayer/summary_grid_2x2_bootstrap
+
+Creating DinoV2 multi-layer analysis plots...
+Saved: /home/mascaretti/deepseek-hidden-states/plots/multilayer/dino_multilayer_analysis
+Saved: /home/mascaretti/deepseek-hidden-states/plots/multilayer/dino_layer_comparison
+
+Done! Check the output directory for plots.
+
+Note: If DeepSeek-DinoV2 data is missing, run:
+python compute_asymmetry_unified.py \
+    --comparison deepseek_dino \
+    --model_a deepseek --model_b dino \
+    --input_path_A /home/laios/activations/flickr/deepseek_all \
+    --input_path_B /home/laios/image-information-imbalance/facebook-dinov2-large \
+    --output_folder /home/laios/image-information-imbalance/results/deepseek-dino-ranks
+
+If DinoV2 multi-layer bootstrap is missing, run:
+python bootstrap_multilayer.py
+Skipping deepseek_clip_text - no bootstrap results
+Skipping deepseek_clip_image - no bootstrap results
+Skipping deepseek_dino - no bootstrap results
+Skipping clip_text_clip_image - no bootstrap results
+Skipping dino_clip_image - no bootstrap results
+
+All multi-layer plots generated!
+
+========================================
+ANALYSIS COMPLETE!
+Finished at: Sun Jul 27 09:37:20 PM CEST 2025
+========================================
+
+Results locations:
+- Analysis results: /home/laios/image-information-imbalance/results/*/multilayer-5000/
+- Bootstrap results: /home/laios/image-information-imbalance/results/bootstrap/*-multilayer/
+- Plots: /home/mascaretti/deepseek-hidden-states/plots/multilayer/
+
+Log files: /home/mascaretti/deepseek-hidden-states/logs/
+
+Generated plots:
+-rw-rw-r-- 1 mascaretti mascaretti 376449 Jul 27  2025 /home/mascaretti/deepseek-hidden-states/plots/multilayer/clip_text_clip_image_plot.png
+-rw-rw-r-- 1 mascaretti mascaretti 320851 Jul 27  2025 /home/mascaretti/deepseek-hidden-states/plots/multilayer/deepseek_clip_text_plot.png
+-rw-rw-r-- 1 mascaretti mascaretti 362487 Jul 27  2025 /home/mascaretti/deepseek-hidden-states/plots/multilayer/deepseek_dino_plot.png
+-rw-rw-r-- 1 mascaretti mascaretti 349149 Jul 27  2025 /home/mascaretti/deepseek-hidden-states/plots/multilayer/dino_clip_image_plot.png
+-rw-rw-r-- 1 mascaretti mascaretti 345175 Jul 27  2025 /home/mascaretti/deepseek-hidden-states/plots/multilayer/dino_layer_comparison.png
+-rw-rw-r-- 1 mascaretti mascaretti 587054 Jul 27  2025 /home/mascaretti/deepseek-hidden-states/plots/multilayer/dino_multilayer_analysis.png
+-rw-rw-r-- 1 mascaretti mascaretti 910694 Jul 27  2025 /home/mascaretti/deepseek-hidden-states/plots/multilayer/summary_grid_2x2_bootstrap.png
+
+Job completed at: Sun Jul 27 09:37:20 PM CEST 2025
+Exit status: 0
