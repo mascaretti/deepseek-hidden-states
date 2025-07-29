@@ -5,6 +5,7 @@ input_paths = {}
 ###  models
 input_paths["deepseek"] = {}
 input_paths["llama"] = {}
+input_paths["bert"] = {}
 
 ### source languages
 input_paths["deepseek"]["english"] = {"spanish": {"source":{},"target":{}}, 
@@ -16,6 +17,8 @@ input_paths["llama"]["english"] = {"spanish": {"source":{},"target":{}},
                                    "italian": {"source":{},"target":{}}}
 input_paths["llama"]["spanish"] = {"italian": {"source":{},"target":{}},}
 input_paths["llama"]["random"] = {}
+
+input_paths["bert"]["english"] = {"spanish": {"source":{},"target":{}},}
 
 ### min_token_length
 input_paths["deepseek"]["english"]["spanish"]['source']['40'] = "/home/laios/activations/opus_english_spanish/deepseek/deepseek_english"
@@ -38,3 +41,5 @@ input_paths["deepseek"]["spanish"]["italian"]["source"]['40'] = "/home/laios/act
 input_paths["deepseek"]["spanish"]["italian"]["target"]['40'] = "/home/laios/activations/opus_spanish_italian/deepseek_target"
 input_paths["deepseek"]["german"]["hungarian"]["source"]['40'] = f"/home/laios/activations/opus_german_hungarian/deepseek_german"
 input_paths["deepseek"]["german"]["hungarian"]["target"]['40'] = f"/home/laios/activations/opus_german_hungarian/deepseek_hungarian"
+
+input_paths["bert"]["english"]["spanish"]["source"]['40'] = "/home/laios/BERT_english_activations"

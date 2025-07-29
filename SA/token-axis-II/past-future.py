@@ -1,8 +1,9 @@
 import sys,os
 sys.path.append('../')
+sys.path.append('../../')
 dbg = int(sys.argv[1])
-if dbg:
-    os.environ["JAX_PLATFORMS"] = "cpu"
+# if dbg:
+#     os.environ["JAX_PLATFORMS"] = "cpu"
 from collections import defaultdict
 import numpy as np
 import matplotlib.pyplot as plt
@@ -28,20 +29,38 @@ from pathlib import Path
 import torch
 from datapaths import *
 import argparse
+from time import time
 
-def take_last_hidden_states(hidden_states,mask,n_loaded_tokens):
-    return hidden_states[:, -n_loaded_tokens-mask:-mask]
+def reshuffle_batch_axis(act, key):
+    """
+    Reshuffles the activations along the batch axis.
 
-def take_first_hidden_states(hidden_states,mask,n_loaded_tokens):
-    return hidden_states[:, mask:n_loaded_tokens+mask]
+    Args:
+        act (jnp.ndarray): Activation matrix of shape (batch_size, ...).
+        key (jax.random.PRNGKey): A PRNG key for randomness.
 
-def collect_data(input_path, 
+    Returns:
+        jnp.ndarray: Shuffled activations.
+    """
+    batch_size = act.shape[0]
+    perm = jax.random.permutation(key, batch_size)
+    return act[perm]
+
+def collect_data(
+                 input_path, 
                  n_loaded_tokens, 
                  n_files,
                  mask,
                  take_last,
                  filter_layer=None, 
                  ):
+    
+    def take_last_hidden_states(hidden_states,mask,n_loaded_tokens):
+        return hidden_states[:, -n_loaded_tokens-mask:-mask]
+
+    def take_first_hidden_states(hidden_states,mask,n_loaded_tokens):
+        return hidden_states[:, mask:n_loaded_tokens+mask]
+    
     files = list_folder(input_path, desc="chunk_")[:n_files]
 
     all_hidden_states = defaultdict(list)
@@ -71,7 +90,49 @@ def collect_data(input_path,
 
     return all_hidden_states
 
-def main(input_path_A, 
+
+def collect_bert_data(
+    input_path,
+    n_loaded_tokens,
+    n_files,
+    mask=0,
+    take_last=True
+):
+    def take_last_hidden_states(hidden_states, mask, n_loaded_tokens):
+        # hidden_states shape: [layers, batch, seq_len, dim]
+        return hidden_states[:, :, -n_loaded_tokens-mask:-mask]
+
+    def take_first_hidden_states(hidden_states, mask, n_loaded_tokens):
+        return hidden_states[:, :, mask:n_loaded_tokens+mask]
+
+    files = sorted([f for f in os.listdir(input_path) if f.endswith(".pkl")])[:n_files]
+    all_hidden_states = defaultdict(list)
+
+    slice_hidden_states = take_last_hidden_states if take_last else take_first_hidden_states
+
+    for fname in tqdm(files, desc="Collect File"):
+        with open(os.path.join(input_path, fname), "rb") as f:
+            hidden_states = pickle.load(f)  # [layers, batch, seq_len, dim]
+
+        # Ensure all sequences are long enough
+        assert hidden_states.shape[2] >= n_loaded_tokens + mask, \
+            f"{fname} has sequence length {hidden_states.shape[2]} < {n_loaded_tokens + mask}"
+
+        sliced = slice_hidden_states(hidden_states, mask, n_loaded_tokens)  # [layers, batch, tokens, dim]
+
+        for layer_idx in range(sliced.shape[0]):
+            layer_tensor = sliced[layer_idx]  # [batch, tokens, dim]
+            all_hidden_states[f"layer_{layer_idx}"].append(layer_tensor)
+
+    # Concatenate tensors for each layer
+    for layer, tensors in all_hidden_states.items():
+        all_hidden_states[layer] = torch.cat(tensors, dim=0)  # [total_batch, tokens, dim]
+
+    return all_hidden_states
+
+
+def main(model,
+        input_path_A, 
         #  input_path_B, 
          n_loaded_tokens, 
          mask,
@@ -83,18 +144,26 @@ def main(input_path_A,
          Nbits_list,
         #  diagonal_constraint,
         take_last,
+        batch_shuffle,
          ):
-    
-    all_activations_A = collect_data(input_path_A, 
+    start = time()
+    if model != 'bert':
+        all_activations_A = collect_data(
+                                     input_path_A, 
                                      n_loaded_tokens=n_loaded_tokens, 
                                      n_files=n_files,
                                      mask=mask,
                                      take_last=take_last,
                                      )
-    all_activations_B = all_activations_A
+    elif model == 'bert':
+        all_activations_A = collect_bert_data(input_path_A,n_loaded_tokens,n_files,mask,take_last)
+    
+    print(f'collect_data took {(time()-start)/60:.2f} m')
+    start = time()
 
-    sample_size = all_activations_B["layer_0"].shape[0]
-    n_layers = len(list(all_activations_B.keys()))
+    sample_size = all_activations_A["layer_0"].shape[0]
+    print(f'{sample_size=}')
+    n_layers = len(list(all_activations_A.keys()))
 
     rows = [f"layer_{i}" for i in range(1, n_layers)]
 
@@ -129,7 +198,7 @@ def main(input_path_A,
                         if aux == 0:
                             aux = None
                         act_A = all_activations_A[layer_A][:,-1:None,:]
-                        act_B = all_activations_B[layer_B][:,-delta_t:aux,:]
+                        act_B = all_activations_A[layer_B][:,-delta_t:aux,:]
 
                         act_A = bf16_torch_to_jax(act_A)
                         act_B = bf16_torch_to_jax(act_B)
@@ -137,12 +206,18 @@ def main(input_path_A,
                         act_A = flatten_tokens_features(act_A)
                         act_B = flatten_tokens_features(act_B)
 
+
                         if Nbits == 1:
                             act_A = binarize(act_A)
                             act_B = binarize(act_B)
                         else:
                             act_A = clip(act_A)
                             act_B = clip(act_B)
+
+                        if batch_shuffle:
+                            key_batch = jax.random.key(678)
+                            key_batch, subkey_batch = jax.random.split(key_batch)
+                            act_B = reshuffle_batch_axis(act_B,subkey_batch)
 
                         (alignment[A_counter,delta_t_id],
                         inf_imb[0,A_counter,delta_t_id],
@@ -160,6 +235,7 @@ def main(input_path_A,
                 np.save(file=f"{output_folder}/n_tokens_{n_tokens}_avg_{avg_tokens}_AB.npy", arr=inf_imb[0])
                 np.save(file=f"{output_folder}/n_tokens_{n_tokens}_avg_{avg_tokens}_BA.npy", arr=inf_imb[1])
 
+    print(f'II took {(time()-start)/60:.1f} m')
 
 if __name__ == "__main__":
 
@@ -175,19 +251,20 @@ if __name__ == "__main__":
     mask = 2 # greater than zero
     n_loaded_tokens = args.min_token_length - mask  # the mask excludes final points and quotes
     take_last = 1
+    batch_shuffle = 1
 
     if args.dbg == 0:
-        n_files = 500
-        seed_list = np.arange(0,5,dtype=int)
+        n_files = 100
+        seed_list = np.arange(0,2,dtype=int)
         k_list = [10]
-        Nbits_list = [1,0]
+        Nbits_list = [1]
         avg_flags = [0]
 
     elif args.dbg == 1:
         n_files = 1
         seed_list = np.arange(0,1+1,dtype=int)
         k_list = [10]
-        Nbits_list = [0,1]
+        Nbits_list = [0]
         avg_flags = [0]
 
     if args.language == "english":
@@ -202,6 +279,7 @@ if __name__ == "__main__":
     
     output_folder0 = makefolder(base=f'./results/santiago/',
                                create_folder=True,
+                               batch_shuffle=batch_shuffle,
                                take_last=take_last,
                                modelA=args.modelA,
                                modelB=args.modelA,
@@ -210,7 +288,7 @@ if __name__ == "__main__":
                                languageA=args.language,
                                mask=mask,
                                )
-    main(
+    main(model=args.modelA,
         input_path_A=input_path_A,
         n_loaded_tokens=n_loaded_tokens,
         mask=mask,
@@ -220,4 +298,5 @@ if __name__ == "__main__":
         output_folder0=output_folder0,
         Nbits_list=Nbits_list,
         take_last=take_last,
+        batch_shuffle=batch_shuffle,
     )
