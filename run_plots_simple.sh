@@ -1,4 +1,13 @@
 #!/bin/bash
+#!/bin/bash
+#SBATCH --job-name=plots
+#SBATCH --output=logs/plots_%j.out
+#SBATCH --error=logs/plots_%j.err
+#SBATCH --time=00:10:00
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=2
+#SBATCH --mem=8G
 # Simple plot generation without scienceplots dependency
 
 echo "Information Imbalance Plot Generation (Simple Version)"
@@ -22,6 +31,3 @@ ls -la /home/mascaretti/deepseek-hidden-states/plots/*.png
 echo ""
 ls -la /home/mascaretti/deepseek-hidden-states/plots/*.pdf
 
-echo ""
-echo "To copy plots to your local machine:"
-echo "scp mascaretti@dgx02:/home/mascaretti/deepseek-hidden-states/plots/*.pdf ."
