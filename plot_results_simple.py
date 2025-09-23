@@ -136,6 +136,15 @@ def plot_all_comparisons(results_dir, output_dir):
     # Define comparisons
     comparisons = [
         {
+            'name': 'deepseek_clip_image',
+            'model_a': 'deepseek',
+            'model_b': 'clip_image',
+            'title': 'DeepSeek-V3 vs CLIP-Image',
+            'layer_info': 'Source Layer: 52 (DeepSeek), Tokens: 9',
+            'forward_file': 'deepseek_clip_image.npy',
+            'backward_file': 'clip_image_deepseek_52.npy'
+        },
+        {
             'name': 'deepseek_clip_text',
             'model_a': 'deepseek',
             'model_b': 'clip_text',
