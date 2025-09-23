@@ -1,11 +1,0 @@
-Collect CLIP text data:   0%|          | 0/5 [00:00<?, ?it/s]Collect CLIP text data: 100%|██████████| 5/5 [00:00<00:00, 84.87it/s]
-Collect CLIP image data:   0%|          | 0/5 [00:00<?, ?it/s]Collect CLIP image data:  20%|██        | 1/5 [00:04<00:17,  4.48s/it]Collect CLIP image data:  40%|████      | 2/5 [00:08<00:13,  4.50s/it]Collect CLIP image data:  60%|██████    | 3/5 [00:13<00:08,  4.45s/it]Collect CLIP image data:  80%|████████  | 4/5 [00:17<00:04,  4.43s/it]Collect CLIP image data: 100%|██████████| 5/5 [00:21<00:00,  4.35s/it]Collect CLIP image data: 100%|██████████| 5/5 [00:21<00:00,  4.40s/it]
-2025-07-27 12:10:41.170612: W external/xla/xla/service/gpu/nvptx_compiler.cc:765] The NVIDIA driver's CUDA version is 12.4 which is older than the ptxas CUDA version (12.8.93). Because the driver is older than the ptxas version, XLA is disabling parallel compilation, which may slow down compilation. You should update your NVIDIA driver or use the NVIDIA-provided CUDA forward compatibility packages.
-Traceback (most recent call last):
-  File "/home/mascaretti/deepseek-hidden-states/compute_asymmetry_unified.py", line 293, in <module>
-    main(args)
-  File "/home/mascaretti/deepseek-hidden-states/compute_asymmetry_unified.py", line 269, in main
-    compute_inf_imb_matrix(
-  File "/home/mascaretti/deepseek-hidden-states/compute_asymmetry_unified.py", line 142, in compute_inf_imb_matrix
-    raise ValueError(f"Layer {layer_A} not found in activations A. Available: {list(all_activations_A.keys())}")
-ValueError: Layer layer_24 not found in activations A. Available: ['layer_0', 'layer_1', 'layer_2', 'layer_3', 'layer_4', 'layer_5', 'layer_6', 'layer_7', 'layer_8', 'layer_9', 'layer_10', 'layer_11', 'layer_12']

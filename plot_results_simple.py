@@ -111,10 +111,10 @@ def plot_comparison(forward_data, backward_data, model_a, model_b,
     stats_text = f'Forward: max={np.max(forward_mean):.3f}, mean={np.mean(forward_mean):.3f}\n'
     stats_text += f'Backward: max={np.max(backward_mean):.3f}, mean={np.mean(backward_mean):.3f}'
     
-    ax.text(0.02, 0.98, stats_text, transform=ax.transAxes,
-            verticalalignment='top', fontsize=9,
-            bbox=dict(boxstyle='round,pad=0.5', facecolor='white', 
-                     edgecolor='gray', alpha=0.8))
+    ## ax.text(0.02, 0.98, stats_text, transform=ax.transAxes,
+    ##         verticalalignment='top', fontsize=9,
+    ##         bbox=dict(boxstyle='round,pad=0.5', facecolor='white', 
+    ##                  edgecolor='gray', alpha=0.8))
     
     plt.tight_layout()
     

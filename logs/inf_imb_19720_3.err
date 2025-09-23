@@ -1,4 +1,0 @@
-  File "/home/mascaretti/deepseek-hidden-states/compute_asymmetry_unified.py", line 147
-    print("Has attribute:"; hasattr(activations_A, 'dtype'))
-                          ^
-SyntaxError: invalid syntax
