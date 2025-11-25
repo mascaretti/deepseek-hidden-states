@@ -141,7 +141,7 @@ def plot_all_comparisons(results_dir, output_dir):
             'model_b': 'clip_image',
             'title': 'DeepSeek-V3 vs CLIP-Image',
             'layer_info': 'Source Layer: 52 (DeepSeek), Tokens: 9',
-            'forward_file': 'deepseek_clip_image.npy',
+            'forward_file': 'deepseek_clip_image_52.npy',
             'backward_file': 'clip_image_deepseek_52.npy'
         },
         {

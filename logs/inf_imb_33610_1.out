@@ -1,0 +1,52 @@
+Running DeepSeek vs CLIP text comparison
+=========================================
+Job started at: Tue Sep 23 02:21:59 PM CEST 2025
+Running on node: dgx02
+Job ID: 33611
+Array Task ID: 1
+Comparison: deepseek_clip_text
+Model A: deepseek (/home/laios/activations/flickr/deepseek_all)
+Model B: clip_text (/home/laios/image-information-imbalance/openai-clip-vit-large-patch14)
+Output: /home/laios/image-information-imbalance/results/deepseek-clip-text-ranks
+=========================================
+Comparison type: deepseek_clip_text
+Model A: deepseek
+Model B: clip_text
+Output: /home/laios/image-information-imbalance/results/deepseek-clip-text-ranks
+DeepSeek data shape: torch.Size([5000, 9, 7168])
+CLIP text data shape: torch.Size([5000, 30, 768])
+Sample size A: 5000
+Sample size B: 5000
+Initial key: Array((), dtype=key<fry>) overlaying:
+[ 0 42]
+Sample size:  5000
+Layer A: layer_52
+dtype of activations_A is: torch.bfloat16
+*** COMPARISON TYPE: text_text ***
+Text comparison...
+Converting to Jax...
+dtype of act_A: bfloat16
+Results saved to: /home/laios/image-information-imbalance/results/deepseek-clip-text-ranks
+Job completed successfully at: Tue Sep 23 04:01:52 PM CEST 2025
+Starting bootstrap analysis...
+Loading data from: /home/laios/image-information-imbalance/results/deepseek-clip-text-ranks
+Number of layers: 12
+Bootstrap replicas: 500
+Bootstrap size: 500
+Number of rows (origins): 1000
+Sample size: 5000
+
+Mean Information Imbalance:
+Forward (deepseek → clip_text): [0.64170947 0.62884989 0.59258201 0.59710774 0.57058249 0.55025315
+ 0.51875788 0.48180184 0.43802671 0.39571434 0.35668184 0.33686124]
+Backward (clip_text → deepseek): [0.51478733 0.50892894 0.47865291 0.47731293 0.46146878 0.44584356
+ 0.44139685 0.42693209 0.40717321 0.39438525 0.37904958 0.40348846]
+
+Performing bootstrap analysis...
+
+Results saved to: /home/laios/image-information-imbalance/results/bootstrap
+Forward: deepseek_clip_text_52.npy
+Backward: clip_text_deepseek_52.npy
+Bootstrap analysis completed
+=========================================
+All processing completed at: Tue Sep 23 04:01:52 PM CEST 2025

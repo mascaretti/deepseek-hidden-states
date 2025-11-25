@@ -19,7 +19,7 @@ def compute_information(key, Y, distance_fn):
     key, subkey = random.split(key)
     information_imbalance_fn = build_information_imbalance(key=subkey, sample_size=n, distance_fn=distance_fn)
     inf_imb = []
-    for jj in tqdm(jnp.arange(1, 200, 1)):
+    for jj in tqdm(jnp.arange(1, p, 1)):
         inf_imb.append(np.array(information_imbalance_fn(Y[:, :jj], Y)))
     return np.asarray(inf_imb)
 

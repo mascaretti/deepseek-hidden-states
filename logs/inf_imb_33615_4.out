@@ -1,0 +1,56 @@
+Running DeepSeek vs CLIP image comparison
+=========================================
+Job started at: Tue Sep 23 04:54:01 PM CEST 2025
+Running on node: dgx01
+Job ID: 33615
+Array Task ID: 4
+Comparison: deepseek_clip_image
+Model A: deepseek (/home/laios/activations/flickr/deepseek_all)
+Model B: clip_image (/home/laios/image-information-imbalance/openai-clip-vit-large-patch14)
+Output: /home/laios/image-information-imbalance/results/deepseek-clip-image-ranks
+=========================================
+Comparison type: deepseek_clip_image
+Model A: deepseek
+Model B: clip_image
+Output: /home/laios/image-information-imbalance/results/deepseek-clip-image-ranks
+DeepSeek data shape: torch.Size([5000, 9, 7168])
+CLIP image data shape: torch.Size([5000, 200, 1024])
+Sample size A: 5000
+Sample size B: 5000
+Initial key: Array((), dtype=key<fry>) overlaying:
+[ 0 42]
+Sample size:  5000
+Layer A: layer_52
+dtype of activations_A is: torch.bfloat16
+*** COMPARISON TYPE: text_image ***
+Text comparison...
+Converting to Jax...
+dtype of act_A: bfloat16
+Results saved to: /home/laios/image-information-imbalance/results/deepseek-clip-image-ranks
+Job completed successfully at: Tue Sep 23 06:09:01 PM CEST 2025
+Starting bootstrap analysis...
+Loading data from: /home/laios/image-information-imbalance/results/deepseek-clip-image-ranks
+Number of layers: 24
+Bootstrap replicas: 500
+Bootstrap size: 500
+Number of rows (origins): 1000
+Sample size: 5000
+
+Mean Information Imbalance:
+Forward (deepseek → clip_image): [0.78320829 0.73999687 0.74452061 0.74184545 0.73824775 0.71541565
+ 0.71085293 0.68093487 0.65326369 0.61086038 0.56671043 0.54376839
+ 0.51526762 0.46811118 0.44492076 0.41208666 0.34842646 0.32845144
+ 0.31076527 0.33082825 0.40291175 0.36230603 0.30307461 0.3569652 ]
+Backward (clip_image → deepseek): [0.87103342 0.83825413 0.83764337 0.80224712 0.79795575 0.73038169
+ 0.74487693 0.72047489 0.69647848 0.66345049 0.60586568 0.58649055
+ 0.5641951  0.55425513 0.50241721 0.44439902 0.43460603 0.40000589
+ 0.38507915 0.38486426 0.4106099  0.37626263 0.34437769 0.36510555]
+
+Performing bootstrap analysis...
+
+Results saved to: /home/laios/image-information-imbalance/results/bootstrap
+Forward: deepseek_clip_image_52.npy
+Backward: clip_image_deepseek_52.npy
+Bootstrap analysis completed
+=========================================
+All processing completed at: Tue Sep 23 06:09:02 PM CEST 2025

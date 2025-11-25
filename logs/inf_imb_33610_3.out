@@ -1,0 +1,55 @@
+Running DinoV2 vs CLIP image comparison
+=========================================
+Job started at: Tue Sep 23 03:05:35 PM CEST 2025
+Running on node: dgx02
+Job ID: 33614
+Array Task ID: 3
+Comparison: dino_clip_image
+Model A: dino (/home/laios/image-information-imbalance/facebook-dinov2-large)
+Model B: clip_image (/home/laios/image-information-imbalance/openai-clip-vit-large-patch14)
+Output: /home/laios/image-information-imbalance/results/dino-clip-image-ranks
+=========================================
+Comparison type: dino_clip_image
+Model A: dino
+Model B: clip_image
+Output: /home/laios/image-information-imbalance/results/dino-clip-image-ranks
+Image model data shape: torch.Size([5000, 200, 1024])
+CLIP image data shape: torch.Size([5000, 200, 1024])
+Sample size A: 5000
+Sample size B: 5000
+Initial key: Array((), dtype=key<fry>) overlaying:
+[ 0 42]
+Sample size:  5000
+Layer A: layer_24
+dtype of activations_A is: torch.float32
+*** COMPARISON TYPE: image_image ***
+Image comparison...
+dtype of act_A: float32
+Results saved to: /home/laios/image-information-imbalance/results/dino-clip-image-ranks
+Job completed successfully at: Tue Sep 23 04:15:57 PM CEST 2025
+Starting bootstrap analysis...
+Loading data from: /home/laios/image-information-imbalance/results/dino-clip-image-ranks
+Number of layers: 24
+Bootstrap replicas: 500
+Bootstrap size: 500
+Number of rows (origins): 1000
+Sample size: 5000
+
+Mean Information Imbalance:
+Forward (dino → clip_image): [0.52808354 0.41964232 0.41641421 0.36324162 0.33163682 0.293003
+ 0.23491546 0.17558079 0.13283192 0.09674737 0.07426763 0.05607204
+ 0.05085993 0.03629015 0.02873687 0.02172586 0.01605053 0.01524412
+ 0.01605053 0.02156728 0.04965933 0.05067684 0.03548174 0.05302151]
+Backward (clip_image → dino): [0.67541313 0.58435268 0.6086701  0.53452026 0.46181208 0.40526063
+ 0.34127853 0.25134801 0.18322884 0.16727925 0.1237576  0.10619146
+ 0.08406003 0.06722111 0.03972936 0.03981311 0.02248579 0.0184808
+ 0.0152159  0.02018142 0.09857076 0.04998999 0.03111306 0.05155978]
+
+Performing bootstrap analysis...
+
+Results saved to: /home/laios/image-information-imbalance/results/bootstrap
+Forward: dino_clip_image_52.npy
+Backward: clip_image_dino_52.npy
+Bootstrap analysis completed
+=========================================
+All processing completed at: Tue Sep 23 04:15:58 PM CEST 2025

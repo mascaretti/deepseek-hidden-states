@@ -255,9 +255,11 @@ def main(args):
     # Determine comparison type for preprocessing
     if "text" in args.comparison and "image" in args.comparison:
         comp_type = "text_image"
+    elif args.comparison in {"deepseek_clip_text", "deepseek_clip_image"}:
+        comp_type = "text_image"
     elif "text" in args.comparison and args.comparison.count("text") == 2:
         comp_type = "text_text"
-    elif args.comparison == "deepseek_clip_text" or args.comparison == "deepseek_dino":
+    elif args.comparison == "deepseek_dino":
         comp_type = "text_text"
     else:
         comp_type = "image_image"

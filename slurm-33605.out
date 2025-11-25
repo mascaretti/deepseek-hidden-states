@@ -1,0 +1,66 @@
+Information Imbalance Plot Generation (Simple Version)
+====================================================
+Generating plots...
+Information Imbalance Plotting
+==================================================
+Results directory: /home/laios/image-information-imbalance/results
+Output directory: /home/mascaretti/deepseek-hidden-states/plots
+
+Creating individual comparison plots...
+Skipping deepseek_clip_image - data files not found
+
+Processing deepseek_clip_text...
+Saved: /home/mascaretti/deepseek-hidden-states/plots/deepseek_clip_text_plot
+
+Processing clip_text_clip_image...
+Saved: /home/mascaretti/deepseek-hidden-states/plots/clip_text_clip_image_plot
+
+Processing dino_clip_image...
+Saved: /home/mascaretti/deepseek-hidden-states/plots/dino_clip_image_plot
+
+Processing deepseek_dino...
+Saved: /home/mascaretti/deepseek-hidden-states/plots/deepseek_dino_plot
+
+Creating 2x2 summary grid with bootstrap bands...
+Saved: /home/mascaretti/deepseek-hidden-states/plots/summary_grid_2x2_bootstrap
+
+Creating DinoV2 multi-layer analysis plots...
+Saved: /home/mascaretti/deepseek-hidden-states/plots/dino_multilayer_analysis
+Saved: /home/mascaretti/deepseek-hidden-states/plots/dino_layer_comparison
+
+Done! Check the output directory for plots.
+
+Note: If DeepSeek-DinoV2 data is missing, run:
+python compute_asymmetry_unified.py \
+    --comparison deepseek_dino \
+    --model_a deepseek --model_b dino \
+    --input_path_A /home/laios/activations/flickr/deepseek_all \
+    --input_path_B /home/laios/image-information-imbalance/facebook-dinov2-large \
+    --output_folder /home/laios/image-information-imbalance/results/deepseek-dino-ranks
+
+If DinoV2 multi-layer bootstrap is missing, run:
+python bootstrap_multilayer.py
+
+Plot generation complete!
+
+Generated plots:
+-rw-rw-r-- 1 mascaretti mascaretti 347194 Sep 23  2025 /home/mascaretti/deepseek-hidden-states/plots/clip_text_clip_image_plot.png
+-rw-rw-r-- 1 mascaretti mascaretti 292911 Sep 23  2025 /home/mascaretti/deepseek-hidden-states/plots/deepseek_clip_text_plot.png
+-rw-rw-r-- 1 mascaretti mascaretti 335258 Sep 23  2025 /home/mascaretti/deepseek-hidden-states/plots/deepseek_dino_plot.png
+-rw-rw-r-- 1 mascaretti mascaretti 321017 Sep 23  2025 /home/mascaretti/deepseek-hidden-states/plots/dino_clip_image_plot.png
+-rw-rw-r-- 1 mascaretti mascaretti 345175 Sep 23  2025 /home/mascaretti/deepseek-hidden-states/plots/dino_layer_comparison.png
+-rw-rw-r-- 1 mascaretti mascaretti 587054 Sep 23  2025 /home/mascaretti/deepseek-hidden-states/plots/dino_multilayer_analysis.png
+-rw-rw-r-- 1 mascaretti mascaretti 910694 Sep 23  2025 /home/mascaretti/deepseek-hidden-states/plots/summary_grid_2x2_bootstrap.png
+
+-rw-rw-r-- 1 mascaretti mascaretti 20443 Sep 23  2025 /home/mascaretti/deepseek-hidden-states/plots/clip_text_clip_image_plot.pdf
+-rw-rw-r-- 1 mascaretti mascaretti 19877 Sep 22 11:01 /home/mascaretti/deepseek-hidden-states/plots/deepseek_clip_text.pdf
+-rw-rw-r-- 1 mascaretti mascaretti 19877 Sep 23  2025 /home/mascaretti/deepseek-hidden-states/plots/deepseek_clip_text_plot.pdf
+-rw-rw-r-- 1 mascaretti mascaretti 19819 Sep 23  2025 /home/mascaretti/deepseek-hidden-states/plots/deepseek_dino_plot.pdf
+-rw-rw-r-- 1 mascaretti mascaretti 19918 Sep 22 11:01 /home/mascaretti/deepseek-hidden-states/plots/dino_clip_image.pdf
+-rw-rw-r-- 1 mascaretti mascaretti 19918 Sep 23  2025 /home/mascaretti/deepseek-hidden-states/plots/dino_clip_image_plot.pdf
+-rw-rw-r-- 1 mascaretti mascaretti 20345 Sep 23  2025 /home/mascaretti/deepseek-hidden-states/plots/dino_layer_comparison.pdf
+-rw-rw-r-- 1 mascaretti mascaretti 23037 Sep 23  2025 /home/mascaretti/deepseek-hidden-states/plots/dino_multilayer_analysis.pdf
+-rw-rw-r-- 1 mascaretti mascaretti 25671 Sep 23  2025 /home/mascaretti/deepseek-hidden-states/plots/summary_grid_2x2_bootstrap.pdf
+
+To copy plots to your local machine:
+scp mascaretti@dgx02:/home/mascaretti/deepseek-hidden-states/plots/*.pdf .
