@@ -25,6 +25,7 @@ from utils import (bf16_torch_to_jax,
                    binarize, 
                    clip,
                    makefolder,
+                   reduce_list_half_preserve_extremes,
                    )
 import pickle
 from tqdm import tqdm
@@ -50,41 +51,6 @@ def reshuffle_batch_axis(act, key):
     perm = jax.random.permutation(key, batch_size)
     return act[perm]
 
-
-def reduce_list_half_preserve_extremes(lst):
-    """
-    Reduces the input list to approximately half its original size,
-    preserving the first and last elements, and sampling uniformly
-    from the intermediate elements.
-    
-    Parameters:
-    -----------
-    lst : list
-        The input list to reduce.
-    
-    Returns:
-    --------
-    list
-        A reduced list with approximately half the points,
-        preserving the first and last elements.
-    """
-    N = len(lst)
-    if N <= 2:
-        return lst.copy()
-    
-    half_N = max(N // 2, 2)
-    num_points_to_sample = half_N - 2
-    
-    new_lst = [lst[0]]
-    
-    if num_points_to_sample > 0:
-        # Calculate the indices to sample from intermediates
-        step = (N - 2) / (num_points_to_sample + 1)
-        intermediate_indices = [int(round(1 + i * step)) for i in range(num_points_to_sample)]
-        new_lst.extend([lst[i] for i in intermediate_indices])
-    
-    new_lst.append(lst[-1])
-    return new_lst
 
 def reshuffle_batch_and_tokens(act, key):
     """
@@ -157,7 +123,6 @@ def main(input_path_A,
          Nbits_list,
          diagonal_constraint,
          seed_list,
-         n_subsamples,
          batch_shuffle,
          ):
     start_time = time()
@@ -175,6 +140,7 @@ def main(input_path_A,
     
 
     total_sample_size = all_activations_B["layer_0"].shape[0]
+    n_subsamples = total_sample_size // 2
 
     #dbg:
     print(f'{total_sample_size=}', flush=True)
@@ -265,7 +231,7 @@ def main(input_path_A,
                                 inf_imb[1,A_counter,B_counter]) = mutual_k_aligmment_fn(act_A,act_B)
                                 # (inf_imb[0,A_counter,B_counter],
                                 # inf_imb[1,A_counter,B_counter]) = information_imbalance_fn(act_A,act_B)
-                                print(f'{layer_A=};{layer_B=};{inf_imb[0,A_counter,B_counter],inf_imb[1,A_counter,B_counter]}')
+                                # print(f'{layer_A=};{layer_B=};{inf_imb[0,A_counter,B_counter],inf_imb[1,A_counter,B_counter]}')
 
                                 
                         output_folder = makefolder(base=output_folder0,
@@ -297,35 +263,33 @@ if __name__ == "__main__":
     batch_size = 10
     mask = 2 # greater than zero
     n_loaded_tokens = args.min_token_length - mask  # the mask excludes final points and quotes
-    seed_list = [0]
+    seed_list = [0,1,2,3,4]
 
     if args.dbg == 0:
         batch_shuffle = 0
         n_files = 500
-        n_subsamples = 2500
         if args.min_token_length == 40:
             n_tokens_list = np.array([n_loaded_tokens,30,20,10,5,1,15,25,35])
+            n_tokens_list = np.array([1,20])
         elif args.min_token_length == 100:
             n_tokens_list = np.array([1,5,10,20,30,40,50,60,70,80,90,n_loaded_tokens])
         k_list = [10]
         Nbits_list = [0,1]
         avg_flags = [0,1]
-        diagonal_constraint = 0
+        diagonal_constraint = 1
 
     elif args.dbg == 1:
         batch_shuffle = 0
         n_files = 2
-        n_subsamples = 10
         n_tokens_list = np.array([1])
         k_list = [10]
         Nbits_list = [0,1]
         avg_flags = [0,1]
-        diagonal_constraint = 0
+        diagonal_constraint = 1
     
     if args.dbg == 2: 
         batch_shuffle = 0
         n_files = 200
-        n_subsamples = n_files * batch_size
         n_tokens_list = np.array([20])
         k_list = [10] 
         Nbits_list = [1,0]
@@ -368,6 +332,5 @@ if __name__ == "__main__":
         Nbits_list=Nbits_list,
         diagonal_constraint=diagonal_constraint,
         seed_list=seed_list,
-        n_subsamples=n_subsamples,
         batch_shuffle=batch_shuffle,
     )

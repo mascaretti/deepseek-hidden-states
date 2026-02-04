@@ -16,7 +16,8 @@ from information_imbalance_module import (normalized_L2_distance,
                                           )
 import jax
 import jax.numpy as jnp
-from utils import (bf16_torch_to_jax, 
+from utils import (bf16_torch_to_jax,
+                   float32_torch_to_jax, 
                    flatten_tokens_features, 
                    list_folder, 
                    binarize, 
@@ -113,6 +114,7 @@ def collect_bert_data(
     for fname in tqdm(files, desc="Collect File"):
         with open(os.path.join(input_path, fname), "rb") as f:
             hidden_states = pickle.load(f)  # [layers, batch, seq_len, dim]
+            # print(f'{np.shape(hidden_states)=}')
 
         # Ensure all sequences are long enough
         assert hidden_states.shape[2] >= n_loaded_tokens + mask, \
@@ -145,6 +147,7 @@ def main(model,
         #  diagonal_constraint,
         take_last,
         batch_shuffle,
+        subtract_mean,
          ):
     start = time()
     if model != 'bert':
@@ -161,16 +164,20 @@ def main(model,
     print(f'collect_data took {(time()-start)/60:.2f} m')
     start = time()
 
-    sample_size = all_activations_A["layer_0"].shape[0]
-    print(f'{sample_size=}')
+    total_sample_size = all_activations_A["layer_0"].shape[0]
+    print(f'{total_sample_size=}')
+    n_subsamples = total_sample_size // 2
     n_layers = len(list(all_activations_A.keys()))
 
     rows = [f"layer_{i}" for i in range(1, n_layers)]
+    key_distances = jax.random.key(42)
+    key_distances, subkey_distances = jax.random.split(key_distances)
 
-    for seed_id, seed in enumerate(seed_list):
-        print(f'{seed=}')
-        key = jax.random.key(seed)
-        key, subkey = jax.random.split(key)
+    for jack_seed_id, jack_seed in enumerate(seed_list):
+        print(f'{jack_seed=}')
+        jack_key = jax.random.key(jack_seed)
+        jack_key, jack_subkey = jax.random.split(jack_key)
+        jack_indices = jax.random.choice(key=jack_key,a=total_sample_size,shape=(n_subsamples,),replace=False)
 
         for k_id, k in enumerate(k_list):
             print(f'{k=}')
@@ -179,8 +186,8 @@ def main(model,
                 print(f'{Nbits=}')
 
                 distance_fn = hamming_distance if Nbits else normalized_L2_distance 
-                mutual_k_aligmment_fn = build_mutual_k_NN_alignment(key=subkey, 
-                                                                    sample_size=sample_size, 
+                mutual_k_aligmment_fn = build_mutual_k_NN_alignment(key=subkey_distances, 
+                                                                    sample_size=n_subsamples, 
                                                                     distance_fn=distance_fn,
                                                                     k=k)
                 
@@ -192,20 +199,25 @@ def main(model,
                 
                 for A_counter,layer_A in enumerate(rows):
                     layer_B = layer_A
+                    
+                    all_activations_A[layer_A] = all_activations_A[layer_A].float()
+                    if subtract_mean:
+                        mu = torch.mean(all_activations_A[layer_A],dim=1,keepdim=True)
+                        all_activations_A[layer_A] -= mu
 
                     for delta_t_id,delta_t in enumerate(np.arange(1,n_loaded_tokens+1,dtype=int)):
                         aux = -delta_t+1
                         if aux == 0:
                             aux = None
+
                         act_A = all_activations_A[layer_A][:,-1:None,:]
                         act_B = all_activations_A[layer_B][:,-delta_t:aux,:]
 
-                        act_A = bf16_torch_to_jax(act_A)
-                        act_B = bf16_torch_to_jax(act_B)
+                        act_A = float32_torch_to_jax(act_A)
+                        act_B = float32_torch_to_jax(act_B)
                         
                         act_A = flatten_tokens_features(act_A)
                         act_B = flatten_tokens_features(act_B)
-
 
                         if Nbits == 1:
                             act_A = binarize(act_A)
@@ -221,13 +233,14 @@ def main(model,
 
                         (alignment[A_counter,delta_t_id],
                         inf_imb[0,A_counter,delta_t_id],
-                        inf_imb[1,A_counter,delta_t_id]) = mutual_k_aligmment_fn(act_A,act_B)
+                        inf_imb[1,A_counter,delta_t_id]) = mutual_k_aligmment_fn(jax.numpy.take(act_A, jack_indices, axis=0),
+                                                                                 jax.numpy.take(act_B, jack_indices, axis=0))
                             
                 output_folder = makefolder(base=output_folder0,
                                         create_folder=True,
                                         k=k,
                                         Nbits=Nbits,
-                                        seed=seed,
+                                        seed=jack_seed,
                                         )
                 n_tokens = 1
                 avg_tokens = 0
@@ -246,23 +259,24 @@ if __name__ == "__main__":
     parser.add_argument("min_token_length",type=int)
     parser.add_argument("modelA",type=str)
     parser.add_argument("language",type=str)
+    parser.add_argument("batch_shuffle",type=int)
+    parser.add_argument("subtract_mean",type=int)
     args = parser.parse_args()
 
     mask = 2 # greater than zero
     n_loaded_tokens = args.min_token_length - mask  # the mask excludes final points and quotes
     take_last = 1
-    batch_shuffle = 1
 
     if args.dbg == 0:
-        n_files = 100
-        seed_list = np.arange(0,2,dtype=int)
+        n_files = 400
+        seed_list = np.arange(0,5,dtype=int)
         k_list = [10]
-        Nbits_list = [1]
+        Nbits_list = [0]
         avg_flags = [0]
 
     elif args.dbg == 1:
         n_files = 1
-        seed_list = np.arange(0,1+1,dtype=int)
+        seed_list = np.arange(0,2+1,dtype=int)
         k_list = [10]
         Nbits_list = [0]
         avg_flags = [0]
@@ -279,7 +293,8 @@ if __name__ == "__main__":
     
     output_folder0 = makefolder(base=f'./results/santiago/',
                                create_folder=True,
-                               batch_shuffle=batch_shuffle,
+                               subtract_mean=args.subtract_mean,
+                               batch_shuffle=args.batch_shuffle,
                                take_last=take_last,
                                modelA=args.modelA,
                                modelB=args.modelA,
@@ -298,5 +313,6 @@ if __name__ == "__main__":
         output_folder0=output_folder0,
         Nbits_list=Nbits_list,
         take_last=take_last,
-        batch_shuffle=batch_shuffle,
+        batch_shuffle=args.batch_shuffle,
+        subtract_mean=args.subtract_mean,
     )

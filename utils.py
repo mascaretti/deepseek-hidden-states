@@ -5,10 +5,48 @@ import jax.numpy as jnp
 
 from einops import rearrange
 
-depths = {"deepseek":61,
+depths = {"bert":24,
+          "deepseek":61,
           "llama":32}
 emb_dims = {"deepseek":7168,
-          "llama":4096}
+            "llama":4096,
+            "bert":1024}
+
+def reduce_list_half_preserve_extremes(lst):
+    """
+    Reduces the input list to approximately half its original size,
+    preserving the first and last elements, and sampling uniformly
+    from the intermediate elements.
+    
+    Parameters:
+    -----------
+    lst : list
+        The input list to reduce.
+    
+    Returns:
+    --------
+    list
+        A reduced list with approximately half the points,
+        preserving the first and last elements.
+    """
+    N = len(lst)
+    if N <= 2:
+        return lst.copy()
+    
+    half_N = max(N // 2, 2)
+    num_points_to_sample = half_N - 2
+    
+    new_lst = [lst[0]]
+    
+    if num_points_to_sample > 0:
+        # Calculate the indices to sample from intermediates
+        step = (N - 2) / (num_points_to_sample + 1)
+        intermediate_indices = [int(round(1 + i * step)) for i in range(num_points_to_sample)]
+        new_lst.extend([lst[i] for i in intermediate_indices])
+    
+    new_lst.append(lst[-1])
+    return new_lst
+
 
 def extract_index(file):
     match = re.search(r'chunk_(\d+)\.pkl', file.name)
@@ -25,10 +63,13 @@ def list_folder(path, desc="chunk_"):
     return files
 
 def bf16_torch_to_jax(tensor):
-    import jax.numpy as jnp
     intermediate_tensor = tensor.view(torch.uint16)
     tensor = jnp.array(intermediate_tensor).view('bfloat16')
     return tensor
+
+def float32_torch_to_jax(tensor):
+    import jax.numpy as jnp
+    return jnp.array(tensor.detach().cpu().numpy(), dtype=jnp.float32)
 
 def flatten_tokens_features(tensor):
     tensor = rearrange(tensor, 'batch tokens embed -> batch (tokens embed)')
