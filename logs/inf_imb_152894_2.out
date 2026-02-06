@@ -1,8 +1,8 @@
 Running CLIP text vs CLIP image comparison
 =========================================
-Job started at: Tue Sep 23 02:21:59 PM CEST 2025
-Running on node: dgx02
-Job ID: 33612
+Job started at: Tue Feb  3 10:24:15 AM CET 2026
+Running on node: dgx01
+Job ID: 152896
 Array Task ID: 2
 Comparison: clip_text_image
 Model A: clip_text (/home/laios/image-information-imbalance/openai-clip-vit-large-patch14)
@@ -27,7 +27,7 @@ Text comparison...
 Creating array...
 dtype of act_A: float32
 Results saved to: /home/laios/image-information-imbalance/results/clip-text-image-ranks
-Job completed successfully at: Tue Sep 23 03:05:34 PM CEST 2025
+Job completed successfully at: Tue Feb  3 12:14:09 PM CET 2026
 Starting bootstrap analysis...
 Loading data from: /home/laios/image-information-imbalance/results/clip-text-image-ranks
 Number of layers: 24
@@ -53,4 +53,4 @@ Forward: clip_text_clip_image_52.npy
 Backward: clip_image_clip_text_52.npy
 Bootstrap analysis completed
 =========================================
-All processing completed at: Tue Sep 23 03:05:35 PM CEST 2025
+All processing completed at: Tue Feb  3 12:14:11 PM CET 2026

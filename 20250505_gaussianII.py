@@ -44,7 +44,7 @@ def make_gaussian(key, p, samples):
 print("** SIMULATING RANDOM PROCESS **")
 key = random.key(20250507)
 
-p = 10000 ##100000
+p = 100000 ##100000
 print(f"p is {p}")
 
 samples = [2000]
@@ -52,7 +52,7 @@ print(f"Samples: {samples}")
 key, bernoulli_subkey, gaussian_subkey = random.split(key, 3)
 bernoulli_inf_imb = {}
 gaussian_inf_imb = {}
-n_replicas = 1
+n_replicas = 10
 for ii in tqdm(range(n_replicas)):
     key, bernoulli_subkey, gaussian_subkey = random.split(key, 3)
     bernoulli_inf_imb[str(ii)] = make_bernoulli(key=bernoulli_subkey, p=p, samples=samples)

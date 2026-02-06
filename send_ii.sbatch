@@ -17,5 +17,5 @@
 source /home/$USER/myjax/bin/activate
 cd /home/$USER/deepseek-hidden-states
 
-python3 20250505_gaussianII.py
+python3 run_cka.py ## 20250505_gaussianII.py
 ## srun python3 compute_information_imbalance_images.py --input_path_A '/home/laios/activations/flickr/deepseek_captions5/' --input_path_B '/home/laios/image-information-imbalance/facebook-dinov2-large/' --output_folder '/home/laios/image-information-imbalance/dino-cpt-5/'

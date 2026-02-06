@@ -1,8 +1,8 @@
 Running DeepSeek vs CLIP image comparison
 =========================================
-Job started at: Tue Sep 23 04:54:01 PM CEST 2025
+Job started at: Wed Feb  4 10:09:35 AM CET 2026
 Running on node: dgx01
-Job ID: 33615
+Job ID: 152942
 Array Task ID: 4
 Comparison: deepseek_clip_image
 Model A: deepseek (/home/laios/activations/flickr/deepseek_all)
@@ -27,7 +27,7 @@ Text comparison...
 Converting to Jax...
 dtype of act_A: bfloat16
 Results saved to: /home/laios/image-information-imbalance/results/deepseek-clip-image-ranks
-Job completed successfully at: Tue Sep 23 06:09:01 PM CEST 2025
+Job completed successfully at: Wed Feb  4 12:06:59 PM CET 2026
 Starting bootstrap analysis...
 Loading data from: /home/laios/image-information-imbalance/results/deepseek-clip-image-ranks
 Number of layers: 24
@@ -53,4 +53,4 @@ Forward: deepseek_clip_image_52.npy
 Backward: clip_image_deepseek_52.npy
 Bootstrap analysis completed
 =========================================
-All processing completed at: Tue Sep 23 06:09:02 PM CEST 2025
+All processing completed at: Wed Feb  4 12:07:00 PM CET 2026

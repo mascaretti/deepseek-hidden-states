@@ -1,0 +1,13 @@
+P=100000, samples=[2000], n_data=200, replicas=10
+Replica 1/10
+Replica 2/10
+Replica 3/10
+Replica 4/10
+Replica 5/10
+Replica 6/10
+Replica 7/10
+Replica 8/10
+Replica 9/10
+Replica 10/10
+Saved Bernoulli CKA to infimbgauss/cka_bernoulli_p_100000.pickle
+Saved Gaussian CKA to infimbgauss/cka_gaussian_p_100000.pickle

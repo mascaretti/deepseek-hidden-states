@@ -8,7 +8,7 @@
 #SBATCH --cpus-per-task=10
 #SBATCH --mem=128G
 #SBATCH --gres=gpu:1
-#SBATCH --array=1-4  # Three priority comparisons
+#SBATCH --array=1-5%1  # Three priority comparisons
 
 # SLURM job array for running all information imbalance comparisons
 # Array jobs will run in parallel on different GPUs
@@ -66,6 +66,16 @@ case ${SLURM_ARRAY_TASK_ID} in
 	INPUT_A="${DEEPSEEK_PATH}"
 	INPUT_B="${IMAGE_BASE}/openai-clip-vit-large-patch14"
 	OUTPUT="${OUTPUT_BASE}/deepseek-clip-image-ranks"
+	;;
+    5)
+	# Priority 5: image-gpt vs dinov2
+	echo "Running image-gpt vs dinov2 comparison"
+	COMPARISON="igpt_dino"
+	MODEL_A="imagegpt"
+	MODEL_B="dino"
+	INPUT_A="${IMAGE_BASE}/openai-imagegpt-large"
+	INPUT_B="${IMAGE_BASE}/facebook-dinov2-large"
+	OUTPUT="${OUTPUT_BASE}/imagegpt-dinov2-ranks"
 	;;
     *)
         echo "Invalid array task ID: ${SLURM_ARRAY_TASK_ID}"

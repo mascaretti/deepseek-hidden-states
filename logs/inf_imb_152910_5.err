@@ -1,0 +1,6 @@
+usage: compute_asymmetry_unified.py [-h] --comparison
+                                    {deepseek_clip_text,clip_text_image,dino_clip_image,deepseek_dino,deepseek_clip_image}
+                                    --model_a MODEL_A --model_b MODEL_B
+                                    --input_path_A INPUT_PATH_A --input_path_B
+                                    INPUT_PATH_B --output_folder OUTPUT_FOLDER
+compute_asymmetry_unified.py: error: argument --comparison: invalid choice: 'igpt_dino' (choose from 'deepseek_clip_text', 'clip_text_image', 'dino_clip_image', 'deepseek_dino', 'deepseek_clip_image')

@@ -1,8 +1,8 @@
 Running DeepSeek vs CLIP text comparison
 =========================================
-Job started at: Tue Sep 23 02:21:59 PM CEST 2025
-Running on node: dgx02
-Job ID: 33611
+Job started at: Wed Feb  4 12:07:04 PM CET 2026
+Running on node: dgx01
+Job ID: 152911
 Array Task ID: 1
 Comparison: deepseek_clip_text
 Model A: deepseek (/home/laios/activations/flickr/deepseek_all)
@@ -22,12 +22,12 @@ Initial key: Array((), dtype=key<fry>) overlaying:
 Sample size:  5000
 Layer A: layer_52
 dtype of activations_A is: torch.bfloat16
-*** COMPARISON TYPE: text_text ***
+*** COMPARISON TYPE: text_image ***
 Text comparison...
 Converting to Jax...
 dtype of act_A: bfloat16
 Results saved to: /home/laios/image-information-imbalance/results/deepseek-clip-text-ranks
-Job completed successfully at: Tue Sep 23 04:01:52 PM CEST 2025
+Job completed successfully at: Wed Feb  4 12:16:23 PM CET 2026
 Starting bootstrap analysis...
 Loading data from: /home/laios/image-information-imbalance/results/deepseek-clip-text-ranks
 Number of layers: 12
@@ -49,4 +49,4 @@ Forward: deepseek_clip_text_52.npy
 Backward: clip_text_deepseek_52.npy
 Bootstrap analysis completed
 =========================================
-All processing completed at: Tue Sep 23 04:01:52 PM CEST 2025
+All processing completed at: Wed Feb  4 12:16:24 PM CET 2026

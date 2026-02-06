@@ -1,0 +1,12 @@
+Running image-gpt vs dinov2 comparison
+=========================================
+Job started at: Wed Feb  4 12:07:00 PM CET 2026
+Running on node: dgx01
+Job ID: 152910
+Array Task ID: 5
+Comparison: igpt_dino
+Model A: imagegpt (/home/laios/image-information-imbalance/openai-imagegpt-large)
+Model B: dino (/home/laios/image-information-imbalance/facebook-dinov2-large)
+Output: /home/laios/image-information-imbalance/results/imagegpt-dinov2-ranks
+=========================================
+Job failed with exit code: 1
