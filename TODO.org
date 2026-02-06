@@ -1,0 +1,5 @@
+#+AUTHOR:Andrea Mascaretti
+#+TITLE:TODO
+
+- [ ] extract_medgemma.py
+- [ ] 

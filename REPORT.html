@@ -1,0 +1,1589 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2026-02-06 ven 15:02 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Repository Audit Report: =deepseek-hidden-states=</title>
+<meta name="generator" content="Org Mode" />
+<style type="text/css">
+  #content { max-width: 60em; margin: auto; }
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #e6e6e6;
+    border-radius: 3px;
+    background-color: #f2f2f2;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: auto;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    top: -8px;
+    right: 12px;
+    padding: 3px;
+    color: #555;
+    background-color: #f2f2f299;
+  }
+  pre.src:hover:before { display: inline; margin-top: 14px;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-authinfo::before { content: 'Authinfo'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .equation-container {
+    display: table;
+    text-align: center;
+    width: 100%;
+  }
+  .equation {
+    vertical-align: middle;
+  }
+  .equation-label {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+  }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { }
+</style>
+</head>
+<body>
+<div id="content" class="content">
+<h1 class="title">Repository Audit Report: <code>deepseek-hidden-states</code></h1>
+<div id="table-of-contents" role="doc-toc">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#orgfbccaf0">1. 1. Executive Summary</a></li>
+<li><a href="#orgfc79bc2">2. 2. Entry Points (sbatch / sh files)</a>
+<ul>
+<li><a href="#orgcd07257">2.1. 2.1 SBATCH Files</a></li>
+<li><a href="#orgb098cab">2.2. 2.2 Shell Scripts</a></li>
+</ul>
+</li>
+<li><a href="#org595a0b9">3. 3. Python Modules: Classification</a>
+<ul>
+<li><a href="#orgb00e9bc">3.1. 3.1 Core Library Modules (shared dependencies)</a></li>
+<li><a href="#org1f9d6fa">3.2. 3.2 Data Extraction Scripts</a></li>
+<li><a href="#org2919a11">3.3. 3.3 Computation Scripts &#x2013; Actively Used</a></li>
+<li><a href="#org0e20a20">3.4. 3.4 Computation Scripts &#x2013; Superseded / Redundant</a></li>
+<li><a href="#org1d6bc3a">3.5. 3.5 Gaussian / Synthetic Experiment Scripts</a></li>
+<li><a href="#orgdb711af">3.6. 3.6 Plotting Scripts</a></li>
+<li><a href="#orgeca0616">3.7. 3.7 Test / Debug / Verification Scripts</a></li>
+<li><a href="#org4752664">3.8. 3.8 Translation Scripts (<code>translate/</code>)</a></li>
+<li><a href="#orge86dea1">3.9. 3.9 Other Files</a></li>
+</ul>
+</li>
+<li><a href="#org679cf49">4. 4. Dependency Graph</a></li>
+<li><a href="#org6060bea">5. 5. Log File Evidence</a>
+<ul>
+<li><a href="#orgaa7f00b">5.1. <code>slurm-33494.out</code></a></li>
+<li><a href="#orgdd68810">5.2. <code>logs/ii-*.out</code> (4 jobs)</a></li>
+<li><a href="#orgb32f636">5.3. <code>logs/inf_imb_*.out</code> (8 jobs)</a></li>
+</ul>
+</li>
+<li><a href="#orgcf313d6">6. 6. Key Issues</a>
+<ul>
+<li><a href="#org5bc906d">6.1. 6.1 Massive Code Duplication</a></li>
+<li><a href="#orgb2154d6">6.2. 6.2 Two Distinct II Implementations</a></li>
+<li><a href="#org643335d">6.3. 6.3 Two Distinct II Computation Approaches</a></li>
+<li><a href="#orge576ccc">6.4. 6.4 Hardcoded Paths Everywhere</a></li>
+<li><a href="#org7667dd3">6.5. 6.5 No Dependency Management</a></li>
+<li><a href="#org2b29e85">6.6. 6.6 <code>platonic.py</code> Duplicates and Extends <code>information_imbalance_module.py</code></a></li>
+<li><a href="#orgd2757ce">6.7. 6.7 Script Generates Scripts</a></li>
+<li><a href="#org1afc4b4">6.8. 6.8 No Tests</a></li>
+</ul>
+</li>
+<li><a href="#orge1143a5">7. 7. Files to Remove (Superseded / Dead)</a>
+<ul>
+<li><a href="#org4d7116e">7.1. Files to Evaluate for Removal</a></li>
+</ul>
+</li>
+<li><a href="#org015f548">8. 8. Files to Keep</a>
+<ul>
+<li><a href="#org2ebb47b">8.1. Core Library</a></li>
+<li><a href="#org39abd23">8.2. Computation</a></li>
+<li><a href="#orgd58f3e6">8.3. Data Extraction</a></li>
+<li><a href="#org0ca33f0">8.4. Gaussian / Synthetic Experiments</a></li>
+<li><a href="#orga9c8858">8.5. Plotting</a></li>
+<li><a href="#org4334dde">8.6. Entry Points</a></li>
+<li><a href="#org4688925">8.7. Notebooks</a></li>
+<li><a href="#orgfc98ddd">8.8. Config</a></li>
+</ul>
+</li>
+<li><a href="#org30cbde1">9. 9. Proposed Cleanup Plan</a>
+<ul>
+<li><a href="#org9404cb6">9.1. Phase 1: Delete Dead Code</a></li>
+<li><a href="#org2e76394">9.2. Phase 2: Reorganize Directory Structure</a></li>
+<li><a href="#orgb767445">9.3. Phase 3: Eliminate Hardcoded Paths</a></li>
+<li><a href="#orga371782">9.4. Phase 4: Add Dependency Management</a></li>
+<li><a href="#org81fc8f4">9.5. Phase 5: Consolidate the Two II Implementations</a></li>
+<li><a href="#orgf85f352">9.6. Phase 6: Merge <code>platonic.py</code> into <code>information_imbalance_module.py</code></a></li>
+<li><a href="#orgf0e3496">9.7. Phase 7: Remove Script-Generation Patterns</a></li>
+<li><a href="#orgefa9a35">9.8. Phase 8: Add Minimal Tests</a></li>
+<li><a href="#org67c1492">9.9. Phase 9: Documentation</a></li>
+</ul>
+</li>
+<li><a href="#orgb7a7c45">10. 10. Summary Table</a></li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orgfbccaf0" class="outline-2">
+<h2 id="orgfbccaf0"><span class="section-number-2">1.</span> 1. Executive Summary</h2>
+<div class="outline-text-2" id="text-1">
+<p>
+This repository implements experiments for measuring <b>Information Imbalance (II)</b> and <b>CKA (Centered Kernel Alignment)</b> between hidden-state representations of different neural networks (DeepSeek-V3, LLama-3.1-8B, CLIP, DinoV2, ImageGPT). The codebase has grown organically across multiple HPC environments and collaborators, resulting in significant duplication, dead code, and entangled concerns. This report catalogues every file, classifies it as <b>actively used</b>, <b>superseded</b>, or <b>orphaned</b>, and proposes a cleanup plan.
+</p>
+</div>
+</div>
+<div id="outline-container-orgfc79bc2" class="outline-2">
+<h2 id="orgfc79bc2"><span class="section-number-2">2.</span> 2. Entry Points (sbatch / sh files)</h2>
+<div class="outline-text-2" id="text-2">
+</div>
+<div id="outline-container-orgcd07257" class="outline-3">
+<h3 id="orgcd07257"><span class="section-number-3">2.1.</span> 2.1 SBATCH Files</h3>
+<div class="outline-text-3" id="text-2-1">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">File</th>
+<th scope="col" class="org-left">Invokes</th>
+<th scope="col" class="org-left">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>send_ii.sbatch</code></td>
+<td class="org-left"><code>run_cka.py</code> (active line); has commented-out call to <code>compute_information_imbalance_images.py</code></td>
+<td class="org-left"><b>Active</b></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>run_asymmetry_array.sbatch</code></td>
+<td class="org-left"><code>compute_asymmetry_unified.py</code> + <code>bootstrap_analysis.py</code> (SLURM array, 5 comparisons)</td>
+<td class="org-left"><b>Active</b></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>submit_deepseek_llama.sbatch</code></td>
+<td class="org-left"><code>compute_deepseek_llama_comparison.py</code></td>
+<td class="org-left"><b>Active</b></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>overnight_multilayer.sbatch</code></td>
+<td class="org-left"><code>run_overnight_analysis.sh</code></td>
+<td class="org-left"><b>Active</b> (duplicate of <code>overnight_multilayer.sh</code>)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-orgb098cab" class="outline-3">
+<h3 id="orgb098cab"><span class="section-number-3">2.2.</span> 2.2 Shell Scripts</h3>
+<div class="outline-text-3" id="text-2-2">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">File</th>
+<th scope="col" class="org-left">Invokes</th>
+<th scope="col" class="org-left">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>send.sh</code></td>
+<td class="org-left"><code>extract_hidden_images_states.py</code> (active line); commented-out calls to <code>extract_hidden_states.py</code> and <code>compute_information_imbalance_images.py</code></td>
+<td class="org-left"><b>Active</b></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>send_information_imbalance.sh</code></td>
+<td class="org-left"><code>compute_information_imbalance.py</code> (user <code>rende</code>'s environment)</td>
+<td class="org-left"><b>Active but environment-specific</b></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>claio_launch.sh</code></td>
+<td class="org-left">External script via <code>src/20250109_masca_binaryactivations.py</code> (references <code>src/</code> dir that does not exist here)</td>
+<td class="org-left"><b>Orphaned</b> (belongs to a different project)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>udine_launch.sh</code></td>
+<td class="org-left">Generic launcher taking a script name as <code>$1</code> (conda env <code>clipenv</code>)</td>
+<td class="org-left"><b>Active</b> (generic)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>run_all_comparisons.sh</code></td>
+<td class="org-left"><code>compute_asymmetry_unified.py</code> (3 comparisons sequentially)</td>
+<td class="org-left"><b>Active</b></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>run_overnight_analysis.sh</code></td>
+<td class="org-left"><code>compute_asymmetry_unified.py</code> + <code>bootstrap_multilayer.py</code> + <code>plot_results_simple.py</code> + inline Python plotting (5 model pairs)</td>
+<td class="org-left"><b>Active</b></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>overnight_multilayer.sh</code></td>
+<td class="org-left"><code>run_overnight_analysis.sh</code> (near-duplicate of <code>.sbatch</code> version, adds <code>--partition=dgx</code>)</td>
+<td class="org-left"><b>Redundant</b></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>generate_all_plots.sh</code></td>
+<td class="org-left"><code>bootstrap_multilayer.py</code> + <code>plot_all_results.py</code> + <code>plot_enhanced.py</code></td>
+<td class="org-left"><b>Active</b></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>run_plots_simple.sh</code></td>
+<td class="org-left"><code>plot_results_simple.py</code></td>
+<td class="org-left"><b>Active</b></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>run_test_deepseek_llama.sh</code></td>
+<td class="org-left"><code>compute_deepseek_llama_comparison.py</code> (test mode)</td>
+<td class="org-left"><b>Active</b> (testing)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>test_15min.sh</code></td>
+<td class="org-left">Creates and runs <code>test_run.py</code> inline (imports from <code>compute_asymmetry_unified</code>)</td>
+<td class="org-left"><b>Active</b> (testing)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>apply_fixes_script.sh</code></td>
+<td class="org-left">Patches <code>check_asymmetry.py</code>, <code>check_asymmetry_images.py</code>, <code>check_mean_asymmetry.py</code></td>
+<td class="org-left"><b>One-shot</b> (already applied; can be removed)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="outline-container-org595a0b9" class="outline-2">
+<h2 id="org595a0b9"><span class="section-number-2">3.</span> 3. Python Modules: Classification</h2>
+<div class="outline-text-2" id="text-3">
+</div>
+<div id="outline-container-orgb00e9bc" class="outline-3">
+<h3 id="orgb00e9bc"><span class="section-number-3">3.1.</span> 3.1 Core Library Modules (shared dependencies)</h3>
+<div class="outline-text-3" id="text-3-1">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">File</th>
+<th scope="col" class="org-left">Role</th>
+<th scope="col" class="org-left">Imported by</th>
+<th scope="col" class="org-left">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>information_imbalance_module.py</code></td>
+<td class="org-left">II computation (JAX): <code>hamming_distance</code>, <code>L2_distance</code>, <code>build_information_imbalance</code>, <code>build_information_matrix</code></td>
+<td class="org-left">Most compute scripts</td>
+<td class="org-left"><b>Core</b></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>utils.py</code></td>
+<td class="org-left"><code>bf16_torch_to_jax</code>, <code>flatten_tokens_features</code>, <code>list_folder</code>, <code>binarize</code>, <code>makefolder</code></td>
+<td class="org-left">Most compute scripts</td>
+<td class="org-left"><b>Core</b></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>cka.py</code></td>
+<td class="org-left">CKA distance computation</td>
+<td class="org-left"><code>run_cka.py</code>, <code>20251201_mat_gaussianII.py</code>, <code>20251201_mat_gaussianII_combined.py</code>, <code>20251201_mat_asymmetryII.py</code></td>
+<td class="org-left"><b>Core</b></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>platonic.py</code></td>
+<td class="org-left">Mutual k-NN alignment + II (extended version of <code>information_imbalance_module.py</code>)</td>
+<td class="org-left"><code>compute_platonic_images.py</code></td>
+<td class="org-left"><b>Core</b> (overlaps with <code>information_imbalance_module.py</code>)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-org1f9d6fa" class="outline-3">
+<h3 id="org1f9d6fa"><span class="section-number-3">3.2.</span> 3.2 Data Extraction Scripts</h3>
+<div class="outline-text-3" id="text-3-2">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">File</th>
+<th scope="col" class="org-left">Purpose</th>
+<th scope="col" class="org-left">Called from</th>
+<th scope="col" class="org-left">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>extract_hidden_states.py</code></td>
+<td class="org-left">Extract LLama-3.1-8B hidden states via sglang</td>
+<td class="org-left"><code>send.sh</code> (commented out)</td>
+<td class="org-left"><b>Active</b> (used for LLama data generation)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>extract_hidden_images_states.py</code></td>
+<td class="org-left">Extract DinoV2/ImageGPT hidden states via HuggingFace</td>
+<td class="org-left"><code>send.sh</code></td>
+<td class="org-left"><b>Active</b></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>extract_hidden_clip.py</code></td>
+<td class="org-left">Extract CLIP text+image hidden states</td>
+<td class="org-left"><code>udine_launch.sh</code> (indirectly)</td>
+<td class="org-left"><b>Active</b></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-org2919a11" class="outline-3">
+<h3 id="org2919a11"><span class="section-number-3">3.3.</span> 3.3 Computation Scripts &#x2013; Actively Used</h3>
+<div class="outline-text-3" id="text-3-3">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">File</th>
+<th scope="col" class="org-left">Purpose</th>
+<th scope="col" class="org-left">Called from</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>compute_asymmetry_unified.py</code></td>
+<td class="org-left"><b>Unified</b> II computation for all model pairs (5 comparison types)</td>
+<td class="org-left"><code>run_asymmetry_array.sbatch</code>, <code>run_all_comparisons.sh</code>, <code>run_overnight_analysis.sh</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>compute_deepseek_llama_comparison.py</code></td>
+<td class="org-left">DeepSeek vs LLama comparison pipeline (imports from <code>compute_asymmetry_unified</code> + <code>bootstrap_analysis</code>)</td>
+<td class="org-left"><code>submit_deepseek_llama.sbatch</code>, <code>run_test_deepseek_llama.sh</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>compute_asymmetry_multi_layer.py</code></td>
+<td class="org-left">Multi-layer II computation (imports <code>*</code> from <code>compute_asymmetry_unified</code>)</td>
+<td class="org-left"><code>run_overnight_analysis.sh</code> (indirectly)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>bootstrap_analysis.py</code></td>
+<td class="org-left">Bootstrap analysis on safetensors II results</td>
+<td class="org-left"><code>run_asymmetry_array.sbatch</code>, <code>compute_deepseek_llama_comparison.py</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>bootstrap_multilayer.py</code></td>
+<td class="org-left">Bootstrap for multi-layer safetensors results</td>
+<td class="org-left"><code>generate_all_plots.sh</code>, <code>run_overnight_analysis.sh</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>run_cka.py</code></td>
+<td class="org-left">CKA computation for Gaussian/Bernoulli data</td>
+<td class="org-left"><code>send_ii.sbatch</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-org0e20a20" class="outline-3">
+<h3 id="org0e20a20"><span class="section-number-3">3.4.</span> 3.4 Computation Scripts &#x2013; Superseded / Redundant</h3>
+<div class="outline-text-3" id="text-3-4">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">File</th>
+<th scope="col" class="org-left">Superseded by</th>
+<th scope="col" class="org-left">Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>check_asymmetry.py</code></td>
+<td class="org-left"><code>compute_asymmetry_unified.py</code></td>
+<td class="org-left">Same logic (DeepSeek vs image model, layer 52, safetensors output) but without context managers, validation, or flexibility. The "unified" version explicitly documents it as a rewrite.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>check_asymmetry_images.py</code></td>
+<td class="org-left"><code>compute_asymmetry_unified.py</code></td>
+<td class="org-left">DinoV2 vs CLIP-Image variant of <code>check_asymmetry.py</code>. Uses layer 24 hardcoded.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>check_mean_asymmetry.py</code></td>
+<td class="org-left"><code>compute_asymmetry_unified.py</code></td>
+<td class="org-left">Same as <code>check_asymmetry.py</code> but applies <code>torch.mean</code> over tokens (dimension collapse).</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>compute_information_imbalance.py</code></td>
+<td class="org-left"><code>compute_asymmetry_unified.py</code></td>
+<td class="org-left">Old text-text II computation. Uses <code>build_information_imbalance</code> (returns scalars) instead of <code>build_information_matrix</code> (returns raw ranks). No subsetting, no safetensors. Called from <code>send_information_imbalance.sh</code> (user <code>rende</code>'s env).</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>compute_information_imbalance_images.py</code></td>
+<td class="org-left"><code>compute_asymmetry_unified.py</code></td>
+<td class="org-left">Old text-image II computation. Uses <code>build_information_imbalance</code>. Has file descriptor leaks.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>compute_information_imbalance_imageimage.py</code></td>
+<td class="org-left"><code>compute_asymmetry_unified.py</code></td>
+<td class="org-left">Old image-image II with jackknife-like resampling. Nearly identical to <code>_images_jackknife</code>.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>compute_information_imbalance_images_jackknife.py</code></td>
+<td class="org-left"><code>compute_asymmetry_unified.py</code></td>
+<td class="org-left">Virtually identical to <code>_imageimage.py</code> (copy-paste).</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>compute_platonic_images.py</code></td>
+<td class="org-left">No direct successor</td>
+<td class="org-left">Uses <code>platonic.py</code>'s mutual k-NN alignment. Different metric (not standard II). Appears to be an experimental variant; no entry point currently calls it.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-org1d6bc3a" class="outline-3">
+<h3 id="org1d6bc3a"><span class="section-number-3">3.5.</span> 3.5 Gaussian / Synthetic Experiment Scripts</h3>
+<div class="outline-text-3" id="text-3-5">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">File</th>
+<th scope="col" class="org-left">Purpose</th>
+<th scope="col" class="org-left">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>20250505_gaussianII.py</code></td>
+<td class="org-left">Original Gaussian II experiment (computes II for Bernoulli/Gaussian, outputs to <code>infimbgauss/</code>)</td>
+<td class="org-left"><b>Superseded</b> by <code>20251201_mat_gaussianII_infoimb.py</code> (uses <code>information_imbalance</code> package instead of JAX module)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>20251201_mat_gaussianII.py</code></td>
+<td class="org-left">CKA on Gaussian/Bernoulli data (outputs to <code>cka_gauss/</code>)</td>
+<td class="org-left"><b>Active</b></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>20251201_mat_gaussianII_infoimb.py</code></td>
+<td class="org-left">II on Gaussian/Bernoulli using <code>information_imbalance</code> package (outputs to <code>infimbgauss_plotstyle/</code>)</td>
+<td class="org-left"><b>Active</b></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>20251201_mat_gaussianII_combined.py</code></td>
+<td class="org-left">Combined II + CKA for multiple <code>p</code> values (outputs to <code>gauss_combo/</code>)</td>
+<td class="org-left"><b>Active</b></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>20251201_mat_asymmetryII.py</code></td>
+<td class="org-left">Synthetic asymmetry experiment (X = noise, Y = BX + eps with layer-dependent rank/noise). Uses <code>information_imbalance</code> package + CKA. Outputs <code>f1_a.pdf</code>.</td>
+<td class="org-left"><b>Active</b></td>
+</tr>
+</tbody>
+</table>
+
+<p>
+<b>Note:</b> <code>20251201_mat_asymmetryII.py</code> and <code>20251201_mat_gaussianII_combined.py</code> import from <code>information_imbalance.imbalance</code>, an <b>installed package</b> separate from the local <code>information_imbalance_module.py</code>. This is a source of confusion.
+</p>
+</div>
+</div>
+<div id="outline-container-orgdb711af" class="outline-3">
+<h3 id="orgdb711af"><span class="section-number-3">3.6.</span> 3.6 Plotting Scripts</h3>
+<div class="outline-text-3" id="text-3-6">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">File</th>
+<th scope="col" class="org-left">Purpose</th>
+<th scope="col" class="org-left">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>plot_results_simple.py</code></td>
+<td class="org-left">Standalone plotting (no <code>scienceplots</code> dep) for bootstrap results</td>
+<td class="org-left"><b>Active</b> (called from <code>run_plots_simple.sh</code>, <code>run_overnight_analysis.sh</code>)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>plot_all_results.py</code></td>
+<td class="org-left">Comprehensive plotting with summary table</td>
+<td class="org-left"><b>Active</b> (called from <code>generate_all_plots.sh</code>, imported by <code>plot_enhanced.py</code>)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>plot_enhanced.py</code></td>
+<td class="org-left">Enhanced multi-layer DinoV2 plots + layer comparison</td>
+<td class="org-left"><b>Active</b> (called from <code>generate_all_plots.sh</code>)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>plot_results.py</code></td>
+<td class="org-left">scienceplots-based plotting</td>
+<td class="org-left"><b>Active</b> (referenced in <code>run_all_comparisons.sh</code> comments)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-orgeca0616" class="outline-3">
+<h3 id="orgeca0616"><span class="section-number-3">3.7.</span> 3.7 Test / Debug / Verification Scripts</h3>
+<div class="outline-text-3" id="text-3-7">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">File</th>
+<th scope="col" class="org-left">Purpose</th>
+<th scope="col" class="org-left">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>test_ii.py</code></td>
+<td class="org-left">Debug: tests II on pre-extracted tensors, varies sample sizes and tokens, generates debug PDFs</td>
+<td class="org-left"><b>Debug/orphaned</b></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>test_text_clip.py</code></td>
+<td class="org-left">Tests DeepSeek bfloat16 handling and CLIP text layer loading</td>
+<td class="org-left"><b>Debug/orphaned</b></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>debug_layers.py</code></td>
+<td class="org-left">Inspects layer structure in pickle files</td>
+<td class="org-left"><b>Debug/orphaned</b></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>verify_data.py</code></td>
+<td class="org-left">Verifies data directories exist on server</td>
+<td class="org-left"><b>Debug/orphaned</b></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>verify_multilayer_results.py</code></td>
+<td class="org-left">Verifies multi-layer analysis outputs</td>
+<td class="org-left"><b>Debug/orphaned</b></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-org4752664" class="outline-3">
+<h3 id="org4752664"><span class="section-number-3">3.8.</span> 3.8 Translation Scripts (<code>translate/</code>)</h3>
+<div class="outline-text-3" id="text-3-8">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">File</th>
+<th scope="col" class="org-left">Purpose</th>
+<th scope="col" class="org-left">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>translate/translate.py</code></td>
+<td class="org-left">Translates English to Chinese using DeepSeek-V3 via sglang server</td>
+<td class="org-left"><b>Unrelated</b> to main project</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>translate/translate_batched.py</code></td>
+<td class="org-left">Batched version of the above</td>
+<td class="org-left"><b>Unrelated</b></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>translate/read_responses.py</code></td>
+<td class="org-left">Reads pickled translation outputs</td>
+<td class="org-left"><b>Unrelated</b></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-orge86dea1" class="outline-3">
+<h3 id="orge86dea1"><span class="section-number-3">3.9.</span> 3.9 Other Files</h3>
+<div class="outline-text-3" id="text-3-9">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">File</th>
+<th scope="col" class="org-left">Purpose</th>
+<th scope="col" class="org-left">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>run_all_multilayer_analysis.py</code></td>
+<td class="org-left">Programmatically generates + runs temporary Python scripts for each model pair, then bootstraps and plots</td>
+<td class="org-left"><b>Active</b> but fragile (generates code as strings)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>backups_20250726_164008/</code></td>
+<td class="org-left">Backup copies of <code>check_asymmetry*.py</code> before <code>apply_fixes_script.sh</code> was run</td>
+<td class="org-left"><b>Dead</b></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="outline-container-org679cf49" class="outline-2">
+<h2 id="org679cf49"><span class="section-number-2">4.</span> 4. Dependency Graph</h2>
+<div class="outline-text-2" id="text-4">
+<div class="org-src-container">
+<pre class="src src-text">Entry points (sbatch/sh)
+    |
+    v
+compute_asymmetry_unified.py  &lt;-- Main computation engine
+    |-- information_imbalance_module.py  (JAX-based II)
+    |-- utils.py  (binarize, flatten, bf16 conversion)
+    |
+    +--&gt; bootstrap_analysis.py  (post-processing)
+    +--&gt; bootstrap_multilayer.py  (post-processing)
+    |
+    +--&gt; plot_results_simple.py
+    +--&gt; plot_all_results.py
+    +--&gt; plot_enhanced.py
+    +--&gt; plot_results.py
+
+compute_deepseek_llama_comparison.py
+    |-- compute_asymmetry_unified.py  (import *)
+    |-- bootstrap_analysis.py  (import *)
+
+compute_asymmetry_multi_layer.py
+    |-- compute_asymmetry_unified.py  (import *)
+
+run_cka.py
+    |-- cka.py
+
+20251201_mat_asymmetryII.py
+    |-- information_imbalance (installed package, NOT information_imbalance_module.py)
+    |-- cka.py
+
+20251201_mat_gaussianII.py / _infoimb.py / _combined.py
+    |-- cka.py  and/or  information_imbalance (installed package)
+
+platonic.py (standalone, extended II module)
+compute_platonic_images.py
+    |-- platonic.py
+    |-- information_imbalance_module.py
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org6060bea" class="outline-2">
+<h2 id="org6060bea"><span class="section-number-2">5.</span> 5. Log File Evidence</h2>
+<div class="outline-text-2" id="text-5">
+</div>
+<div id="outline-container-orgaa7f00b" class="outline-3">
+<h3 id="orgaa7f00b"><span class="section-number-3">5.1.</span> <code>slurm-33494.out</code></h3>
+<div class="outline-text-3" id="text-5-1">
+<p>
+Confirms successful execution of <code>plot_results_simple.py</code> generating all bootstrap plots (Sep 2025).
+</p>
+</div>
+</div>
+<div id="outline-container-orgdd68810" class="outline-3">
+<h3 id="orgdd68810"><span class="section-number-3">5.2.</span> <code>logs/ii-*.out</code> (4 jobs)</h3>
+<div class="outline-text-3" id="text-5-2">
+<p>
+Evidence of <code>send_ii.sbatch</code> runs (likely <code>run_cka.py</code> or the earlier II computations).
+</p>
+</div>
+</div>
+<div id="outline-container-orgb32f636" class="outline-3">
+<h3 id="orgb32f636"><span class="section-number-3">5.3.</span> <code>logs/inf_imb_*.out</code> (8 jobs)</h3>
+<div class="outline-text-3" id="text-5-3">
+<p>
+Evidence of <code>run_asymmetry_array.sbatch</code> runs computing II across model pairs.
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-orgcf313d6" class="outline-2">
+<h2 id="orgcf313d6"><span class="section-number-2">6.</span> 6. Key Issues</h2>
+<div class="outline-text-2" id="text-6">
+</div>
+<div id="outline-container-org5bc906d" class="outline-3">
+<h3 id="org5bc906d"><span class="section-number-3">6.1.</span> 6.1 Massive Code Duplication</h3>
+<div class="outline-text-3" id="text-6-1">
+<p>
+The <code>collect_data()</code>, <code>collect_images()</code>, <code>CPU_Unpickler</code>, and <code>compute_inf_imb_matrix()</code> functions are <b>copy-pasted</b> across 7+ files:
+</p>
+<ul class="org-ul">
+<li><code>check_asymmetry.py</code></li>
+<li><code>check_asymmetry_images.py</code></li>
+<li><code>check_mean_asymmetry.py</code></li>
+<li><code>compute_information_imbalance.py</code></li>
+<li><code>compute_information_imbalance_images.py</code></li>
+<li><code>compute_information_imbalance_imageimage.py</code></li>
+<li><code>compute_information_imbalance_images_jackknife.py</code></li>
+<li><code>compute_platonic_images.py</code></li>
+</ul>
+
+<p>
+<code>compute_asymmetry_unified.py</code> was written to replace all of these, but the old files were never removed.
+</p>
+</div>
+</div>
+<div id="outline-container-orgb2154d6" class="outline-3">
+<h3 id="orgb2154d6"><span class="section-number-3">6.2.</span> 6.2 Two Distinct II Implementations</h3>
+<div class="outline-text-3" id="text-6-2">
+<ol class="org-ol">
+<li><b><code>information_imbalance_module.py</code></b> (local, JAX-based): Used by all compute scripts in the repo.</li>
+<li><b><code>information_imbalance</code> package</b> (installed, NumPy-based): Used by <code>20251201_mat_asymmetryII.py</code>, <code>20251201_mat_gaussianII_infoimb.py</code>, <code>20251201_mat_gaussianII_combined.py</code>.</li>
+</ol>
+
+<p>
+These have different APIs (<code>build_information_imbalance</code> in the local module returns <code>(forward, backward)</code> tuple; the package version takes <code>k</code>, <code>maxk</code>, <code>subset_size</code> parameters). This split is undocumented and confusing.
+</p>
+</div>
+</div>
+<div id="outline-container-org643335d" class="outline-3">
+<h3 id="org643335d"><span class="section-number-3">6.3.</span> 6.3 Two Distinct II Computation Approaches</h3>
+<div class="outline-text-3" id="text-6-3">
+<ul class="org-ul">
+<li><b>Old approach</b> (<code>build_information_imbalance</code>): Returns scalar II values directly. Used by the old <code>compute_information_imbalance*.py</code> scripts.</li>
+<li><b>New approach</b> (<code>build_information_matrix</code>): Returns raw ranks/cards for post-hoc bootstrap. Used by <code>compute_asymmetry_unified.py</code> and the <code>check_asymmetry*.py</code> scripts.</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orge576ccc" class="outline-3">
+<h3 id="orge576ccc"><span class="section-number-3">6.4.</span> 6.4 Hardcoded Paths Everywhere</h3>
+<div class="outline-text-3" id="text-6-4">
+<p>
+Server-specific paths (<code>/home/mascaretti/</code>, <code>/home/laios/</code>, <code>/home/rende/</code>) are hardcoded in nearly every script and entry point. Three different users' home directories appear:
+</p>
+<ul class="org-ul">
+<li><code>/home/mascaretti/</code> (primary user)</li>
+<li><code>/home/laios/</code> (shared data/results)</li>
+<li><code>/home/rende/</code> (collaborator)</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org7667dd3" class="outline-3">
+<h3 id="org7667dd3"><span class="section-number-3">6.5.</span> 6.5 No Dependency Management</h3>
+<div class="outline-text-3" id="text-6-5">
+<p>
+No <code>requirements.txt</code>, <code>pyproject.toml</code>, or <code>setup.py</code>. Dependencies are scattered and unclear. Known dependencies include: <code>jax</code>, <code>torch</code>, <code>safetensors</code>, <code>einops</code>, <code>tqdm</code>, <code>scienceplots</code> (optional), <code>sglang</code> (for extraction only), <code>transformers</code> (for extraction only), <code>information_imbalance</code> (installed package, used by some scripts).
+</p>
+</div>
+</div>
+<div id="outline-container-org2b29e85" class="outline-3">
+<h3 id="org2b29e85"><span class="section-number-3">6.6.</span> 6.6 <code>platonic.py</code> Duplicates and Extends <code>information_imbalance_module.py</code></h3>
+<div class="outline-text-3" id="text-6-6">
+<p>
+<code>platonic.py</code> contains a full copy of the II computation logic <b>plus</b> mutual k-NN alignment. The shared functions (<code>pairwise_distances</code>, <code>separate_samples</code>, <code>mapped_compute_ranks</code>, etc.) diverge slightly from <code>information_imbalance_module.py</code>.
+</p>
+</div>
+</div>
+<div id="outline-container-orgd2757ce" class="outline-3">
+<h3 id="orgd2757ce"><span class="section-number-3">6.7.</span> 6.7 Script Generates Scripts</h3>
+<div class="outline-text-3" id="text-6-7">
+<p>
+<code>run_all_multilayer_analysis.py</code> and <code>run_overnight_analysis.sh</code> dynamically generate Python scripts as strings and execute them. This is fragile and hard to debug.
+</p>
+</div>
+</div>
+<div id="outline-container-org1afc4b4" class="outline-3">
+<h3 id="org1afc4b4"><span class="section-number-3">6.8.</span> 6.8 No Tests</h3>
+<div class="outline-text-3" id="text-6-8">
+<p>
+No unit tests, no CI. The <code>test_*.py</code> files are ad-hoc verification scripts, not proper tests.
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-orge1143a5" class="outline-2">
+<h2 id="orge1143a5"><span class="section-number-2">7.</span> 7. Files to Remove (Superseded / Dead)</h2>
+<div class="outline-text-2" id="text-7">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">File</th>
+<th scope="col" class="org-left">Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>check_asymmetry.py</code></td>
+<td class="org-left">Superseded by <code>compute_asymmetry_unified.py</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>check_asymmetry_images.py</code></td>
+<td class="org-left">Superseded by <code>compute_asymmetry_unified.py</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>check_mean_asymmetry.py</code></td>
+<td class="org-left">Superseded by <code>compute_asymmetry_unified.py</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>compute_information_imbalance.py</code></td>
+<td class="org-left">Superseded by <code>compute_asymmetry_unified.py</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>compute_information_imbalance_images.py</code></td>
+<td class="org-left">Superseded by <code>compute_asymmetry_unified.py</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>compute_information_imbalance_imageimage.py</code></td>
+<td class="org-left">Superseded by <code>compute_asymmetry_unified.py</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>compute_information_imbalance_images_jackknife.py</code></td>
+<td class="org-left">Superseded by <code>compute_asymmetry_unified.py</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>backups_20250726_164008/</code></td>
+<td class="org-left">Old backups of already-superseded files</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>apply_fixes_script.sh</code></td>
+<td class="org-left">One-shot patch script (already applied)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>overnight_multilayer.sh</code></td>
+<td class="org-left">Near-duplicate of <code>overnight_multilayer.sbatch</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>test_ii.py</code></td>
+<td class="org-left">Ad-hoc debug script</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>test_text_clip.py</code></td>
+<td class="org-left">Ad-hoc test script</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>debug_layers.py</code></td>
+<td class="org-left">Ad-hoc debug script</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>verify_data.py</code></td>
+<td class="org-left">Ad-hoc verification (server-specific)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>verify_multilayer_results.py</code></td>
+<td class="org-left">Ad-hoc verification (server-specific)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>slurm-33494.out</code>, <code>slurm-33605.out</code></td>
+<td class="org-left">Stale SLURM logs in root</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>20250505_gaussianII.py</code></td>
+<td class="org-left">Superseded by <code>20251201_mat_gaussianII_infoimb.py</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="outline-container-org4d7116e" class="outline-3">
+<h3 id="org4d7116e"><span class="section-number-3">7.1.</span> Files to Evaluate for Removal</h3>
+<div class="outline-text-3" id="text-7-1">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">File</th>
+<th scope="col" class="org-left">Concern</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>compute_platonic_images.py</code></td>
+<td class="org-left">No entry point calls it; uses different metric (mutual k-NN). Keep if the metric is still needed.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>translate/</code></td>
+<td class="org-left">Entirely unrelated to the main project; should live in a separate repo.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>claio_launch.sh</code></td>
+<td class="org-left">References <code>src/</code> directory that doesn't exist; belongs to a different project.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>run_all_multilayer_analysis.py</code></td>
+<td class="org-left">Generates scripts as strings; fragile. Functionality is covered by <code>run_overnight_analysis.sh</code> + <code>compute_asymmetry_multi_layer.py</code>.</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>test_15min.sh</code></td>
+<td class="org-left">Generates a temporary Python file. Could be replaced by a <code>--test</code> flag on <code>compute_asymmetry_unified.py</code>.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="outline-container-org015f548" class="outline-2">
+<h2 id="org015f548"><span class="section-number-2">8.</span> 8. Files to Keep</h2>
+<div class="outline-text-2" id="text-8">
+</div>
+<div id="outline-container-org2ebb47b" class="outline-3">
+<h3 id="org2ebb47b"><span class="section-number-3">8.1.</span> Core Library</h3>
+<div class="outline-text-3" id="text-8-1">
+<ul class="org-ul">
+<li><code>information_imbalance_module.py</code></li>
+<li><code>utils.py</code></li>
+<li><code>cka.py</code></li>
+<li><code>platonic.py</code> (if mutual k-NN alignment is needed; otherwise merge relevant parts into <code>information_imbalance_module.py</code>)</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org39abd23" class="outline-3">
+<h3 id="org39abd23"><span class="section-number-3">8.2.</span> Computation</h3>
+<div class="outline-text-3" id="text-8-2">
+<ul class="org-ul">
+<li><code>compute_asymmetry_unified.py</code></li>
+<li><code>compute_asymmetry_multi_layer.py</code></li>
+<li><code>compute_deepseek_llama_comparison.py</code></li>
+<li><code>bootstrap_analysis.py</code></li>
+<li><code>bootstrap_multilayer.py</code></li>
+<li><code>run_cka.py</code></li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orgd58f3e6" class="outline-3">
+<h3 id="orgd58f3e6"><span class="section-number-3">8.3.</span> Data Extraction</h3>
+<div class="outline-text-3" id="text-8-3">
+<ul class="org-ul">
+<li><code>extract_hidden_states.py</code></li>
+<li><code>extract_hidden_images_states.py</code></li>
+<li><code>extract_hidden_clip.py</code></li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org0ca33f0" class="outline-3">
+<h3 id="org0ca33f0"><span class="section-number-3">8.4.</span> Gaussian / Synthetic Experiments</h3>
+<div class="outline-text-3" id="text-8-4">
+<ul class="org-ul">
+<li><code>20251201_mat_asymmetryII.py</code></li>
+<li><code>20251201_mat_gaussianII.py</code></li>
+<li><code>20251201_mat_gaussianII_infoimb.py</code></li>
+<li><code>20251201_mat_gaussianII_combined.py</code></li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orga9c8858" class="outline-3">
+<h3 id="orga9c8858"><span class="section-number-3">8.5.</span> Plotting</h3>
+<div class="outline-text-3" id="text-8-5">
+<ul class="org-ul">
+<li><code>plot_results_simple.py</code></li>
+<li><code>plot_all_results.py</code></li>
+<li><code>plot_enhanced.py</code></li>
+<li><code>plot_results.py</code></li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org4334dde" class="outline-3">
+<h3 id="org4334dde"><span class="section-number-3">8.6.</span> Entry Points</h3>
+<div class="outline-text-3" id="text-8-6">
+<ul class="org-ul">
+<li><code>send_ii.sbatch</code></li>
+<li><code>run_asymmetry_array.sbatch</code></li>
+<li><code>submit_deepseek_llama.sbatch</code></li>
+<li><code>overnight_multilayer.sbatch</code></li>
+<li><code>send.sh</code></li>
+<li><code>udine_launch.sh</code></li>
+<li><code>run_all_comparisons.sh</code></li>
+<li><code>run_overnight_analysis.sh</code></li>
+<li><code>generate_all_plots.sh</code></li>
+<li><code>run_plots_simple.sh</code></li>
+<li><code>run_test_deepseek_llama.sh</code></li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org4688925" class="outline-3">
+<h3 id="org4688925"><span class="section-number-3">8.7.</span> Notebooks</h3>
+<div class="outline-text-3" id="text-8-7">
+<ul class="org-ul">
+<li><code>20251201_asymmetryII.ipynb</code></li>
+<li><code>plotting.ipynb</code></li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orgfc98ddd" class="outline-3">
+<h3 id="orgfc98ddd"><span class="section-number-3">8.8.</span> Config</h3>
+<div class="outline-text-3" id="text-8-8">
+<ul class="org-ul">
+<li><code>.gitignore</code></li>
+</ul>
+</div>
+</div>
+</div>
+<div id="outline-container-org30cbde1" class="outline-2">
+<h2 id="org30cbde1"><span class="section-number-2">9.</span> 9. Proposed Cleanup Plan</h2>
+<div class="outline-text-2" id="text-9">
+</div>
+<div id="outline-container-org9404cb6" class="outline-3">
+<h3 id="org9404cb6"><span class="section-number-3">9.1.</span> Phase 1: Delete Dead Code</h3>
+<div class="outline-text-3" id="text-9-1">
+<p>
+Remove the 17+ files identified in Section 7. This alone eliminates ~50% of the Python files and removes all ambiguity about which scripts are canonical.
+</p>
+</div>
+</div>
+<div id="outline-container-org2e76394" class="outline-3">
+<h3 id="org2e76394"><span class="section-number-3">9.2.</span> Phase 2: Reorganize Directory Structure</h3>
+<div class="outline-text-3" id="text-9-2">
+<div class="org-src-container">
+<pre class="src src-text">deepseek-hidden-states/
+  README.md
+  requirements.txt
+  src/
+    core/
+      information_imbalance.py    (merge information_imbalance_module.py + platonic.py)
+      cka.py
+      utils.py
+    extraction/
+      extract_deepseek.py         (rename extract_hidden_states.py)
+      extract_images.py           (rename extract_hidden_images_states.py)
+      extract_clip.py             (rename extract_hidden_clip.py)
+    computation/
+      compute_ii_unified.py       (rename compute_asymmetry_unified.py)
+      compute_ii_multilayer.py    (rename compute_asymmetry_multi_layer.py)
+      compute_deepseek_llama.py
+      compute_cka.py              (rename run_cka.py)
+    analysis/
+      bootstrap.py                (rename bootstrap_analysis.py)
+      bootstrap_multilayer.py
+    plotting/
+      plot_simple.py
+      plot_all.py
+      plot_enhanced.py
+      plot_publication.py         (rename plot_results.py)
+    experiments/
+      synthetic_asymmetry.py      (rename 20251201_mat_asymmetryII.py)
+      synthetic_gaussian_cka.py
+      synthetic_gaussian_ii.py
+      synthetic_combined.py
+  scripts/
+    (all .sbatch and .sh files, with paths parameterized)
+  notebooks/
+    asymmetry.ipynb
+    plotting.ipynb
+  logs/                           (gitignored)
+  plots/                          (gitignored)
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgb767445" class="outline-3">
+<h3 id="orgb767445"><span class="section-number-3">9.3.</span> Phase 3: Eliminate Hardcoded Paths</h3>
+<div class="outline-text-3" id="text-9-3">
+<p>
+Replace all <code>/home/mascaretti/</code>, <code>/home/laios/</code>, <code>/home/rende/</code> paths with:
+</p>
+<ol class="org-ol">
+<li>Environment variables (e.g., <code>$DATA_DIR</code>, <code>$RESULTS_DIR</code>, <code>$REPO_DIR</code>)</li>
+<li>A single <code>config.py</code> or <code>.env</code> file defining base paths</li>
+<li>CLI arguments (already partially done in <code>compute_asymmetry_unified.py</code>)</li>
+</ol>
+</div>
+</div>
+<div id="outline-container-orga371782" class="outline-3">
+<h3 id="orga371782"><span class="section-number-3">9.4.</span> Phase 4: Add Dependency Management</h3>
+<div class="outline-text-3" id="text-9-4">
+<p>
+Create <code>requirements.txt</code> or <code>pyproject.toml</code>:
+</p>
+<div class="org-src-container">
+<pre class="src src-text">jax[cuda12]
+torch
+safetensors
+einops
+tqdm
+matplotlib
+numpy
+scienceplots  # optional
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org81fc8f4" class="outline-3">
+<h3 id="org81fc8f4"><span class="section-number-3">9.5.</span> Phase 5: Consolidate the Two II Implementations</h3>
+<div class="outline-text-3" id="text-9-5">
+<p>
+Decide whether to use:
+</p>
+<ul class="org-ul">
+<li>The local JAX module (<code>information_imbalance_module.py</code>), or</li>
+<li>The installed <code>information_imbalance</code> package</li>
+</ul>
+
+<p>
+Then update all scripts to use one. Document the choice.
+</p>
+</div>
+</div>
+<div id="outline-container-orgf85f352" class="outline-3">
+<h3 id="orgf85f352"><span class="section-number-3">9.6.</span> Phase 6: Merge <code>platonic.py</code> into <code>information_imbalance_module.py</code></h3>
+<div class="outline-text-3" id="text-9-6">
+<p>
+The mutual k-NN alignment is an extension of the same distance-rank framework. It should be a function in the core module, not a separate file with duplicated internals.
+</p>
+</div>
+</div>
+<div id="outline-container-orgf0e3496" class="outline-3">
+<h3 id="orgf0e3496"><span class="section-number-3">9.7.</span> Phase 7: Remove Script-Generation Patterns</h3>
+<div class="outline-text-3" id="text-9-7">
+<p>
+Replace <code>run_all_multilayer_analysis.py</code> (which generates Python as strings) with proper parameterization of <code>compute_asymmetry_multi_layer.py</code> via CLI arguments. Same for the inline Python in <code>run_overnight_analysis.sh</code>.
+</p>
+</div>
+</div>
+<div id="outline-container-orgefa9a35" class="outline-3">
+<h3 id="orgefa9a35"><span class="section-number-3">9.8.</span> Phase 8: Add Minimal Tests</h3>
+<div class="outline-text-3" id="text-9-8">
+<p>
+Add at least:
+</p>
+<ul class="org-ul">
+<li>Unit tests for <code>information_imbalance_module.py</code> (known inputs -&gt; expected outputs)</li>
+<li>Unit tests for <code>utils.py</code> (<code>binarize</code>, <code>flatten_tokens_features</code>, <code>bf16_torch_to_jax</code>)</li>
+<li>Integration test: small synthetic data through the full pipeline</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org67c1492" class="outline-3">
+<h3 id="org67c1492"><span class="section-number-3">9.9.</span> Phase 9: Documentation</h3>
+<div class="outline-text-3" id="text-9-9">
+<ul class="org-ul">
+<li><code>README.md</code>: project overview, setup instructions, how to reproduce experiments</li>
+<li>Docstrings on all public functions (some already exist)</li>
+<li>A <code>EXPERIMENTS.md</code> describing each experiment and how to run it</li>
+</ul>
+</div>
+</div>
+</div>
+<div id="outline-container-orgb7a7c45" class="outline-2">
+<h2 id="orgb7a7c45"><span class="section-number-2">10.</span> 10. Summary Table</h2>
+<div class="outline-text-2" id="text-10">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Category</th>
+<th scope="col" class="org-right">Count</th>
+<th scope="col" class="org-right">Keep</th>
+<th scope="col" class="org-right">Remove</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Core library <code>.py</code></td>
+<td class="org-right">4</td>
+<td class="org-right">4</td>
+<td class="org-right">0</td>
+</tr>
+
+<tr>
+<td class="org-left">Active compute <code>.py</code></td>
+<td class="org-right">6</td>
+<td class="org-right">6</td>
+<td class="org-right">0</td>
+</tr>
+
+<tr>
+<td class="org-left">Superseded compute <code>.py</code></td>
+<td class="org-right">7</td>
+<td class="org-right">0</td>
+<td class="org-right">7</td>
+</tr>
+
+<tr>
+<td class="org-left">Extraction <code>.py</code></td>
+<td class="org-right">3</td>
+<td class="org-right">3</td>
+<td class="org-right">0</td>
+</tr>
+
+<tr>
+<td class="org-left">Gaussian/synthetic <code>.py</code></td>
+<td class="org-right">5</td>
+<td class="org-right">4</td>
+<td class="org-right">1</td>
+</tr>
+
+<tr>
+<td class="org-left">Plotting <code>.py</code></td>
+<td class="org-right">4</td>
+<td class="org-right">4</td>
+<td class="org-right">0</td>
+</tr>
+
+<tr>
+<td class="org-left">Debug/test <code>.py</code></td>
+<td class="org-right">5</td>
+<td class="org-right">0</td>
+<td class="org-right">5</td>
+</tr>
+
+<tr>
+<td class="org-left">Orchestration <code>.py</code></td>
+<td class="org-right">1</td>
+<td class="org-right">0-1</td>
+<td class="org-right">0-1</td>
+</tr>
+
+<tr>
+<td class="org-left">Translation <code>.py</code></td>
+<td class="org-right">3</td>
+<td class="org-right">0</td>
+<td class="org-right">3 (move to separate repo)</td>
+</tr>
+
+<tr>
+<td class="org-left">Shell entry points</td>
+<td class="org-right">15</td>
+<td class="org-right">11</td>
+<td class="org-right">4</td>
+</tr>
+
+<tr>
+<td class="org-left">Backup directory</td>
+<td class="org-right">1</td>
+<td class="org-right">0</td>
+<td class="org-right">1</td>
+</tr>
+
+<tr>
+<td class="org-left"><b>Total</b></td>
+<td class="org-right"><b>54</b></td>
+<td class="org-right"><b>~32</b></td>
+<td class="org-right"><b>~22</b></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="date">Created: 2026-02-06 ven 15:02</p>
+<p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>

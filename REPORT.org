@@ -1,0 +1,408 @@
+#+TITLE: Repository Audit Report: =deepseek-hidden-states=
+
+* 1. Executive Summary
+
+This repository implements experiments for measuring *Information Imbalance (II)* and *CKA (Centered Kernel Alignment)* between hidden-state representations of different neural networks (DeepSeek-V3, LLama-3.1-8B, CLIP, DinoV2, ImageGPT). The codebase has grown organically across multiple HPC environments and collaborators, resulting in significant duplication, dead code, and entangled concerns. This report catalogues every file, classifies it as *actively used*, *superseded*, or *orphaned*, and proposes a cleanup plan.
+
+* 2. Entry Points (sbatch / sh files)
+
+** 2.1 SBATCH Files
+
+| File                              | Invokes                                                                                                  | Status                                          |
+|-----------------------------------+----------------------------------------------------------------------------------------------------------+-------------------------------------------------|
+| =send_ii.sbatch=                  | =run_cka.py= (active line); has commented-out call to =compute_information_imbalance_images.py=          | *Active*                                        |
+| =run_asymmetry_array.sbatch=      | =compute_asymmetry_unified.py= + =bootstrap_analysis.py= (SLURM array, 5 comparisons)                   | *Active*                                        |
+| =submit_deepseek_llama.sbatch=    | =compute_deepseek_llama_comparison.py=                                                                   | *Active*                                        |
+| =overnight_multilayer.sbatch=     | =run_overnight_analysis.sh=                                                                              | *Active* (duplicate of =overnight_multilayer.sh=) |
+
+** 2.2 Shell Scripts
+
+| File                            | Invokes                                                                                                                    | Status                                               |
+|---------------------------------+----------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------|
+| =send.sh=                       | =extract_hidden_images_states.py= (active line); commented-out calls to =extract_hidden_states.py= and =compute_information_imbalance_images.py= | *Active*                                             |
+| =send_information_imbalance.sh= | =compute_information_imbalance.py= (user =rende='s environment)                                                           | *Active but environment-specific*                    |
+| =claio_launch.sh=               | External script via =src/20250109_masca_binaryactivations.py= (references =src/= dir that does not exist here)             | *Orphaned* (belongs to a different project)          |
+| =udine_launch.sh=               | Generic launcher taking a script name as =$1= (conda env =clipenv=)                                                       | *Active* (generic)                                   |
+| =run_all_comparisons.sh=        | =compute_asymmetry_unified.py= (3 comparisons sequentially)                                                               | *Active*                                             |
+| =run_overnight_analysis.sh=     | =compute_asymmetry_unified.py= + =bootstrap_multilayer.py= + =plot_results_simple.py= + inline Python plotting (5 model pairs) | *Active*                                             |
+| =overnight_multilayer.sh=       | =run_overnight_analysis.sh= (near-duplicate of =.sbatch= version, adds =--partition=dgx=)                                 | *Redundant*                                          |
+| =generate_all_plots.sh=         | =bootstrap_multilayer.py= + =plot_all_results.py= + =plot_enhanced.py=                                                    | *Active*                                             |
+| =run_plots_simple.sh=           | =plot_results_simple.py=                                                                                                   | *Active*                                             |
+| =run_test_deepseek_llama.sh=    | =compute_deepseek_llama_comparison.py= (test mode)                                                                         | *Active* (testing)                                   |
+| =test_15min.sh=                 | Creates and runs =test_run.py= inline (imports from =compute_asymmetry_unified=)                                           | *Active* (testing)                                   |
+| =apply_fixes_script.sh=         | Patches =check_asymmetry.py=, =check_asymmetry_images.py=, =check_mean_asymmetry.py=                                      | *One-shot* (already applied; can be removed)         |
+
+* 3. Python Modules: Classification
+
+** 3.1 Core Library Modules (shared dependencies)
+
+| File                              | Role                                                                                                     | Imported by          | Status                                                           |
+|-----------------------------------+----------------------------------------------------------------------------------------------------------+----------------------+------------------------------------------------------------------|
+| =information_imbalance_module.py= | II computation (JAX): =hamming_distance=, =L2_distance=, =build_information_imbalance=, =build_information_matrix= | Most compute scripts | *Core*                                                           |
+| =utils.py=                        | =bf16_torch_to_jax=, =flatten_tokens_features=, =list_folder=, =binarize=, =makefolder=                 | Most compute scripts | *Core*                                                           |
+| =cka.py=                          | CKA distance computation                                                                                 | =run_cka.py=, =20251201_mat_gaussianII.py=, =20251201_mat_gaussianII_combined.py=, =20251201_mat_asymmetryII.py= | *Core*                                                           |
+| =platonic.py=                     | Mutual k-NN alignment + II (extended version of =information_imbalance_module.py=)                       | =compute_platonic_images.py= | *Core* (overlaps with =information_imbalance_module.py=) |
+
+** 3.2 Data Extraction Scripts
+
+| File                             | Purpose                                                | Called from                    | Status                                       |
+|----------------------------------+--------------------------------------------------------+--------------------------------+----------------------------------------------|
+| =extract_hidden_states.py=       | Extract LLama-3.1-8B hidden states via sglang          | =send.sh= (commented out)     | *Active* (used for LLama data generation)    |
+| =extract_hidden_images_states.py= | Extract DinoV2/ImageGPT hidden states via HuggingFace  | =send.sh=                     | *Active*                                     |
+| =extract_hidden_clip.py=         | Extract CLIP text+image hidden states                  | =udine_launch.sh= (indirectly) | *Active*                                     |
+
+** 3.3 Computation Scripts -- Actively Used
+
+| File                                  | Purpose                                                                                           | Called from                                                                           |
+|---------------------------------------+---------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------|
+| =compute_asymmetry_unified.py=        | *Unified* II computation for all model pairs (5 comparison types)                                 | =run_asymmetry_array.sbatch=, =run_all_comparisons.sh=, =run_overnight_analysis.sh=  |
+| =compute_deepseek_llama_comparison.py= | DeepSeek vs LLama comparison pipeline (imports from =compute_asymmetry_unified= + =bootstrap_analysis=) | =submit_deepseek_llama.sbatch=, =run_test_deepseek_llama.sh=                         |
+| =compute_asymmetry_multi_layer.py=    | Multi-layer II computation (imports =*= from =compute_asymmetry_unified=)                         | =run_overnight_analysis.sh= (indirectly)                                              |
+| =bootstrap_analysis.py=               | Bootstrap analysis on safetensors II results                                                       | =run_asymmetry_array.sbatch=, =compute_deepseek_llama_comparison.py=                  |
+| =bootstrap_multilayer.py=             | Bootstrap for multi-layer safetensors results                                                      | =generate_all_plots.sh=, =run_overnight_analysis.sh=                                  |
+| =run_cka.py=                          | CKA computation for Gaussian/Bernoulli data                                                        | =send_ii.sbatch=                                                                      |
+
+** 3.4 Computation Scripts -- Superseded / Redundant
+
+| File                                                | Superseded by                    | Evidence                                                                                                                                                                                                                            |
+|-----------------------------------------------------+----------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| =check_asymmetry.py=                                | =compute_asymmetry_unified.py=   | Same logic (DeepSeek vs image model, layer 52, safetensors output) but without context managers, validation, or flexibility. The "unified" version explicitly documents it as a rewrite.                                            |
+| =check_asymmetry_images.py=                         | =compute_asymmetry_unified.py=   | DinoV2 vs CLIP-Image variant of =check_asymmetry.py=. Uses layer 24 hardcoded.                                                                                                                                                     |
+| =check_mean_asymmetry.py=                           | =compute_asymmetry_unified.py=   | Same as =check_asymmetry.py= but applies =torch.mean= over tokens (dimension collapse).                                                                                                                                            |
+| =compute_information_imbalance.py=                  | =compute_asymmetry_unified.py=   | Old text-text II computation. Uses =build_information_imbalance= (returns scalars) instead of =build_information_matrix= (returns raw ranks). No subsetting, no safetensors. Called from =send_information_imbalance.sh= (user =rende='s env). |
+| =compute_information_imbalance_images.py=           | =compute_asymmetry_unified.py=   | Old text-image II computation. Uses =build_information_imbalance=. Has file descriptor leaks.                                                                                                                                       |
+| =compute_information_imbalance_imageimage.py=       | =compute_asymmetry_unified.py=   | Old image-image II with jackknife-like resampling. Nearly identical to =_images_jackknife=.                                                                                                                                          |
+| =compute_information_imbalance_images_jackknife.py= | =compute_asymmetry_unified.py=   | Virtually identical to =_imageimage.py= (copy-paste).                                                                                                                                                                               |
+| =compute_platonic_images.py=                        | No direct successor               | Uses =platonic.py='s mutual k-NN alignment. Different metric (not standard II). Appears to be an experimental variant; no entry point currently calls it.                                                                           |
+
+** 3.5 Gaussian / Synthetic Experiment Scripts
+
+| File                                  | Purpose                                                                                                                        | Status                                                                                               |
+|---------------------------------------+--------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------|
+| =20250505_gaussianII.py=              | Original Gaussian II experiment (computes II for Bernoulli/Gaussian, outputs to =infimbgauss/=)                                | *Superseded* by =20251201_mat_gaussianII_infoimb.py= (uses =information_imbalance= package instead of JAX module) |
+| =20251201_mat_gaussianII.py=          | CKA on Gaussian/Bernoulli data (outputs to =cka_gauss/=)                                                                      | *Active*                                                                                             |
+| =20251201_mat_gaussianII_infoimb.py=  | II on Gaussian/Bernoulli using =information_imbalance= package (outputs to =infimbgauss_plotstyle/=)                           | *Active*                                                                                             |
+| =20251201_mat_gaussianII_combined.py= | Combined II + CKA for multiple =p= values (outputs to =gauss_combo/=)                                                         | *Active*                                                                                             |
+| =20251201_mat_asymmetryII.py=         | Synthetic asymmetry experiment (X = noise, Y = BX + eps with layer-dependent rank/noise). Uses =information_imbalance= package + CKA. Outputs =f1_a.pdf=. | *Active*                                                                                             |
+
+*Note:* =20251201_mat_asymmetryII.py= and =20251201_mat_gaussianII_combined.py= import from =information_imbalance.imbalance=, an *installed package* separate from the local =information_imbalance_module.py=. This is a source of confusion.
+
+** 3.6 Plotting Scripts
+
+| File                    | Purpose                                                          | Status                                                                        |
+|-------------------------+------------------------------------------------------------------+-------------------------------------------------------------------------------|
+| =plot_results_simple.py= | Standalone plotting (no =scienceplots= dep) for bootstrap results | *Active* (called from =run_plots_simple.sh=, =run_overnight_analysis.sh=)     |
+| =plot_all_results.py=   | Comprehensive plotting with summary table                         | *Active* (called from =generate_all_plots.sh=, imported by =plot_enhanced.py=) |
+| =plot_enhanced.py=      | Enhanced multi-layer DinoV2 plots + layer comparison              | *Active* (called from =generate_all_plots.sh=)                                |
+| =plot_results.py=       | scienceplots-based plotting                                       | *Active* (referenced in =run_all_comparisons.sh= comments)                    |
+
+** 3.7 Test / Debug / Verification Scripts
+
+| File                            | Purpose                                                          | Status              |
+|---------------------------------+------------------------------------------------------------------+---------------------|
+| =test_ii.py=                    | Debug: tests II on pre-extracted tensors, varies sample sizes and tokens, generates debug PDFs | *Debug/orphaned*    |
+| =test_text_clip.py=             | Tests DeepSeek bfloat16 handling and CLIP text layer loading     | *Debug/orphaned*    |
+| =debug_layers.py=               | Inspects layer structure in pickle files                         | *Debug/orphaned*    |
+| =verify_data.py=                | Verifies data directories exist on server                        | *Debug/orphaned*    |
+| =verify_multilayer_results.py=  | Verifies multi-layer analysis outputs                            | *Debug/orphaned*    |
+
+** 3.8 Translation Scripts (=translate/=)
+
+| File                        | Purpose                                                            | Status                          |
+|-----------------------------+--------------------------------------------------------------------+---------------------------------|
+| =translate/translate.py=    | Translates English to Chinese using DeepSeek-V3 via sglang server  | *Unrelated* to main project     |
+| =translate/translate_batched.py= | Batched version of the above                                  | *Unrelated*                     |
+| =translate/read_responses.py= | Reads pickled translation outputs                                | *Unrelated*                     |
+
+** 3.9 Other Files
+
+| File                               | Purpose                                                                                                                    | Status                                                    |
+|------------------------------------+----------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------|
+| =run_all_multilayer_analysis.py=   | Programmatically generates + runs temporary Python scripts for each model pair, then bootstraps and plots                   | *Active* but fragile (generates code as strings)          |
+| =backups_20250726_164008/=          | Backup copies of =check_asymmetry*.py= before =apply_fixes_script.sh= was run                                             | *Dead*                                                    |
+
+* 4. Dependency Graph
+
+#+BEGIN_SRC text
+Entry points (sbatch/sh)
+    |
+    v
+compute_asymmetry_unified.py  <-- Main computation engine
+    |-- information_imbalance_module.py  (JAX-based II)
+    |-- utils.py  (binarize, flatten, bf16 conversion)
+    |
+    +--> bootstrap_analysis.py  (post-processing)
+    +--> bootstrap_multilayer.py  (post-processing)
+    |
+    +--> plot_results_simple.py
+    +--> plot_all_results.py
+    +--> plot_enhanced.py
+    +--> plot_results.py
+
+compute_deepseek_llama_comparison.py
+    |-- compute_asymmetry_unified.py  (import *)
+    |-- bootstrap_analysis.py  (import *)
+
+compute_asymmetry_multi_layer.py
+    |-- compute_asymmetry_unified.py  (import *)
+
+run_cka.py
+    |-- cka.py
+
+20251201_mat_asymmetryII.py
+    |-- information_imbalance (installed package, NOT information_imbalance_module.py)
+    |-- cka.py
+
+20251201_mat_gaussianII.py / _infoimb.py / _combined.py
+    |-- cka.py  and/or  information_imbalance (installed package)
+
+platonic.py (standalone, extended II module)
+compute_platonic_images.py
+    |-- platonic.py
+    |-- information_imbalance_module.py
+#+END_SRC
+
+* 5. Log File Evidence
+
+** =slurm-33494.out=
+Confirms successful execution of =plot_results_simple.py= generating all bootstrap plots (Sep 2025).
+
+** =logs/ii-*.out= (4 jobs)
+Evidence of =send_ii.sbatch= runs (likely =run_cka.py= or the earlier II computations).
+
+** =logs/inf_imb_*.out= (8 jobs)
+Evidence of =run_asymmetry_array.sbatch= runs computing II across model pairs.
+
+* 6. Key Issues
+
+** 6.1 Massive Code Duplication
+The =collect_data()=, =collect_images()=, =CPU_Unpickler=, and =compute_inf_imb_matrix()= functions are *copy-pasted* across 7+ files:
+- =check_asymmetry.py=
+- =check_asymmetry_images.py=
+- =check_mean_asymmetry.py=
+- =compute_information_imbalance.py=
+- =compute_information_imbalance_images.py=
+- =compute_information_imbalance_imageimage.py=
+- =compute_information_imbalance_images_jackknife.py=
+- =compute_platonic_images.py=
+
+=compute_asymmetry_unified.py= was written to replace all of these, but the old files were never removed.
+
+** 6.2 Two Distinct II Implementations
+1. *=information_imbalance_module.py=* (local, JAX-based): Used by all compute scripts in the repo.
+2. *=information_imbalance= package* (installed, NumPy-based): Used by =20251201_mat_asymmetryII.py=, =20251201_mat_gaussianII_infoimb.py=, =20251201_mat_gaussianII_combined.py=.
+
+These have different APIs (=build_information_imbalance= in the local module returns =(forward, backward)= tuple; the package version takes =k=, =maxk=, =subset_size= parameters). This split is undocumented and confusing.
+
+** 6.3 Two Distinct II Computation Approaches
+- *Old approach* (=build_information_imbalance=): Returns scalar II values directly. Used by the old =compute_information_imbalance*.py= scripts.
+- *New approach* (=build_information_matrix=): Returns raw ranks/cards for post-hoc bootstrap. Used by =compute_asymmetry_unified.py= and the =check_asymmetry*.py= scripts.
+
+** 6.4 Hardcoded Paths Everywhere
+Server-specific paths (=/home/mascaretti/=, =/home/laios/=, =/home/rende/=) are hardcoded in nearly every script and entry point. Three different users' home directories appear:
+- =/home/mascaretti/= (primary user)
+- =/home/laios/= (shared data/results)
+- =/home/rende/= (collaborator)
+
+** 6.5 No Dependency Management
+No =requirements.txt=, =pyproject.toml=, or =setup.py=. Dependencies are scattered and unclear. Known dependencies include: =jax=, =torch=, =safetensors=, =einops=, =tqdm=, =scienceplots= (optional), =sglang= (for extraction only), =transformers= (for extraction only), =information_imbalance= (installed package, used by some scripts).
+
+** 6.6 =platonic.py= Duplicates and Extends =information_imbalance_module.py=
+=platonic.py= contains a full copy of the II computation logic *plus* mutual k-NN alignment. The shared functions (=pairwise_distances=, =separate_samples=, =mapped_compute_ranks=, etc.) diverge slightly from =information_imbalance_module.py=.
+
+** 6.7 Script Generates Scripts
+=run_all_multilayer_analysis.py= and =run_overnight_analysis.sh= dynamically generate Python scripts as strings and execute them. This is fragile and hard to debug.
+
+** 6.8 No Tests
+No unit tests, no CI. The =test_*.py= files are ad-hoc verification scripts, not proper tests.
+
+* 7. Files to Remove (Superseded / Dead)
+
+| File                                                | Reason                                            |
+|-----------------------------------------------------+---------------------------------------------------|
+| =check_asymmetry.py=                                | Superseded by =compute_asymmetry_unified.py=      |
+| =check_asymmetry_images.py=                         | Superseded by =compute_asymmetry_unified.py=      |
+| =check_mean_asymmetry.py=                           | Superseded by =compute_asymmetry_unified.py=      |
+| =compute_information_imbalance.py=                  | Superseded by =compute_asymmetry_unified.py=      |
+| =compute_information_imbalance_images.py=           | Superseded by =compute_asymmetry_unified.py=      |
+| =compute_information_imbalance_imageimage.py=       | Superseded by =compute_asymmetry_unified.py=      |
+| =compute_information_imbalance_images_jackknife.py= | Superseded by =compute_asymmetry_unified.py=      |
+| =backups_20250726_164008/=                           | Old backups of already-superseded files            |
+| =apply_fixes_script.sh=                             | One-shot patch script (already applied)            |
+| =overnight_multilayer.sh=                           | Near-duplicate of =overnight_multilayer.sbatch=    |
+| =test_ii.py=                                        | Ad-hoc debug script                               |
+| =test_text_clip.py=                                 | Ad-hoc test script                                |
+| =debug_layers.py=                                   | Ad-hoc debug script                               |
+| =verify_data.py=                                    | Ad-hoc verification (server-specific)             |
+| =verify_multilayer_results.py=                      | Ad-hoc verification (server-specific)             |
+| =slurm-33494.out=, =slurm-33605.out=                | Stale SLURM logs in root                          |
+| =20250505_gaussianII.py=                            | Superseded by =20251201_mat_gaussianII_infoimb.py= |
+
+** Files to Evaluate for Removal
+
+| File                               | Concern                                                                                                                       |
+|------------------------------------+-------------------------------------------------------------------------------------------------------------------------------|
+| =compute_platonic_images.py=       | No entry point calls it; uses different metric (mutual k-NN). Keep if the metric is still needed.                             |
+| =translate/=                        | Entirely unrelated to the main project; should live in a separate repo.                                                       |
+| =claio_launch.sh=                  | References =src/= directory that doesn't exist; belongs to a different project.                                               |
+| =run_all_multilayer_analysis.py=   | Generates scripts as strings; fragile. Functionality is covered by =run_overnight_analysis.sh= + =compute_asymmetry_multi_layer.py=. |
+| =test_15min.sh=                    | Generates a temporary Python file. Could be replaced by a =--test= flag on =compute_asymmetry_unified.py=.                   |
+
+* 8. Files to Keep
+
+** Core Library
+- =information_imbalance_module.py=
+- =utils.py=
+- =cka.py=
+- =platonic.py= (if mutual k-NN alignment is needed; otherwise merge relevant parts into =information_imbalance_module.py=)
+
+** Computation
+- =compute_asymmetry_unified.py=
+- =compute_asymmetry_multi_layer.py=
+- =compute_deepseek_llama_comparison.py=
+- =bootstrap_analysis.py=
+- =bootstrap_multilayer.py=
+- =run_cka.py=
+
+** Data Extraction
+- =extract_hidden_states.py=
+- =extract_hidden_images_states.py=
+- =extract_hidden_clip.py=
+
+** Gaussian / Synthetic Experiments
+- =20251201_mat_asymmetryII.py=
+- =20251201_mat_gaussianII.py=
+- =20251201_mat_gaussianII_infoimb.py=
+- =20251201_mat_gaussianII_combined.py=
+
+** Plotting
+- =plot_results_simple.py=
+- =plot_all_results.py=
+- =plot_enhanced.py=
+- =plot_results.py=
+
+** Entry Points
+- =send_ii.sbatch=
+- =run_asymmetry_array.sbatch=
+- =submit_deepseek_llama.sbatch=
+- =overnight_multilayer.sbatch=
+- =send.sh=
+- =udine_launch.sh=
+- =run_all_comparisons.sh=
+- =run_overnight_analysis.sh=
+- =generate_all_plots.sh=
+- =run_plots_simple.sh=
+- =run_test_deepseek_llama.sh=
+
+** Notebooks
+- =20251201_asymmetryII.ipynb=
+- =plotting.ipynb=
+
+** Config
+- =.gitignore=
+
+* 9. Proposed Cleanup Plan
+
+** Phase 1: Delete Dead Code
+Remove the 17+ files identified in Section 7. This alone eliminates ~50% of the Python files and removes all ambiguity about which scripts are canonical.
+
+** Phase 2: Reorganize Directory Structure
+#+BEGIN_SRC text
+deepseek-hidden-states/
+  README.md
+  requirements.txt
+  src/
+    core/
+      information_imbalance.py    (merge information_imbalance_module.py + platonic.py)
+      cka.py
+      utils.py
+    extraction/
+      extract_deepseek.py         (rename extract_hidden_states.py)
+      extract_images.py           (rename extract_hidden_images_states.py)
+      extract_clip.py             (rename extract_hidden_clip.py)
+    computation/
+      compute_ii_unified.py       (rename compute_asymmetry_unified.py)
+      compute_ii_multilayer.py    (rename compute_asymmetry_multi_layer.py)
+      compute_deepseek_llama.py
+      compute_cka.py              (rename run_cka.py)
+    analysis/
+      bootstrap.py                (rename bootstrap_analysis.py)
+      bootstrap_multilayer.py
+    plotting/
+      plot_simple.py
+      plot_all.py
+      plot_enhanced.py
+      plot_publication.py         (rename plot_results.py)
+    experiments/
+      synthetic_asymmetry.py      (rename 20251201_mat_asymmetryII.py)
+      synthetic_gaussian_cka.py
+      synthetic_gaussian_ii.py
+      synthetic_combined.py
+  scripts/
+    (all .sbatch and .sh files, with paths parameterized)
+  notebooks/
+    asymmetry.ipynb
+    plotting.ipynb
+  logs/                           (gitignored)
+  plots/                          (gitignored)
+#+END_SRC
+
+** Phase 3: Eliminate Hardcoded Paths
+Replace all =/home/mascaretti/=, =/home/laios/=, =/home/rende/= paths with:
+1. Environment variables (e.g., =$DATA_DIR=, =$RESULTS_DIR=, =$REPO_DIR=)
+2. A single =config.py= or =.env= file defining base paths
+3. CLI arguments (already partially done in =compute_asymmetry_unified.py=)
+
+** Phase 4: Add Dependency Management
+Create =requirements.txt= or =pyproject.toml=:
+#+BEGIN_SRC text
+jax[cuda12]
+torch
+safetensors
+einops
+tqdm
+matplotlib
+numpy
+scienceplots  # optional
+#+END_SRC
+
+** Phase 5: Consolidate the Two II Implementations
+Decide whether to use:
+- The local JAX module (=information_imbalance_module.py=), or
+- The installed =information_imbalance= package
+
+Then update all scripts to use one. Document the choice.
+
+** Phase 6: Merge =platonic.py= into =information_imbalance_module.py=
+The mutual k-NN alignment is an extension of the same distance-rank framework. It should be a function in the core module, not a separate file with duplicated internals.
+
+** Phase 7: Remove Script-Generation Patterns
+Replace =run_all_multilayer_analysis.py= (which generates Python as strings) with proper parameterization of =compute_asymmetry_multi_layer.py= via CLI arguments. Same for the inline Python in =run_overnight_analysis.sh=.
+
+** Phase 8: Add Minimal Tests
+Add at least:
+- Unit tests for =information_imbalance_module.py= (known inputs -> expected outputs)
+- Unit tests for =utils.py= (=binarize=, =flatten_tokens_features=, =bf16_torch_to_jax=)
+- Integration test: small synthetic data through the full pipeline
+
+** Phase 9: Documentation
+- =README.md=: project overview, setup instructions, how to reproduce experiments
+- Docstrings on all public functions (some already exist)
+- A =EXPERIMENTS.md= describing each experiment and how to run it
+
+* 10. Summary Table
+
+| Category               | Count | Keep | Remove            |
+|------------------------+-------+------+-------------------|
+| Core library =.py=     |     4 |    4 | 0                 |
+| Active compute =.py=   |     6 |    6 | 0                 |
+| Superseded compute =.py= |   7 |    0 | 7                 |
+| Extraction =.py=       |     3 |    3 | 0                 |
+| Gaussian/synthetic =.py= |   5 |    4 | 1                 |
+| Plotting =.py=         |     4 |    4 | 0                 |
+| Debug/test =.py=       |     5 |    0 | 5                 |
+| Orchestration =.py=    |     1 |  0-1 | 0-1               |
+| Translation =.py=      |     3 |    0 | 3 (move to separate repo) |
+| Shell entry points     |    15 |   11 | 4                 |
+| Backup directory       |     1 |    0 | 1                 |
+| *Total*                |  *54* | *~32* | *~22*             |
