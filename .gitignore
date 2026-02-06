@@ -4,6 +4,7 @@
 *.pickle
 *.pdf
 *.png
+*.npz
 
 ### Emacs ###
 # -*- mode: gitignore; -*-
