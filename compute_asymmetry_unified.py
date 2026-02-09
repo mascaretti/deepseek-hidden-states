@@ -192,8 +192,8 @@ def main(args):
     n_files = int(subset_size / 10)
     
     # CHANGE: Routing logic for different comparisons
+
     if args.comparison == "deepseek_clip_text":
-        # Priority 1: DeepSeek vs CLIP text
         all_activations_A = collect_deepseek_data(
             args.input_path_A, n_loaded_tokens=9, subset_size=subset_size
         )
@@ -203,7 +203,6 @@ def main(args):
         layer_A_id = 52  # DeepSeek layer
         
     elif args.comparison == "clip_text_image":
-        # Priority 2: CLIP text vs CLIP image
         all_activations_A = collect_clip_text_data(
             args.input_path_A, n_files=n_files, last_tokens=30
         )
@@ -214,7 +213,6 @@ def main(args):
         layer_A_id = 12  # Last layer for CLIP text
         
     elif args.comparison == "dino_clip_image":
-        # Priority 3: DinoV2 vs CLIP image
         all_activations_A = collect_image_model_data(
             args.input_path_A, n_files=n_files, last_tokens=200
         )
@@ -224,7 +222,6 @@ def main(args):
         layer_A_id = 24  # DinoV2 layer
         
     elif args.comparison == "deepseek_dino":
-        # DeepSeek vs DinoV2 (lower priority)
         all_activations_A = collect_deepseek_data(
             args.input_path_A, n_loaded_tokens=9, subset_size=subset_size
         )
@@ -234,7 +231,6 @@ def main(args):
         layer_A_id = 52  # DeepSeek layer
         
     elif args.comparison == "deepseek_clip_image":
-        # DeepSeek vs CLIP image
         all_activations_A = collect_deepseek_data(
             args.input_path_A, n_loaded_tokens=9, subset_size=subset_size
         )
@@ -242,7 +238,14 @@ def main(args):
             args.input_path_B, n_files=n_files, last_tokens=200
         )
         layer_A_id = 52  # DeepSeek layer
-        
+    if args.comparison == "dino_igpt":
+        all_activations_A = collect_image_model_data(
+            args.input_path_A, n_files=n_files, last_tokens=50
+        )
+        all_activations_B = collect_image_model_data(
+            args.input_path_B, n_files=n_files, last_tokens=50
+        )
+        layer_A_id = 24  # DeepSeek layer
     else:
         raise ValueError(f"Unknown comparison type: {args.comparison}")
     
@@ -280,7 +283,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Compute Information Imbalance - Unified")
     parser.add_argument("--comparison", type=str, required=True, 
                        choices=["deepseek_clip_text", "clip_text_image", "dino_clip_image", 
-                               "deepseek_dino", "deepseek_clip_image"],
+                               "deepseek_dino", "deepseek_clip_image", "dino_igpt"],
                        help="Type of comparison to perform")
     parser.add_argument("--model_a", type=str, required=True, help="Model A name for output")
     parser.add_argument("--model_b", type=str, required=True, help="Model B name for output")

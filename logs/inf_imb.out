@@ -1,0 +1,55 @@
+Running image-gpt vs dinov2 comparison
+=========================================
+Job started at: Fri Feb  6 05:01:23 PM CET 2026
+Running on node: dgx01
+Job ID: 153357
+Array Task ID: 
+Comparison: dino_igpt
+Model A: dino (/home/laios/image-information-imbalance/facebook-dinov2-large)
+Model B: igpt (/home/laios/image-information-imbalance/openai-imagegpt-large)
+Output: /home/laios/image-information-imbalance/results/imagegpt-dinov2-ranks
+=========================================
+Comparison type: dino_igpt
+Model A: dino
+Model B: igpt
+Output: /home/laios/image-information-imbalance/results/imagegpt-dinov2-ranks
+Image model data shape: torch.Size([5000, 50, 1024])
+Image model data shape: torch.Size([5000, 50, 1536])
+Sample size A: 5000
+Sample size B: 5000
+Initial key: Array((), dtype=key<fry>) overlaying:
+[ 0 42]
+Sample size:  5000
+Layer A: layer_24
+dtype of activations_A is: torch.float32
+*** COMPARISON TYPE: image_image ***
+Image comparison...
+dtype of act_A: float32
+Results saved to: /home/laios/image-information-imbalance/results/imagegpt-dinov2-ranks
+Job completed successfully at: Fri Feb  6 11:07:35 PM CET 2026
+Starting bootstrap analysis...
+Loading data from: /home/laios/image-information-imbalance/results/imagegpt-dinov2-ranks
+Number of layers: 24
+Bootstrap replicas: 500
+Bootstrap size: 500
+Number of rows (origins): 1000
+Sample size: 5000
+
+Mean Information Imbalance:
+Forward (dino → igpt): [0.75202243 0.72390279 0.68468348 0.64744972 0.625357   0.5791317
+ 0.55901158 0.54712167 0.53714457 0.52013108 0.49208369 0.44593661
+ 0.40402273 0.38712882 0.34858914 0.31607387 0.29187701 0.26380172
+ 0.24829048 0.2401958  0.24695515 0.25221475 0.27337523 0.28342956]
+Backward (igpt → dino): [0.76977739 0.68228664 0.68676588 0.61813974 0.58922568 0.58497031
+ 0.57381136 0.56413671 0.55552851 0.52882218 0.52125713 0.47180406
+ 0.4234827  0.41212864 0.37061681 0.34228641 0.29835947 0.2756688
+ 0.25374387 0.24088368 0.25010755 0.24325499 0.27023752 0.26889495]
+
+Performing bootstrap analysis...
+
+Results saved to: /home/laios/image-information-imbalance/results/bootstrap
+Forward: dino_igpt_52.npy
+Backward: igpt_dino_52.npy
+Bootstrap analysis completed
+=========================================
+All processing completed at: Fri Feb  6 11:07:36 PM CET 2026
