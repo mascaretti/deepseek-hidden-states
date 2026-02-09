@@ -10,6 +10,16 @@ if _repo_root not in os.sys.path:
 
 from utils import makefolder, reduce_list_half_preserve_extremes
 
+def _min_token_length(model, languageA,languageB):
+    condition0 = (model == 'llama')
+    conditio1 = (languageA == 'english' and languageB == 'spanish')
+    condition2 = (languageA == 'german' and languageB == 'english')
+    if condition0 and (conditio1 or condition2):
+        return 40
+    elif model == 'deepseek':
+        return 40
+    else:
+        return 35
 
 def apply_plot_style(rcpsize=12):
     """Apply consistent plotting style and return (colors, markers, linestyles)."""

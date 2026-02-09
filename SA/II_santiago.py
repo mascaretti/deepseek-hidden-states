@@ -1,3 +1,9 @@
+import sys,os
+sys.path.append('../')
+dbg = int(sys.argv[1])
+if dbg:
+    os.environ["JAX_PLATFORMS"] = "cpu"
+    
 import jax
 jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
@@ -6,11 +12,7 @@ from datetime import datetime
 now = datetime.now()
 print(now.strftime("%Y-%m-%d %H:%M:%S"))
 
-import sys,os
-sys.path.append('../')
-dbg = int(sys.argv[1])
-if dbg:
-    os.environ["JAX_PLATFORMS"] = "cpu"
+
 from collections import defaultdict
 import numpy as np
 
@@ -95,7 +97,7 @@ def collect_data(input_path,
 
         for _, sentence in enumerate(data):
             hidden_states = sentence['meta_info']['hidden_states'][0]
-            assert hidden_states.shape[1] >= n_loaded_tokens
+            # assert hidden_states.shape[1] >= n_loaded_tokens
             hidden_states = hidden_states[:, -n_loaded_tokens-mask:-mask]
 
             for layer_idx, layer_tensor in enumerate(hidden_states.split(1, dim=0)):
@@ -185,6 +187,8 @@ def main(input_path_A,
                     #                                                        k=k)
                     
                     for avg_tokens in avg_flags:
+                        if n_tokens == 1 and avg_tokens == 1:
+                            continue
                         print(f'{avg_tokens=}')
                         alignment = np.zeros(shape=(len(rows),
                                                     len(cols))
@@ -268,24 +272,23 @@ if __name__ == "__main__":
     if args.dbg == 0:
         batch_shuffle = 0
         n_files = 500
-        if args.min_token_length == 40:
-            n_tokens_list = np.array([n_loaded_tokens,30,20,10,5,1,15,25,35])
+        if args.min_token_length <= 40:
+            # n_tokens_list = np.array([n_loaded_tokens,30,20,10,5,1,15,25,35])
             n_tokens_list = np.array([1,20])
+            assert np.max(n_tokens_list) <= n_loaded_tokens
         elif args.min_token_length == 100:
             n_tokens_list = np.array([1,5,10,20,30,40,50,60,70,80,90,n_loaded_tokens])
         k_list = [10]
-        Nbits_list = [0,1]
+        Nbits_list = [0]
         avg_flags = [0,1]
-        diagonal_constraint = 1
 
     elif args.dbg == 1:
         batch_shuffle = 0
-        n_files = 2
+        n_files = 1
         n_tokens_list = np.array([1])
         k_list = [10]
-        Nbits_list = [0,1]
-        avg_flags = [0,1]
-        diagonal_constraint = 1
+        Nbits_list = [0]
+        avg_flags = [0]
     
     if args.dbg == 2: 
         batch_shuffle = 0
@@ -294,17 +297,22 @@ if __name__ == "__main__":
         k_list = [10] 
         Nbits_list = [1,0]
         avg_flags = [0]
+
+    input_path_A = input_paths[args.modelA][args.languageA][args.languageB][args.aux_A]['40']
+    input_path_B = input_paths[args.modelB][args.languageA][args.languageB][args.aux_B]['40']
+    
+    if args.modelA == args.modelB:
         diagonal_constraint = 1
+    else:        
+        diagonal_constraint = 0
+
+    print("Input path A = ", input_path_A, flush=True)
+    print("Input path B = ", input_path_B, flush=True)
 
     print(f'{k_list=}')
     print(f'{Nbits_list=}')
     print(f'{avg_flags=}')
     print(f'{diagonal_constraint=}')
-
-    input_path_A = input_paths[args.modelA][args.languageA][args.languageB][args.aux_A]['40']
-    input_path_B = input_paths[args.modelB][args.languageA][args.languageB][args.aux_B]['40']
-    print("Input path A = ", input_path_A, flush=True)
-    print("Input path B = ", input_path_B, flush=True)
     
     output_folder0 = makefolder(base=f'./results/santiago/',
                                create_folder=True,

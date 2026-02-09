@@ -3,22 +3,28 @@
 # All arguments are hard-coded here.
 
 dbg=0
-min_token_length=40
+min_token_length=35
 modelA="deepseek"
-modelB="deepseek"
+modelB="llama"
 aux_A="source"
-aux_B="target"
-languageA="english"
-languageB="spanish"
+aux_B="source"
+languageA="german"
+languageB="english"
 # -----------------------------------------------
 
-deps=$(squeue -u "$USER" -h -o "%i" | paste -sd: -)
+# deps=$(squeue -u "$USER" -h -o "%i" | paste -sd: -)
 
 args=( "$dbg" "$min_token_length" "$modelA" "$modelB" "$aux_A" "$aux_B" "$languageA" "$languageB" )
 echo "${args[@]}"
 
-if [ -n "$deps" ]; then
-  sbatch --dependency=afterany:$deps sII.sh "${args[@]}"
+if [ "$dbg" -eq 1 ]; then
+  gpu_arg="--gres=gpu:0"
 else
-  sbatch sII.sh "${args[@]}"
+  gpu_arg="--gres=gpu:1"
+fi
+
+if [ -n "$deps" ]; then
+  sbatch $gpu_arg --dependency=afterany:$deps sII.sh "${args[@]}"
+else
+  sbatch $gpu_arg sII.sh "${args[@]}"
 fi
