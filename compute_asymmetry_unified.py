@@ -245,7 +245,16 @@ def main(args):
         all_activations_B = collect_image_model_data(
             args.input_path_B, n_files=n_files, last_tokens=50
         )
-        layer_A_id = 24  # DeepSeek layer
+        layer_A_id = 24
+    if args.comparison == "igpt_dino":
+        all_activations_A = collect_image_model_data(
+            args.input_path_A, n_files=n_files, last_tokens=50
+        )
+        all_activations_B = collect_image_model_data(
+            args.input_path_B, n_files=n_files, last_tokens=50
+        )
+        layer_A_id = 24
+        
     else:
         raise ValueError(f"Unknown comparison type: {args.comparison}")
     
