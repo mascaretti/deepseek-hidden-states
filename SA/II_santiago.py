@@ -142,6 +142,7 @@ def main(input_path_A,
     
 
     total_sample_size = all_activations_B["layer_0"].shape[0]
+    assert total_sample_size == all_activations_A["layer_0"].shape[0]
     n_subsamples = total_sample_size // 2
 
     #dbg:
@@ -154,7 +155,6 @@ def main(input_path_A,
     key_distances = jax.random.key(42)
     key_distances, subkey_distances = jax.random.split(key_distances)
 
-    A_batch_key = jax.random.key(101)
     B_batch_key = jax.random.key(102)
 
     rows = [f"layer_{i}" for i in range(1, n_layers_A)]

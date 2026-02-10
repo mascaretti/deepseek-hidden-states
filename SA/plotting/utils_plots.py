@@ -21,7 +21,7 @@ def _min_token_length(model, languageA,languageB):
     else:
         return 35
 
-def apply_plot_style(rcpsize=12):
+def apply_plot_style(rcpsize=14):
     """Apply consistent plotting style and return (colors, markers, linestyles)."""
     plt.rcParams['xtick.labelsize'] = rcpsize
     plt.rcParams['ytick.labelsize'] = rcpsize
