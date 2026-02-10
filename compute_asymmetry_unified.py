@@ -292,7 +292,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Compute Information Imbalance - Unified")
     parser.add_argument("--comparison", type=str, required=True, 
                        choices=["deepseek_clip_text", "clip_text_image", "dino_clip_image", 
-                               "deepseek_dino", "deepseek_clip_image", "dino_igpt"],
+                               "deepseek_dino", "deepseek_clip_image", "dino_igpt", "igpt_dino"],
                        help="Type of comparison to perform")
     parser.add_argument("--model_a", type=str, required=True, help="Model A name for output")
     parser.add_argument("--model_b", type=str, required=True, help="Model B name for output")

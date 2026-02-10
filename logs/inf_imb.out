@@ -1,20 +1,20 @@
 Running image-gpt vs dinov2 comparison
 =========================================
-Job started at: Fri Feb  6 05:01:23 PM CET 2026
+Job started at: Mon Feb  9 04:22:20 PM CET 2026
 Running on node: dgx01
-Job ID: 153357
+Job ID: 153436
 Array Task ID: 
-Comparison: dino_igpt
-Model A: dino (/home/laios/image-information-imbalance/facebook-dinov2-large)
-Model B: igpt (/home/laios/image-information-imbalance/openai-imagegpt-large)
-Output: /home/laios/image-information-imbalance/results/imagegpt-dinov2-ranks
+Comparison: igpt_dino
+Model A: igpt (/home/laios/image-information-imbalance/openai-imagegpt-large)
+Model B: dino (/home/laios/image-information-imbalance/facebook-dinov2-large)
+Output: /home/laios/image-information-imbalance/results/dinov2-imagegpt-ranks
 =========================================
-Comparison type: dino_igpt
-Model A: dino
-Model B: igpt
-Output: /home/laios/image-information-imbalance/results/imagegpt-dinov2-ranks
-Image model data shape: torch.Size([5000, 50, 1024])
+Comparison type: igpt_dino
+Model A: igpt
+Model B: dino
+Output: /home/laios/image-information-imbalance/results/dinov2-imagegpt-ranks
 Image model data shape: torch.Size([5000, 50, 1536])
+Image model data shape: torch.Size([5000, 50, 1024])
 Sample size A: 5000
 Sample size B: 5000
 Initial key: Array((), dtype=key<fry>) overlaying:
@@ -25,10 +25,10 @@ dtype of activations_A is: torch.float32
 *** COMPARISON TYPE: image_image ***
 Image comparison...
 dtype of act_A: float32
-Results saved to: /home/laios/image-information-imbalance/results/imagegpt-dinov2-ranks
-Job completed successfully at: Fri Feb  6 11:07:35 PM CET 2026
+Results saved to: /home/laios/image-information-imbalance/results/dinov2-imagegpt-ranks
+Job completed successfully at: Mon Feb  9 10:48:22 PM CET 2026
 Starting bootstrap analysis...
-Loading data from: /home/laios/image-information-imbalance/results/imagegpt-dinov2-ranks
+Loading data from: /home/laios/image-information-imbalance/results/dinov2-imagegpt-ranks
 Number of layers: 24
 Bootstrap replicas: 500
 Bootstrap size: 500
@@ -36,20 +36,20 @@ Number of rows (origins): 1000
 Sample size: 5000
 
 Mean Information Imbalance:
-Forward (dino → igpt): [0.75202243 0.72390279 0.68468348 0.64744972 0.625357   0.5791317
- 0.55901158 0.54712167 0.53714457 0.52013108 0.49208369 0.44593661
- 0.40402273 0.38712882 0.34858914 0.31607387 0.29187701 0.26380172
- 0.24829048 0.2401958  0.24695515 0.25221475 0.27337523 0.28342956]
-Backward (igpt → dino): [0.76977739 0.68228664 0.68676588 0.61813974 0.58922568 0.58497031
- 0.57381136 0.56413671 0.55552851 0.52882218 0.52125713 0.47180406
- 0.4234827  0.41212864 0.37061681 0.34228641 0.29835947 0.2756688
- 0.25374387 0.24088368 0.25010755 0.24325499 0.27023752 0.26889495]
+Forward (igpt → dino): [0.61157829 0.58411706 0.56338969 0.56078839 0.56350275 0.56996198
+ 0.56561231 0.56867384 0.53049525 0.50045373 0.44402651 0.39227164
+ 0.31374687 0.27324662 0.24181291 0.20463832 0.20976988 0.21874087
+ 0.21838269 0.22509405 0.22690545 0.25255578 0.27017409 0.26889495]
+Backward (dino → igpt): [0.68920524 0.66913337 0.60292834 0.57928615 0.57417359 0.59176391
+ 0.5901957  0.57441507 0.53903375 0.49724812 0.4023203  0.3561731
+ 0.29345998 0.25333504 0.21420141 0.19079779 0.20685193 0.21159236
+ 0.22259287 0.22356787 0.22815158 0.25592886 0.27274337 0.28342956]
 
 Performing bootstrap analysis...
 
 Results saved to: /home/laios/image-information-imbalance/results/bootstrap
-Forward: dino_igpt_52.npy
-Backward: igpt_dino_52.npy
+Forward: igpt_dino_52.npy
+Backward: dino_igpt_52.npy
 Bootstrap analysis completed
 =========================================
-All processing completed at: Fri Feb  6 11:07:36 PM CET 2026
+All processing completed at: Mon Feb  9 10:48:24 PM CET 2026
