@@ -10,7 +10,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=END,FAIL
 #SBATCH --mail-user=amascare@sissa.it
-#SBATCH --array=1-7%1
+#SBATCH --array=1-10%1
 
 # Compute information imbalance from mean-pooled activations.
 # One comparison per array task, %1 = sequential (shared GPU).
@@ -72,6 +72,24 @@ case ${SLURM_ARRAY_TASK_ID} in
         INPUT_A="${DEEPSEEK_MEAN}"
         INPUT_B="${LLAMA_MEAN}"
         LAYER_A=52
+        ;;
+    8)
+        NAME="llama_deepseek"
+        INPUT_A="${LLAMA_MEAN}"
+        INPUT_B="${DEEPSEEK_MEAN}"
+        LAYER_A=32  # TODO: pick after exploratory runs
+        ;;
+    9)
+        NAME="llama_clip_text"
+        INPUT_A="${LLAMA_MEAN}"
+        INPUT_B="${CLIP_TEXT_MEAN}"
+        LAYER_A=32  # TODO: pick after exploratory runs
+        ;;
+    10)
+        NAME="llama_clip_image"
+        INPUT_A="${LLAMA_MEAN}"
+        INPUT_B="${CLIP_IMAGE_MEAN}"
+        LAYER_A=32  # TODO: pick after exploratory runs
         ;;
     *)
         echo "Invalid array task ID: ${SLURM_ARRAY_TASK_ID}"
