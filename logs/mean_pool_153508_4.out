@@ -1,0 +1,11 @@
+=========================================
+Mean-pooling: imagegpt
+Job 153512, task 4
+Node: dgx01
+Started at: Tue Feb 10 09:32:28 PM CET 2026
+Input:  /home/laios/image-information-imbalance/openai-imagegpt-large
+Output: /home/laios/image-information-imbalance/mean/openai-imagegpt-large
+Prefix: chunk_
+=========================================
+Detected format: image
+Found 1000 chunk files in /home/laios/image-information-imbalance/openai-imagegpt-large
