@@ -163,8 +163,11 @@ def main():
         total_samples += layer_means["layer_0"].shape[0]
         save_file(layer_means, str(out_path))
 
-    n_layers = len(layer_means)
-    embed = layer_means["layer_0"].shape[1]
+    # Read back shape info from first output file
+    first_out = output_dir / f"mean_{files[0].stem}.safetensors"
+    sample = load_file(str(first_out))
+    n_layers = len(sample)
+    embed = sample["layer_0"].shape[1]
     print(f"\nDone. {total_samples} samples, {n_layers} layers, embed={embed}.")
     print(f"Output in: {output_dir}")
 

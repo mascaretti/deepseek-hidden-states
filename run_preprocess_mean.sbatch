@@ -2,7 +2,7 @@
 #SBATCH --job-name=mean_pool
 #SBATCH --output=logs/mean_pool_%A_%a.out
 #SBATCH --error=logs/mean_pool_%A_%a.err
-#SBATCH --time=12:00:00
+#SBATCH --time=24:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=10
