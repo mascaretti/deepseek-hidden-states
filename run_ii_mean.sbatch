@@ -10,7 +10,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=END,FAIL
 #SBATCH --mail-user=amascare@sissa.it
-#SBATCH --array=1-10%1
+#SBATCH --array=1-24%1
 
 # Compute information imbalance from mean-pooled activations.
 # One comparison per array task, %1 = sequential (shared GPU).
@@ -90,6 +90,91 @@ case ${SLURM_ARRAY_TASK_ID} in
         INPUT_A="${LLAMA_MEAN}"
         INPUT_B="${CLIP_IMAGE_MEAN}"
         LAYER_A=32  # TODO: pick after exploratory runs
+        ;;
+    # --- Reverse directions (11-18) ---
+    11)
+        NAME="igpt_dino"
+        INPUT_A="${IGPT_MEAN}"
+        INPUT_B="${DINOV2_MEAN}"
+        LAYER_A=48
+        ;;
+    12)
+        NAME="clip_text_deepseek"
+        INPUT_A="${CLIP_TEXT_MEAN}"
+        INPUT_B="${DEEPSEEK_MEAN}"
+        LAYER_A=12
+        ;;
+    13)
+        NAME="dino_deepseek"
+        INPUT_A="${DINOV2_MEAN}"
+        INPUT_B="${DEEPSEEK_MEAN}"
+        LAYER_A=24
+        ;;
+    14)
+        NAME="clip_image_deepseek"
+        INPUT_A="${CLIP_IMAGE_MEAN}"
+        INPUT_B="${DEEPSEEK_MEAN}"
+        LAYER_A=24
+        ;;
+    15)
+        NAME="clip_image_clip_text"
+        INPUT_A="${CLIP_IMAGE_MEAN}"
+        INPUT_B="${CLIP_TEXT_MEAN}"
+        LAYER_A=24
+        ;;
+    16)
+        NAME="clip_image_dino"
+        INPUT_A="${CLIP_IMAGE_MEAN}"
+        INPUT_B="${DINOV2_MEAN}"
+        LAYER_A=24
+        ;;
+    17)
+        NAME="clip_text_llama"
+        INPUT_A="${CLIP_TEXT_MEAN}"
+        INPUT_B="${LLAMA_MEAN}"
+        LAYER_A=12
+        ;;
+    18)
+        NAME="clip_image_llama"
+        INPUT_A="${CLIP_IMAGE_MEAN}"
+        INPUT_B="${LLAMA_MEAN}"
+        LAYER_A=24
+        ;;
+    19)
+        NAME="deepseek_igpt"
+        INPUT_A="${DEEPSEEK_MEAN}"
+        INPUT_B="${IGPT_MEAN}"
+        LAYER_A=52
+        ;;
+    20)
+        NAME="igpt_deepseek"
+        INPUT_A="${IGPT_MEAN}"
+        INPUT_B="${DEEPSEEK_MEAN}"
+        LAYER_A=48
+        ;;
+    21)
+        NAME="llama_igpt"
+        INPUT_A="${LLAMA_MEAN}"
+        INPUT_B="${IGPT_MEAN}"
+        LAYER_A=32  # TODO: pick after exploratory runs
+        ;;
+    22)
+        NAME="igpt_llama"
+        INPUT_A="${IGPT_MEAN}"
+        INPUT_B="${LLAMA_MEAN}"
+        LAYER_A=48
+        ;;
+    23)
+        NAME="llama_dino"
+        INPUT_A="${LLAMA_MEAN}"
+        INPUT_B="${DINOV2_MEAN}"
+        LAYER_A=32  # TODO: pick after exploratory runs
+        ;;
+    24)
+        NAME="dino_llama"
+        INPUT_A="${DINOV2_MEAN}"
+        INPUT_B="${LLAMA_MEAN}"
+        LAYER_A=24
         ;;
     *)
         echo "Invalid array task ID: ${SLURM_ARRAY_TASK_ID}"
