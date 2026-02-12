@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 """
 Mean-pool activations over the token dimension for any model.
+Includes:
+1. Winsorization (clipping to 5th/95th quantiles) to remove spikes.
+2. Option to select only the last K tokens (DeepSeek).
 
 Supports two on-disk formats (auto-detected from the first chunk):
 
@@ -54,6 +57,22 @@ def list_chunks(path, prefix="chunk_"):
     )
 
 
+def winsorized_mean(tensor, q_low=0.05, q_high=0.95, dim=1):
+    """
+    Computes the mean after clamping values to the q_low/q_high quantiles.
+    """
+    # Convert to float32 for accurate quantile calculation
+    tensor = tensor.float()
+    
+    # Calculate quantiles along the token dimension
+    low_val = torch.quantile(tensor, q_low, dim=dim, keepdim=True)
+    high_val = torch.quantile(tensor, q_high, dim=dim, keepdim=True)
+    
+    # Clamp (Winsorize) and mean
+    clamped = torch.clamp(tensor, min=low_val, max=high_val)
+    return clamped.mean(dim=dim)
+
+
 # ---------------------------------------------------------------------------
 # Format detection
 # ---------------------------------------------------------------------------
@@ -73,38 +92,45 @@ def detect_format(chunk_path):
 # Processing functions
 # ---------------------------------------------------------------------------
 
-def process_deepseek_chunk(data):
+def process_deepseek_chunk(data, last_k=None):
     """Mean-pool a DeepSeek chunk (list of sentence dicts).
-
-    Returns dict[str, np.ndarray]: {layer_N: (n_sentences, embed)} float32
+    
+    Args:
+        data: List of sentence dictionaries.
+        last_k: If integer > 0, only use the last k tokens.
     """
     layer_means = defaultdict(list)
     for sentence in data:
         hs = sentence["meta_info"]["hidden_states"][0]  # (layers, tokens, embed)
-        mean = hs.float().mean(dim=1)  # (layers, embed)
+        
+        # Slice last k tokens if requested
+        if last_k is not None and last_k > 0:
+            hs = hs[:, -last_k:, :]
+
+        # Winsorized mean
+        mean = winsorized_mean(hs, dim=1)  # (layers, embed)
+        
         for layer_idx in range(mean.shape[0]):
             layer_means[f"layer_{layer_idx}"].append(mean[layer_idx].numpy())
     return {k: np.stack(v) for k, v in layer_means.items()}
 
 
 def process_image_chunk(data):
-    """Mean-pool an image-model chunk (dict of layer tensors).
-
-    Returns dict[str, np.ndarray]: {layer_N: (batch, embed)} float32
-    """
+    """Mean-pool an image-model chunk (dict of layer tensors)."""
     result = {}
     for layer_key, tensor in data.items():
         # tensor: (batch, tokens, embed)
-        result[layer_key] = tensor.float().mean(dim=1).numpy()
+        # We generally do not apply last_k to images (spatial tokens)
+        result[layer_key] = winsorized_mean(tensor, dim=1).numpy()
     return result
 
 
-def load_and_process(chunk_path, fmt):
+def load_and_process(chunk_path, fmt, last_k=None):
     """Load a chunk and return mean-pooled activations."""
     if fmt == "deepseek":
         with open(chunk_path, "rb") as f:
             data = pickle.load(f)
-        return process_deepseek_chunk(data)
+        return process_deepseek_chunk(data, last_k=last_k)
     else:
         with open(chunk_path, "rb") as f:
             data = CPU_Unpickler(f).load()
@@ -117,7 +143,7 @@ def load_and_process(chunk_path, fmt):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Mean-pool activations over the token dimension"
+        description="Mean-pool activations with Winsorization and optional token slicing."
     )
     parser.add_argument("--input_path", type=str, required=True,
                         help="Directory containing chunk_N.pkl files")
@@ -125,6 +151,8 @@ def main():
                         help="Directory for mean_chunk_N.safetensors output")
     parser.add_argument("--prefix", type=str, default="chunk_",
                         help="File prefix to match (default: chunk_)")
+    parser.add_argument("--last_k", type=int, default=0,
+                        help="DeepSeek only: Use last k tokens. 0 = use all tokens (default).")
     parser.add_argument("--verify", action="store_true",
                         help="After processing, verify first chunk against original")
     args = parser.parse_args()
@@ -141,24 +169,31 @@ def main():
     # Detect format from first file
     fmt, first_data = detect_format(files[0])
     print(f"Detected format: {fmt}")
+    if fmt == "deepseek" and args.last_k > 0:
+        print(f"Pooling strategy: Winsorized Mean over LAST {args.last_k} tokens.")
+    else:
+        print(f"Pooling strategy: Winsorized Mean over ALL tokens.")
+
     print(f"Found {len(files)} chunk files in {input_dir}")
 
     total_samples = 0
-    for i, file in enumerate(tqdm(files, desc="Mean-pooling chunks")):
+    for i, file in enumerate(tqdm(files, desc="Processing chunks")):
         out_name = f"mean_{file.stem}.safetensors"
         out_path = output_dir / out_name
 
         if out_path.exists():
+            # If skipping, we just peek at shape to track total_samples
             existing = load_file(str(out_path))
             total_samples += existing["layer_0"].shape[0]
             continue
 
         # Reuse already-loaded first chunk
         if i == 0:
-            layer_means = (process_deepseek_chunk(first_data) if fmt == "deepseek"
+            layer_means = (process_deepseek_chunk(first_data, last_k=args.last_k) 
+                           if fmt == "deepseek"
                            else process_image_chunk(first_data))
         else:
-            layer_means = load_and_process(file, fmt)
+            layer_means = load_and_process(file, fmt, last_k=args.last_k)
 
         total_samples += layer_means["layer_0"].shape[0]
         save_file(layer_means, str(out_path))
@@ -175,8 +210,13 @@ def main():
     if args.verify:
         print("\n=== Verification ===")
         out_path = output_dir / f"mean_{files[0].stem}.safetensors"
-        expected = (process_deepseek_chunk(first_data) if fmt == "deepseek"
-                    else process_image_chunk(first_data))
+        
+        # Re-compute expected
+        if fmt == "deepseek":
+            expected = process_deepseek_chunk(first_data, last_k=args.last_k)
+        else:
+            expected = process_image_chunk(first_data)
+            
         saved = load_file(str(out_path))
 
         all_ok = True
