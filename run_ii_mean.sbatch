@@ -10,7 +10,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=END,FAIL
 #SBATCH --mail-user=amascare@sissa.it
-#SBATCH --array=1-24%1
+#SBATCH --array=1-24
 
 # Compute information imbalance from mean-pooled activations.
 # One comparison per array task, %1 = sequential (shared GPU).
@@ -77,26 +77,26 @@ case ${SLURM_ARRAY_TASK_ID} in
         NAME="llama_deepseek"
         INPUT_A="${LLAMA_MEAN}"
         INPUT_B="${DEEPSEEK_MEAN}"
-        LAYER_A=32  # TODO: pick after exploratory runs
+        LAYER_A=20  # TODO: pick after exploratory runs
         ;;
     9)
         NAME="llama_clip_text"
         INPUT_A="${LLAMA_MEAN}"
         INPUT_B="${CLIP_TEXT_MEAN}"
-        LAYER_A=32  # TODO: pick after exploratory runs
+        LAYER_A=20  # TODO: pick after exploratory runs
         ;;
     10)
         NAME="llama_clip_image"
         INPUT_A="${LLAMA_MEAN}"
         INPUT_B="${CLIP_IMAGE_MEAN}"
-        LAYER_A=32  # TODO: pick after exploratory runs
+        LAYER_A=20  # TODO: pick after exploratory runs
         ;;
     # --- Reverse directions (11-18) ---
     11)
         NAME="igpt_dino"
         INPUT_A="${IGPT_MEAN}"
         INPUT_B="${DINOV2_MEAN}"
-        LAYER_A=48
+        LAYER_A=20
         ;;
     12)
         NAME="clip_text_deepseek"
@@ -150,25 +150,25 @@ case ${SLURM_ARRAY_TASK_ID} in
         NAME="igpt_deepseek"
         INPUT_A="${IGPT_MEAN}"
         INPUT_B="${DEEPSEEK_MEAN}"
-        LAYER_A=48
+        LAYER_A=20
         ;;
     21)
         NAME="llama_igpt"
         INPUT_A="${LLAMA_MEAN}"
         INPUT_B="${IGPT_MEAN}"
-        LAYER_A=32  # TODO: pick after exploratory runs
+        LAYER_A=20  # TODO: pick after exploratory runs
         ;;
     22)
         NAME="igpt_llama"
         INPUT_A="${IGPT_MEAN}"
         INPUT_B="${LLAMA_MEAN}"
-        LAYER_A=48
+        LAYER_A=20
         ;;
     23)
         NAME="llama_dino"
         INPUT_A="${LLAMA_MEAN}"
         INPUT_B="${DINOV2_MEAN}"
-        LAYER_A=32  # TODO: pick after exploratory runs
+        LAYER_A=20  # TODO: pick after exploratory runs
         ;;
     24)
         NAME="dino_llama"

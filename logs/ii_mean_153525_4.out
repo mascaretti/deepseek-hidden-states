@@ -1,0 +1,21 @@
+=========================================
+II (mean-pooled): deepseek_clip_image
+Job 153529, task 4
+Node: dgx01
+Started at: Wed Feb 11 01:12:11 PM CET 2026
+A: /home/laios/activations/flickr/deepseek_mean (layer 52)
+B: /home/laios/image-information-imbalance/mean/openai-clip-vit-large-patch14-image
+=========================================
+Loading activations...
+  deepseek_mean: 5000 samples, 62 layers, embed=7168
+  openai-clip-vit-large-patch14-image: 5000 samples, 25 layers, embed=1024
+
+Model A layer: layer_52 (7168d)
+Model B layers: 25 (1024d)
+Sample size: 5000
+
+Results saved to: /home/laios/image-information-imbalance/results-mean/deepseek_clip_image
+
+Finished at: Wed Feb 11 01:12:55 PM CET 2026
+Exit code: 0
+Output: 24 layer files
