@@ -2,7 +2,7 @@
 #SBATCH --job-name=mean_pool
 #SBATCH --output=logs/mean_pool_%A_%a.out
 #SBATCH --error=logs/mean_pool_%A_%a.err
-#SBATCH --time=24:00:00
+#SBATCH --time=48:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=10
@@ -20,13 +20,14 @@ cd /home/mascaretti/deepseek-hidden-states
 mkdir -p logs
 
 IMAGE_BASE="/home/laios/image-information-imbalance"
-MEAN_BASE="${IMAGE_BASE}/mean"
+MEAN_BASE="${IMAGE_BASE}/windsorised_mean"
+DEEPSEEK_TOKENS=20
 
 case ${SLURM_ARRAY_TASK_ID} in
     1)
         NAME="deepseek"
         INPUT="/home/laios/activations/flickr/deepseek_all"
-        OUTPUT="/home/laios/activations/flickr/deepseek_mean"
+        OUTPUT="/home/laios/activations/flickr/deepseek_windsorised_mean"
         PREFIX="chunk_"
         ;;
     2)
@@ -73,12 +74,14 @@ echo "Started at: $(date)"
 echo "Input:  ${INPUT}"
 echo "Output: ${OUTPUT}"
 echo "Prefix: ${PREFIX}"
+echo "DeepSeek Tokens: ${DEEPSEEK_TOKENS}"
 echo "========================================="
 
 python preprocess_mean.py \
     --input_path "${INPUT}" \
     --output_path "${OUTPUT}" \
     --prefix "${PREFIX}" \
+    --last_k "${DEEPSEEK_TOKENS}"\
     --verify
 
 STATUS=$?
