@@ -91,19 +91,23 @@ def detect_format(chunk_path):
 # ---------------------------------------------------------------------------
 # Processing functions
 # ---------------------------------------------------------------------------
-
-def process_deepseek_chunk(data, last_k=None):
-    """Mean-pool a DeepSeek chunk (list of sentence dicts).
+def process_deepseek_chunk(data, last_k=None, start_token_idx=0):
+    """Mean-pool a DeepSeek/Llama chunk.
     
     Args:
         data: List of sentence dictionaries.
         last_k: If integer > 0, only use the last k tokens.
+        start_token_idx: Index to start pooling from (use 1 to skip BOS).
     """
     layer_means = defaultdict(list)
     for sentence in data:
         hs = sentence["meta_info"]["hidden_states"][0]  # (layers, tokens, embed)
         
-        # Slice last k tokens if requested
+        # 1. CRITICAL: Remove the BOS token (Attention Sink)
+        if start_token_idx > 0:
+            hs = hs[:, start_token_idx:, :]
+
+        # 2. Slice last k tokens if requested (applied after removing BOS)
         if last_k is not None and last_k > 0:
             hs = hs[:, -last_k:, :]
 
@@ -114,7 +118,6 @@ def process_deepseek_chunk(data, last_k=None):
             layer_means[f"layer_{layer_idx}"].append(mean[layer_idx].numpy())
     return {k: np.stack(v) for k, v in layer_means.items()}
 
-
 def process_image_chunk(data):
     """Mean-pool an image-model chunk (dict of layer tensors)."""
     result = {}
@@ -124,13 +127,13 @@ def process_image_chunk(data):
         result[layer_key] = winsorized_mean(tensor, dim=1).numpy()
     return result
 
-
-def load_and_process(chunk_path, fmt, last_k=None):
+def load_and_process(chunk_path, fmt, last_k=None, start_token_idx=0):
     """Load a chunk and return mean-pooled activations."""
     if fmt == "deepseek":
         with open(chunk_path, "rb") as f:
             data = pickle.load(f)
-        return process_deepseek_chunk(data, last_k=last_k)
+        # Pass the argument here!
+        return process_deepseek_chunk(data, last_k=last_k, start_token_idx=start_token_idx)
     else:
         with open(chunk_path, "rb") as f:
             data = CPU_Unpickler(f).load()
@@ -153,6 +156,8 @@ def main():
                         help="File prefix to match (default: chunk_)")
     parser.add_argument("--last_k", type=int, default=0,
                         help="DeepSeek only: Use last k tokens. 0 = use all tokens (default).")
+    parser.add_argument("--skip-first", dest="skip_first", action="store_true", 
+                        help="Skip the first token (BOS) before pooling.")
     parser.add_argument("--verify", action="store_true",
                         help="After processing, verify first chunk against original")
     args = parser.parse_args()
@@ -176,6 +181,10 @@ def main():
 
     print(f"Found {len(files)} chunk files in {input_dir}")
 
+    print("Set first token:")
+    start_idx = 1 if args.skip_first else 0
+    print(f"We start from {start_idx}.")
+    
     total_samples = 0
     for i, file in enumerate(tqdm(files, desc="Processing chunks")):
         out_name = f"mean_{file.stem}.safetensors"
@@ -189,11 +198,11 @@ def main():
 
         # Reuse already-loaded first chunk
         if i == 0:
-            layer_means = (process_deepseek_chunk(first_data, last_k=args.last_k) 
+            layer_means = (process_deepseek_chunk(first_data, last_k=args.last_k, start_token_idx=start_idx) 
                            if fmt == "deepseek"
                            else process_image_chunk(first_data))
         else:
-            layer_means = load_and_process(file, fmt, last_k=args.last_k)
+            layer_means = load_and_process(file, fmt, last_k=args.last_k, start_token_idx=start_idx)
 
         total_samples += layer_means["layer_0"].shape[0]
         save_file(layer_means, str(out_path))
@@ -206,14 +215,14 @@ def main():
     print(f"\nDone. {total_samples} samples, {n_layers} layers, embed={embed}.")
     print(f"Output in: {output_dir}")
 
-    # --- Verification ---
+    # --- Verification ---    
     if args.verify:
         print("\n=== Verification ===")
         out_path = output_dir / f"mean_{files[0].stem}.safetensors"
         
         # Re-compute expected
         if fmt == "deepseek":
-            expected = process_deepseek_chunk(first_data, last_k=args.last_k)
+            expected = process_deepseek_chunk(first_data, last_k=args.last_k, start_token_idx=start_idx)
         else:
             expected = process_image_chunk(first_data)
             

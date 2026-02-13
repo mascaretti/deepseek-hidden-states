@@ -35,6 +35,7 @@ case ${SLURM_ARRAY_TASK_ID} in
         INPUT="/home/laios/llama_flickr_cpt_all"
         OUTPUT="${MEAN_BASE}/llama"
         PREFIX="chunk_"
+	FLAGS="--skip_first"
         ;;
     3)
         NAME="dinov2"
@@ -82,7 +83,8 @@ python preprocess_mean.py \
     --output_path "${OUTPUT}" \
     --prefix "${PREFIX}" \
     --last_k "${DEEPSEEK_TOKENS}"\
-    --verify
+    --verify \
+    ${FLAGS}
 
 STATUS=$?
 
