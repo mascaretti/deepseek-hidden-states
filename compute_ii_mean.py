@@ -5,7 +5,7 @@ Compute information imbalance between two models using mean-pooled activations.
 Input:  mean_chunk_N.safetensors from preprocess_mean.py
         Each file: {layer_N: (n_samples, embed)} float32
 
-Pipeline: load → concatenate chunks → binarize → Hamming II
+Pipeline: load → concatenate chunks → binarize (Hamming) / raw or normalise (L2) → II
 """
 
 import argparse
@@ -19,7 +19,8 @@ import numpy as np
 from safetensors.numpy import load_file, save_file
 from tqdm import tqdm
 
-from information_imbalance_module import build_information_matrix, hamming_distance
+from information_imbalance_module import L2_distance, build_information_matrix, hamming_distance
+from utils import binarize
 
 
 # ---------------------------------------------------------------------------
@@ -66,13 +67,12 @@ def load_mean_activations(input_path, subset_size=5000, prefix="mean_"):
 
 
 # ---------------------------------------------------------------------------
-# Binarization
+# L2 normalisation
 # ---------------------------------------------------------------------------
 
-def binarize(a):
-    a = jnp.sign(a).astype(jnp.int8)
-    a = a.at[a == 0].set(-1)
-    return a
+def l2_normalize(a):
+    norms = jnp.linalg.norm(a, axis=-1, keepdims=True)
+    return a / jnp.maximum(norms, 1e-8)
 
 
 # ---------------------------------------------------------------------------
@@ -91,9 +91,12 @@ def main():
     parser.add_argument("--layer_A", type=int, required=True,
                         help="Fixed layer index for model A")
     parser.add_argument("--subset_size", type=int, default=5000)
+    parser.add_argument("--l2_normalize", action="store_true",
+                        help="L2-normalise vectors before computing L2 distance (cosine mode)")
     args = parser.parse_args()
 
-    Path(args.output_folder).mkdir(parents=True, exist_ok=True)
+    Path(args.output_folder, "hamming").mkdir(parents=True, exist_ok=True)
+    Path(args.output_folder, "l2").mkdir(parents=True, exist_ok=True)
 
     # Load
     print("Loading activations...")
@@ -117,24 +120,37 @@ def main():
     print(f"Model B layers: {n_layers_B} ({act_B['layer_0'].shape[1]}d)")
     print(f"Sample size: {sample_size}")
 
-    # Setup II computation
+    # Setup II computation (two distance functions)
     key = jax.random.key(42)
-    key, subkey = jax.random.split(key)
-    information_matrix_fn = build_information_matrix(
-        key=subkey, sample_size=sample_size, distance_fn=hamming_distance
+    key, subkey1, subkey2 = jax.random.split(key, 3)
+    hamming_fn = build_information_matrix(
+        key=subkey1, sample_size=sample_size, distance_fn=hamming_distance
+    )
+    l2_fn = build_information_matrix(
+        key=subkey2, sample_size=sample_size, distance_fn=L2_distance
     )
 
-    # Binarize model A (fixed layer)
-    a = binarize(jnp.array(act_A[layer_A_key]))
+    # Prepare model A (fixed layer)
+    raw_a = jnp.array(act_A[layer_A_key])
+    a_hamming = binarize(raw_a)
+    a_l2 = l2_normalize(raw_a) if args.l2_normalize else raw_a
 
     # Sweep over model B layers
     cols = [f"layer_{i}" for i in range(1, n_layers_B)]
     for layer_B_key in tqdm(cols, desc="Computing II"):
-        b = binarize(jnp.array(act_B[layer_B_key]))
-        result = information_matrix_fn(a, b)
-        # Convert JAX arrays to numpy for safetensors
+        raw_b = jnp.array(act_B[layer_B_key])
+
+        # Hamming
+        b_hamming = binarize(raw_b)
+        result = hamming_fn(a_hamming, b_hamming)
         result_np = {k: np.asarray(v) for k, v in result.items()}
-        save_file(result_np, str(Path(args.output_folder, f"{layer_B_key}.safetensors")))
+        save_file(result_np, str(Path(args.output_folder, "hamming", f"{layer_B_key}.safetensors")))
+
+        # L2
+        b_l2 = l2_normalize(raw_b) if args.l2_normalize else raw_b
+        result = l2_fn(a_l2, b_l2)
+        result_np = {k: np.asarray(v) for k, v in result.items()}
+        save_file(result_np, str(Path(args.output_folder, "l2", f"{layer_B_key}.safetensors")))
 
     print(f"\nResults saved to: {args.output_folder}")
 
