@@ -195,7 +195,8 @@ python compute_ii_mean.py \
     --input_path_A "${INPUT_A}" \
     --input_path_B "${INPUT_B}" \
     --output_folder "${OUTPUT_BASE}/${NAME}" \
-    --layer_A ${LAYER_A}
+    --layer_A ${LAYER_A} \
+    --l2_normalize
 
 STATUS=$?
 

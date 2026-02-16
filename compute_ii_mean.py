@@ -131,6 +131,8 @@ def main():
     )
 
     # Prepare model A (fixed layer)
+    if args.l2_normalize:
+        print("L2 Normalisation")
     raw_a = jnp.array(act_A[layer_A_key])
     a_hamming = binarize(raw_a)
     a_l2 = l2_normalize(raw_a) if args.l2_normalize else raw_a
