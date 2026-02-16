@@ -1,0 +1,27 @@
+=========================================
+Mean-pooling: deepseek
+Job 153689, task 1
+Node: dgx02
+Started at: Fri Feb 13 03:20:17 PM CET 2026
+Input:  /home/laios/activations/flickr/deepseek_all
+Output: /home/laios/activations/flickr/deepseek_windsorised_mean
+Prefix: chunk_
+DeepSeek Tokens: 20
+=========================================
+Detected format: deepseek
+Pooling strategy: Winsorized Mean over LAST 20 tokens.
+Found 471 chunk files in /home/laios/activations/flickr/deepseek_all
+Set first token:
+We start from 0.
+
+Done. 14109 samples, 62 layers, embed=7168.
+Output in: /home/laios/activations/flickr/deepseek_windsorised_mean
+
+=== Verification ===
+  Shape: (30 samples, 62 layers, 7168 embed)
+  dtype: float32
+  All layers match. PASSED.
+
+Finished at: Fri Feb 13 03:34:52 PM CET 2026
+Exit code: 0
+Output: 471 files, 24G

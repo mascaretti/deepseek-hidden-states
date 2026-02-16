@@ -1,0 +1,4 @@
+usage: preprocess_mean.py [-h] --input_path INPUT_PATH --output_path
+                          OUTPUT_PATH [--prefix PREFIX] [--last_k LAST_K]
+                          [--skip-first] [--verify]
+preprocess_mean.py: error: unrecognized arguments: --skip_first

@@ -1,0 +1,15 @@
+=========================================
+Mean-pooling: llama
+Job 154541, task 2
+Node: dgx01
+Started at: Mon Feb 16 10:33:51 AM CET 2026
+Input:  /home/laios/llama_flickr_cpt_all
+Output: /home/laios/image-information-imbalance/windsorised_mean/llama
+Prefix: chunk_
+DeepSeek Tokens: 20
+=========================================
+Detected format: deepseek
+Pooling strategy: Winsorized Mean over LAST 20 tokens.
+Found 471 chunk files in /home/laios/llama_flickr_cpt_all
+Set first token:
+We start from 1.

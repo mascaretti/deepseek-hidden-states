@@ -20,8 +20,8 @@ cd /home/mascaretti/deepseek-hidden-states
 mkdir -p logs
 
 IMAGE_BASE="/home/laios/image-information-imbalance"
-MEAN_BASE="${IMAGE_BASE}/mean"
-DEEPSEEK_MEAN="/home/laios/activations/flickr/deepseek_mean"
+MEAN_BASE="${IMAGE_BASE}/windsorised_mean"
+DEEPSEEK_MEAN="/home/laios/activations/flickr/deepseek_windsorised_mean"
 LLAMA_MEAN="${MEAN_BASE}/llama"
 DINOV2_MEAN="${MEAN_BASE}/facebook-dinov2-large"
 IGPT_MEAN="${MEAN_BASE}/openai-imagegpt-large"

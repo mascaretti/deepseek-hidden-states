@@ -35,7 +35,7 @@ case ${SLURM_ARRAY_TASK_ID} in
         INPUT="/home/laios/llama_flickr_cpt_all"
         OUTPUT="${MEAN_BASE}/llama"
         PREFIX="chunk_"
-	FLAGS="--skip_first"
+	FLAGS="--skip-first --last_k=20"
         ;;
     3)
         NAME="dinov2"

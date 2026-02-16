@@ -1,0 +1,27 @@
+=========================================
+Mean-pooling: clip_image
+Job 153703, task 5
+Node: dgx01
+Started at: Sat Feb 14 04:18:56 PM CET 2026
+Input:  /home/laios/image-information-imbalance/openai-clip-vit-large-patch14
+Output: /home/laios/image-information-imbalance/windsorised_mean/openai-clip-vit-large-patch14-image
+Prefix: image-chunk_
+DeepSeek Tokens: 20
+=========================================
+Detected format: image
+Pooling strategy: Winsorized Mean over ALL tokens.
+Found 500 chunk files in /home/laios/image-information-imbalance/openai-clip-vit-large-patch14
+Set first token:
+We start from 0.
+
+Done. 5000 samples, 25 layers, embed=1024.
+Output in: /home/laios/image-information-imbalance/windsorised_mean/openai-clip-vit-large-patch14-image
+
+=== Verification ===
+  Shape: (10 samples, 25 layers, 1024 embed)
+  dtype: float32
+  All layers match. PASSED.
+
+Finished at: Sat Feb 14 06:16:45 PM CET 2026
+Exit code: 0
+Output: 500 files, 491M

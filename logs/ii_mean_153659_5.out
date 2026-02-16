@@ -1,0 +1,21 @@
+=========================================
+II (mean-pooled): clip_text_clip_image
+Job 153665, task 5
+Node: dgx01
+Started at: Fri Feb 13 01:43:55 PM CET 2026
+A: /home/laios/image-information-imbalance/windsorised_mean/openai-clip-vit-large-patch14-text (layer 12)
+B: /home/laios/image-information-imbalance/windsorised_mean/openai-clip-vit-large-patch14-image
+=========================================
+Loading activations...
+  openai-clip-vit-large-patch14-text: 5000 samples, 13 layers, embed=768
+  openai-clip-vit-large-patch14-image: 5000 samples, 25 layers, embed=1024
+
+Model A layer: layer_12 (768d)
+Model B layers: 25 (1024d)
+Sample size: 5000
+
+Results saved to: /home/laios/image-information-imbalance/results-mean/clip_text_clip_image
+
+Finished at: Fri Feb 13 01:44:39 PM CET 2026
+Exit code: 0
+Output: 24 layer files

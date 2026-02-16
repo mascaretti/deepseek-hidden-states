@@ -1,0 +1,25 @@
+=========================================
+Mean-pooling: llama
+Job 153636, task 2
+Node: dgx02
+Started at: Thu Feb 12 07:50:35 PM CET 2026
+Input:  /home/laios/llama_flickr_cpt_all
+Output: /home/laios/image-information-imbalance/windsorised_mean/llama
+Prefix: chunk_
+DeepSeek Tokens: 20
+=========================================
+Detected format: deepseek
+Pooling strategy: Winsorized Mean over LAST 20 tokens.
+Found 471 chunk files in /home/laios/llama_flickr_cpt_all
+
+Done. 14109 samples, 33 layers, embed=4096.
+Output in: /home/laios/image-information-imbalance/windsorised_mean/llama
+
+=== Verification ===
+  Shape: (30 samples, 33 layers, 4096 embed)
+  dtype: float32
+  All layers match. PASSED.
+
+Finished at: Thu Feb 12 08:29:56 PM CET 2026
+Exit code: 0
+Output: 471 files, 7.2G

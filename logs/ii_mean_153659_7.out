@@ -1,0 +1,21 @@
+=========================================
+II (mean-pooled): deepseek_llama
+Job 153667, task 7
+Node: dgx01
+Started at: Fri Feb 13 01:44:55 PM CET 2026
+A: /home/laios/activations/flickr/deepseek_windsorised_mean (layer 52)
+B: /home/laios/image-information-imbalance/windsorised_mean/llama
+=========================================
+Loading activations...
+  deepseek_windsorised_mean: 5000 samples, 62 layers, embed=7168
+  llama: 5000 samples, 33 layers, embed=4096
+
+Model A layer: layer_52 (7168d)
+Model B layers: 33 (4096d)
+Sample size: 5000
+
+Results saved to: /home/laios/image-information-imbalance/results-mean/deepseek_llama
+
+Finished at: Fri Feb 13 01:47:03 PM CET 2026
+Exit code: 0
+Output: 32 layer files

@@ -1,0 +1,13 @@
+=========================================
+Mean-pooling: llama
+Job 153691, task 2
+Node: dgx02
+Started at: Fri Feb 13 03:35:17 PM CET 2026
+Input:  /home/laios/llama_flickr_cpt_all
+Output: /home/laios/image-information-imbalance/windsorised_mean/llama
+Prefix: chunk_
+DeepSeek Tokens: 20
+=========================================
+
+Finished at: Fri Feb 13 03:35:20 PM CET 2026
+Exit code: 2
