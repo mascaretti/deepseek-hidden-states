@@ -5,6 +5,7 @@
 *.pdf
 *.png
 *.npz
+*.safetensors
 
 ### Emacs ###
 # -*- mode: gitignore; -*-
