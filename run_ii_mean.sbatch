@@ -10,7 +10,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=END,FAIL
 #SBATCH --mail-user=amascare@sissa.it
-#SBATCH --array=1-24
+#SBATCH --array=1-26
 
 # Compute information imbalance from mean-pooled activations.
 # One comparison per array task, %1 = sequential (shared GPU).
@@ -176,6 +176,19 @@ case ${SLURM_ARRAY_TASK_ID} in
         INPUT_B="${LLAMA_MEAN}"
         LAYER_A=24
         ;;
+    # --- Self-comparisons (sanity checks) ---
+    25)
+        NAME="dino_dino"
+        INPUT_A="${DINOV2_MEAN}"
+        INPUT_B="${DINOV2_MEAN}"
+        LAYER_A=12
+        ;;
+    26)
+        NAME="igpt_igpt"
+        INPUT_A="${IGPT_MEAN}"
+        INPUT_B="${IGPT_MEAN}"
+        LAYER_A=20
+        ;;
     *)
         echo "Invalid array task ID: ${SLURM_ARRAY_TASK_ID}"
         exit 1
@@ -196,6 +209,7 @@ python compute_ii_mean.py \
     --input_path_B "${INPUT_B}" \
     --output_folder "${OUTPUT_BASE}/${NAME}" \
     --layer_A ${LAYER_A} \
+    --mean_center \
     --l2_normalize
 
 STATUS=$?
@@ -205,7 +219,7 @@ echo "Finished at: $(date)"
 echo "Exit code: ${STATUS}"
 if [ ${STATUS} -eq 0 ]; then
     echo "Output (hamming): $(ls ${OUTPUT_BASE}/${NAME}/hamming | wc -l) layer files"
-    echo "Output (l2):      $(ls ${OUTPUT_BASE}/${NAME}/l2 | wc -l) layer files"
+    echo "Output (l2):      $(ls ${OUTPUT_BASE}/${NAME}/l2_centered_normalized | wc -l) layer files"
 fi
 
 exit ${STATUS}

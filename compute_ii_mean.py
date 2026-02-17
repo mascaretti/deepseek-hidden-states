@@ -19,7 +19,12 @@ import numpy as np
 from safetensors.numpy import load_file, save_file
 from tqdm import tqdm
 
-from information_imbalance_module import L2_distance, build_information_matrix, hamming_distance
+from information_imbalance_module import (
+    L2_distance,
+    build_information_imbalance,
+    build_information_matrix,
+    hamming_distance,
+)
 from utils import binarize
 
 
@@ -93,10 +98,18 @@ def main():
     parser.add_argument("--subset_size", type=int, default=5000)
     parser.add_argument("--l2_normalize", action="store_true",
                         help="L2-normalise vectors before computing L2 distance (cosine mode)")
+    parser.add_argument("--mean_center", action="store_true",
+                        help="Subtract per-layer mean before computing L2 distance")
     args = parser.parse_args()
 
     Path(args.output_folder, "hamming").mkdir(parents=True, exist_ok=True)
-    Path(args.output_folder, "l2").mkdir(parents=True, exist_ok=True)
+    l2_parts = ["l2"]
+    if args.mean_center:
+        l2_parts.append("centered")
+    if args.l2_normalize:
+        l2_parts.append("normalized")
+    l2_label = "_".join(l2_parts)
+    Path(args.output_folder, l2_label).mkdir(parents=True, exist_ok=True)
 
     # Load
     print("Loading activations...")
@@ -126,16 +139,22 @@ def main():
     hamming_fn = build_information_matrix(
         key=subkey1, sample_size=sample_size, distance_fn=hamming_distance
     )
-    l2_fn = build_information_matrix(
+    l2_fn = build_information_imbalance(
         key=subkey2, sample_size=sample_size, distance_fn=L2_distance
     )
 
     # Prepare model A (fixed layer)
     if args.l2_normalize:
         print("L2 Normalisation")
+    if args.mean_center:
+        print("Mean centering")
     raw_a = jnp.array(act_A[layer_A_key])
     a_hamming = binarize(raw_a)
-    a_l2 = l2_normalize(raw_a) if args.l2_normalize else raw_a
+    a_l2 = raw_a
+    if args.mean_center:
+        a_l2 = a_l2 - a_l2.mean(axis=0)
+    if args.l2_normalize:
+        a_l2 = l2_normalize(a_l2)
 
     # Sweep over model B layers
     cols = [f"layer_{i}" for i in range(1, n_layers_B)]
@@ -148,11 +167,18 @@ def main():
         result_np = {k: np.asarray(v) for k, v in result.items()}
         save_file(result_np, str(Path(args.output_folder, "hamming", f"{layer_B_key}.safetensors")))
 
-        # L2
-        b_l2 = l2_normalize(raw_b) if args.l2_normalize else raw_b
-        result = l2_fn(a_l2, b_l2)
-        result_np = {k: np.asarray(v) for k, v in result.items()}
-        save_file(result_np, str(Path(args.output_folder, "l2", f"{layer_B_key}.safetensors")))
+        # L2 (scalar II, no cardinality normalisation — no ties with continuous distances)
+        b_l2 = raw_b
+        if args.mean_center:
+            b_l2 = b_l2 - b_l2.mean(axis=0)
+        if args.l2_normalize:
+            b_l2 = l2_normalize(b_l2)
+        inf_imb, reciprocal_inf_imb = l2_fn(a_l2, b_l2)
+        l2_result = {
+            "inf_imb": np.asarray(inf_imb),
+            "reciprocal_inf_imb": np.asarray(reciprocal_inf_imb),
+        }
+        save_file(l2_result, str(Path(args.output_folder, l2_label, f"{layer_B_key}.safetensors")))
 
     print(f"\nResults saved to: {args.output_folder}")
 
