@@ -5,16 +5,17 @@
 dbg=0
 min_token_length=35
 modelA="deepseek"
-modelB="llama"
+modelB="deepseek"
 aux_A="source"
-aux_B="source"
-languageA="german"
-languageB="english"
+aux_B="target"
+languageA="english"
+languageB="italian"
+diagonal_constraint=1
 # -----------------------------------------------
 
-# deps=$(squeue -u "$USER" -h -o "%i" | paste -sd: -)
+deps=$(squeue -u "$USER" -h -o "%i" | paste -sd: -)
 
-args=( "$dbg" "$min_token_length" "$modelA" "$modelB" "$aux_A" "$aux_B" "$languageA" "$languageB" )
+args=( "$dbg" "$min_token_length" "$modelA" "$modelB" "$aux_A" "$aux_B" "$languageA" "$languageB" "$diagonal_constraint" )
 echo "${args[@]}"
 
 if [ "$dbg" -eq 1 ]; then

@@ -11,6 +11,7 @@ input_paths["bert"] = {}
 input_paths["deepseek"]["english"] = {"spanish": {"source":{},"target":{}}, 
                                       "italian": {"source":{},"target":{}},
                                       "hungarian": {"source":{},"target":{}},
+                                      "dutch": {"source":{},"target":{}},
                                       }
 input_paths["deepseek"]["spanish"] = {"italian": {"source":{},"target":{}},}
 input_paths["deepseek"]["german"] = {"hungarian": {"source":{},"target":{}},
@@ -20,6 +21,7 @@ input_paths["llama"]["english"] = {"spanish": {"source":{},"target":{}},
                                    "italian": {"source":{},"target":{}},
                                    "french": {"source":{},"target":{}},
                                    "dutch": {"source":{},"target":{}},
+                                   "hungarian": {"source":{},"target":{}},
                                    }
 input_paths["llama"]["spanish"] = {"italian": {"source":{},"target":{}},}
 input_paths["llama"]["german"] = {"english": {"source":{},"target":{}}}
@@ -35,6 +37,8 @@ input_paths["deepseek"]["german"]["english"]['source']['40'] = "/home/laios/acti
 input_paths["deepseek"]["german"]["english"]['target']['40'] = "/home/laios/activations/opus_german_english/deepseek_german_english_target"
 input_paths["deepseek"]["english"]["hungarian"]['source']['40'] = "/home/laios/activations/opus_english_hungarian/deepseek_en_hu_source"
 input_paths["deepseek"]["english"]["hungarian"]['target']['40'] = "/home/laios/activations/opus_english_hungarian/deepseek_en_hu_target"
+input_paths["deepseek"]["english"]["dutch"]['source']['40'] = "/home/laios/activations/opus_english_dutch/deepseek_en_nl_source"
+input_paths["deepseek"]["english"]["dutch"]['target']['40'] = "/home/laios/activations/opus_english_dutch/deepseek_en_nl_target"
 
 input_paths["deepseek"]["english"]["spanish"]["source"]['100'] = "/home/laios/activations/opus_english_spanish/deepseek/100_200_tokens/deepseek_source"
 input_paths["deepseek"]["english"]["spanish"]["target"]['100'] = "/home/laios/activations/opus_english_spanish/deepseek/100_200_tokens/deepseek_target"
@@ -51,7 +55,8 @@ input_paths["llama"]["english"]["french"]["source"]['40'] = "/home/laios/activat
 input_paths["llama"]["english"]["french"]["target"]['40'] = "/home/laios/activations/opus_english_french/llama_en_fr_target"
 input_paths["llama"]["english"]["dutch"]["source"]['40'] = "/home/laios/activations/opus_english_dutch/llama_en_nl_source"
 input_paths["llama"]["english"]["dutch"]["target"]['40'] = "/home/laios/activations/opus_english_dutch/llama_en_nl_target"
-
+input_paths["llama"]["english"]["hungarian"]["source"]['40'] = "/home/laios/activations/opus_english_hungarian/llama_en_hu_source"
+input_paths["llama"]["english"]["hungarian"]["target"]['40'] = "/home/laios/activations/opus_english_hungarian/llama_en_hu_target"
 
 
 input_paths["deepseek"]["spanish"]["italian"]["source"]['40'] = "/home/laios/activations/opus_spanish_italian/deepseek_source"

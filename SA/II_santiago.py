@@ -27,7 +27,7 @@ from utils import (bf16_torch_to_jax,
                    makefolder,
                    reduce_list_half_preserve_extremes,
                    )
-from utils_loading import collect_data
+from utils_loading import collect_data, collect_data_aligned
 from datapaths import *
 import argparse
 from time import time
@@ -96,7 +96,10 @@ def main(input_path_A,
                                      n_files=n_files,
                                      mask=mask,
                                      )
-    all_activations_B = collect_data(input_path_B,
+    if input_path_A == input_path_B:
+        all_activations_B = all_activations_A.copy()
+    else:
+        all_activations_B = collect_data(input_path_B,
                                      n_loaded_tokens=n_loaded_tokens, 
                                      n_files=n_files,
                                      mask=mask,
@@ -224,6 +227,7 @@ if __name__ == "__main__":
     parser.add_argument("aux_B",type=str)
     parser.add_argument("languageA",type=str)
     parser.add_argument("languageB",type=str)
+    parser.add_argument("diagonal_constraint",type=int,choices=[0,1])
     args = parser.parse_args()
 
     batch_size = 10
@@ -235,8 +239,9 @@ if __name__ == "__main__":
         batch_shuffle = 0
         n_files = 500
         if args.min_token_length <= 40:
-            # n_tokens_list = np.array([n_loaded_tokens,30,20,10,5,1,15,25,35])
-            n_tokens_list = np.array([1,20])
+            n_tokens_list = np.array([30,20,10,5,1])
+            n_tokens_list = np.array([20,1])
+            # n_tokens_list = np.array([1,20])
             assert np.max(n_tokens_list) <= n_loaded_tokens
         elif args.min_token_length == 100:
             n_tokens_list = np.array([1,5,10,20,30,40,50,60,70,80,90,n_loaded_tokens])
@@ -262,11 +267,7 @@ if __name__ == "__main__":
 
     input_path_A = input_paths[args.modelA][args.languageA][args.languageB][args.aux_A]['40']
     input_path_B = input_paths[args.modelB][args.languageA][args.languageB][args.aux_B]['40']
-    
-    if args.modelA == args.modelB:
-        diagonal_constraint = 1
-    else:        
-        diagonal_constraint = 0
+
 
     print("Input path A = ", input_path_A, flush=True)
     print("Input path B = ", input_path_B, flush=True)
@@ -274,7 +275,7 @@ if __name__ == "__main__":
     print(f'{k_list=}')
     print(f'{Nbits_list=}')
     print(f'{avg_flags=}')
-    print(f'{diagonal_constraint=}')
+    print(f'{args.diagonal_constraint=}')
     
     output_folder0 = makefolder(base=f'./results/santiago/',
                                create_folder=True,
@@ -300,7 +301,7 @@ if __name__ == "__main__":
         output_folder0=output_folder0,
         avg_flags=avg_flags,
         Nbits_list=Nbits_list,
-        diagonal_constraint=diagonal_constraint,
+        diagonal_constraint=args.diagonal_constraint,
         seed_list=seed_list,
         batch_shuffle=batch_shuffle,
     )
