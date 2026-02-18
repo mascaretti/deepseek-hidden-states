@@ -15,6 +15,10 @@ def L2_distance(x, y):
 def L1_distance(x, y):
     return jnp.sum(jnp.abs(x - y))
 
+def Lhalf_distance(x, y):
+    """L_{1/2} pseudo-metric: (sum sqrt|x_i - y_i|)^2. Less sensitive to concentration than L2."""
+    return jnp.sum(jnp.sqrt(jnp.abs(x - y))) ** 2
+
 def pairwise_distances(distance, xs, ys):
   return jax.vmap(lambda x: jax.vmap(lambda y: distance(x, y))(xs))(ys).T
 

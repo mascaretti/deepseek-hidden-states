@@ -8,11 +8,11 @@ Strategies:
   2. Centered+Norm L2 — mean_center -> l2_normalize -> L2_distance
   3. Centered L1      — mean_center -> L1_distance
   4. PCA-100 + L2     — PCA(100 PCs, per-model) -> L2_distance
-  5. Log-map + L2     — l2_normalize -> Log_mu (tangent space) -> L2_distance
+  5. Centered L½      — mean_center -> Lhalf_distance  (p=0.5, sub-quadratic)
 
 All 5 use build_information_imbalance with the same key -> identical subsampling.
 
-Includes spectral entropy diagnostic: H_spec before/after Log-map.
+Includes spectral entropy diagnostic: H_spec per strategy transform.
 
 Usage:
   python test_distance_strategies.py \
@@ -51,6 +51,7 @@ from compute_ii_mean import load_mean_activations
 from information_imbalance_module import (
     L1_distance,
     L2_distance,
+    Lhalf_distance,
     build_information_imbalance,
     hamming_distance,
 )
@@ -77,24 +78,6 @@ def pca_project(a, n_components=100):
     _, _, Vt = np.linalg.svd(a_np, full_matrices=False)
     projected = a_np @ Vt[:n_components].T
     return jnp.array(projected, dtype=jnp.float32)
-
-
-def log_map(a):
-    """
-    Map L2-normalised points on S^(d-1) to tangent space at Frechet mean mu.
-
-        v = (theta / sin(theta)) * (x - cos(theta) * mu)
-
-    where theta = arccos(mu^T x).  Handles theta->0 (scale->1).
-    """
-    x_hat = l2_normalize(a)
-    mu = jnp.mean(x_hat, axis=0)
-    mu = mu / jnp.maximum(jnp.linalg.norm(mu), 1e-8)
-
-    cos_theta = jnp.clip(x_hat @ mu, -1.0 + 1e-7, 1.0 - 1e-7)
-    theta = jnp.arccos(cos_theta)
-    scale = jnp.where(theta < 1e-7, 1.0, theta / jnp.sin(theta))
-    return scale[:, None] * (x_hat - cos_theta[:, None] * mu[None, :])
 
 
 # ---------------------------------------------------------------------------
@@ -163,7 +146,7 @@ def main():
         ("Cent+Norm L2", L2_distance,      lambda a: l2_normalize(mean_center(a))),
         ("Cent L1",      L1_distance,      mean_center),
         (pca_name,       L2_distance,      lambda a: pca_project(a, args.pca_components)),
-        ("Log-map+L2",   L2_distance,      log_map),
+        ("Cent L½",      Lhalf_distance,   mean_center),
     ]
 
     # ------------------------------------------------------------------
@@ -260,7 +243,7 @@ def main():
         "Cent+Norm L2": "#C44536",
         "Cent L1":      "#609966",
         pca_name:       "#FC5185",
-        "Log-map+L2":   "#E8A87C",
+        "Cent L½":      "#E8A87C",
     }
     ms, mew = 2, 0.3
 
