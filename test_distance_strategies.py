@@ -182,22 +182,36 @@ def main():
     a_transforms = {name: transform(raw_a) for name, _, transform in STRATEGIES}
 
     # ------------------------------------------------------------------
-    # Spectral entropy diagnostic — one column per strategy transform
+    # Spectral entropy diagnostic — all layers, all strategy transforms
     # ------------------------------------------------------------------
     strategy_names = [name for name, _, _ in STRATEGIES]
+
+    def compute_entropy_curves(act_B):
+        """Return {strategy_name: np.array of H_spec per layer}."""
+        n_layers = len(act_B)
+        curves = {name: np.zeros(n_layers) for name, _, _ in STRATEGIES}
+        for i in range(n_layers):
+            b = jnp.array(act_B[f"layer_{i}"])
+            for name, _, transform in STRATEGIES:
+                curves[name][i] = spectral_entropy(transform(b))
+        return curves
+
+    print("\nComputing spectral entropy curves...")
+    entropy_dino = compute_entropy_curves(act_dino)
+    entropy_igpt = compute_entropy_curves(act_igpt)
+
+    # Print summary table (every ~6th layer)
     header = f"{'Model/layer':<22}" + "".join(f"  {n:>14}" for n in strategy_names)
     print("\n=== Spectral entropy H_spec per strategy transform ===")
     print(header)
     print("-" * (22 + 16 * len(STRATEGIES)))
-    for label, act_B in [("DeepSeek", {layer_A_key: np.array(raw_a)}),
-                          ("DinoV2",   act_dino),
-                          ("ImageGPT", act_igpt)]:
-        keys = sorted(act_B.keys(), key=lambda k: int(k.split("_")[1]))
-        step = max(1, len(keys) // 6)
-        for k in keys[::step]:
-            b = jnp.array(act_B[k])
-            entropies = [spectral_entropy(transform(b)) for _, _, transform in STRATEGIES]
-            row = f"  {label+'/'+k:<20}" + "".join(f"  {h:>14.3f}" for h in entropies)
+    for label, curves, act_B in [("DinoV2", entropy_dino, act_dino),
+                                   ("ImageGPT", entropy_igpt, act_igpt)]:
+        n = len(act_B)
+        step = max(1, n // 6)
+        for i in range(0, n, step):
+            row = f"  {label+'/layer_'+str(i):<20}" + \
+                  "".join(f"  {curves[name][i]:>14.3f}" for name, _, _ in STRATEGIES)
             print(row)
 
     # ------------------------------------------------------------------
@@ -229,10 +243,12 @@ def main():
     }
     for name, _, _ in STRATEGIES:
         slug = name.replace(" ", "_").replace("+", "_").lower()
-        save_dict[f"dino_{slug}_fwd"] = results_dino[name]["fwd"]
-        save_dict[f"dino_{slug}_bwd"] = results_dino[name]["bwd"]
-        save_dict[f"igpt_{slug}_fwd"] = results_igpt[name]["fwd"]
-        save_dict[f"igpt_{slug}_bwd"] = results_igpt[name]["bwd"]
+        save_dict[f"dino_{slug}_fwd"]     = results_dino[name]["fwd"]
+        save_dict[f"dino_{slug}_bwd"]     = results_dino[name]["bwd"]
+        save_dict[f"igpt_{slug}_fwd"]     = results_igpt[name]["fwd"]
+        save_dict[f"igpt_{slug}_bwd"]     = results_igpt[name]["bwd"]
+        save_dict[f"dino_{slug}_entropy"] = entropy_dino[name]
+        save_dict[f"igpt_{slug}_entropy"] = entropy_igpt[name]
     np.savez(f"{args.output_prefix}.npz", **save_dict)
     print(f"Saved {args.output_prefix}.npz")
 
@@ -271,6 +287,30 @@ def main():
     for ext in ("pdf", "png"):
         fig.savefig(f"{args.output_prefix}.{ext}", dpi=300)
     print(f"Saved {args.output_prefix}.pdf/.png")
+
+    # Entropy figure
+    fig2, axes2 = plt.subplots(1, 2, figsize=(9, 3), sharey=True)
+    for ax, (curves, act_B, title) in zip(
+        axes2,
+        [(entropy_dino, act_dino, "H_spec — DinoV2 layers"),
+         (entropy_igpt, act_igpt, "H_spec — ImageGPT layers")],
+    ):
+        n = len(act_B)
+        rel = np.arange(n) / n
+        for name, _, _ in STRATEGIES:
+            ax.plot(rel, curves[name], "-o",
+                    color=COLORS.get(name, "gray"),
+                    markersize=ms, markeredgecolor="black", markeredgewidth=mew,
+                    label=name)
+        ax.set_xlabel("Model B relative depth", fontsize=10)
+        ax.set_ylabel(r"$H_{\rm spec}$", fontsize=10)
+        ax.set_title(title, fontsize=10)
+        ax.legend(fontsize=6, loc="lower right")
+
+    fig2.tight_layout()
+    for ext in ("pdf", "png"):
+        fig2.savefig(f"{args.output_prefix}_entropy.{ext}", dpi=300)
+    print(f"Saved {args.output_prefix}_entropy.pdf/.png")
 
 
 if __name__ == "__main__":
