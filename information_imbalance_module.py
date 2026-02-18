@@ -12,6 +12,9 @@ def hamming_distance(x, y):
 def L2_distance(x, y):
     return jnp.linalg.norm(x=x - y, ord=None)
 
+def L1_distance(x, y):
+    return jnp.sum(jnp.abs(x - y))
+
 def pairwise_distances(distance, xs, ys):
   return jax.vmap(lambda x: jax.vmap(lambda y: distance(x, y))(xs))(ys).T
 

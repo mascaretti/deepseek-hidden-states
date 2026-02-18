@@ -62,7 +62,7 @@ def winsorized_mean(tensor, q_low=0.05, q_high=0.95, dim=1):
     Computes the mean after clamping values to the q_low/q_high quantiles.
     """
     # Convert to float32 for accurate quantile calculation
-    tensor = tensor.float()
+    tensor = tensor.to(torch.float64)
     
     # Calculate quantiles along the token dimension
     low_val = torch.quantile(tensor, q_low, dim=dim, keepdim=True)
