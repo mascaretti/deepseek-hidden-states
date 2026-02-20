@@ -1,0 +1,37 @@
+=========================================
+Distance strategy test
+Job 164366
+Node: dgx01
+Started at: Wed Feb 18 11:22:45 AM CET 2026
+A: /home/laios/activations/flickr/deepseek_windsorised_mean (layer 52)
+B_dino: /home/laios/image-information-imbalance/windsorised_mean/facebook-dinov2-large
+B_igpt: /home/laios/image-information-imbalance/windsorised_mean/openai-imagegpt-large
+=========================================
+Loading activations...
+  deepseek_windsorised_mean: 5000 samples, 62 layers, embed=7168
+  facebook-dinov2-large: 5000 samples, 25 layers, embed=1024
+  openai-imagegpt-large: 5000 samples, 49 layers, embed=1536
+
+Model A: layer 52 (7168d)
+DinoV2:  25 layers (1024d)
+ImageGPT: 49 layers (1536d)
+Sample size: 5000
+PCA components: 100
+
+=== DeepSeek → DinoV2 ===
+  Strategy: Hamming
+  Strategy: Centered+Norm L2
+  Strategy: Centered L1
+  Strategy: PCA + L2
+
+=== DeepSeek → ImageGPT ===
+  Strategy: Hamming
+  Strategy: Centered+Norm L2
+  Strategy: Centered L1
+  Strategy: PCA + L2
+
+Saved data: results/distance_test.npz
+Saved plot: results/distance_test.png
+
+Finished at: Wed Feb 18 11:25:21 AM CET 2026
+Exit code: 0

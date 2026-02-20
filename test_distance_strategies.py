@@ -41,11 +41,6 @@ import numpy as np
 from jax import random
 from tqdm import tqdm
 
-try:
-    import scienceplots
-    plt.style.use(["nature", "science"])
-except Exception:
-    pass
 
 from compute_ii_mean import load_mean_activations
 from information_imbalance_module import (

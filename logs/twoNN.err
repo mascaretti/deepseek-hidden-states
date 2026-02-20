@@ -1,0 +1,3 @@
+usage: test_twoNN.py [-h] --input_path INPUT_PATH [--subset_size SUBSET_SIZE]
+                     [--seed SEED] [--output_prefix OUTPUT_PREFIX]
+test_twoNN.py: error: the following arguments are required: --input_path

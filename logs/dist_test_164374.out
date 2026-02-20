@@ -1,0 +1,47 @@
+=========================================
+Distance strategy test
+Job 164374
+Node: dgx01
+Started at: Wed Feb 18 05:12:29 PM CET 2026
+A: /home/laios/activations/flickr/deepseek_windsorised_mean (layer 52)
+B_dino: /home/laios/image-information-imbalance/windsorised_mean/facebook-dinov2-large
+B_igpt: /home/laios/image-information-imbalance/windsorised_mean/openai-imagegpt-large
+=========================================
+Loading activations...
+  deepseek_windsorised_mean: 5000 samples, 62 layers, embed=7168
+  facebook-dinov2-large: 5000 samples, 25 layers, embed=1024
+  openai-imagegpt-large: 5000 samples, 49 layers, embed=1536
+
+Model A : layer_52, embed=7168, N=5000
+DinoV2  : 25 layers, embed=1024
+ImageGPT: 49 layers, embed=1536
+
+Transforming model A layer...
+
+Computing spectral entropy curves...
+
+=== Spectral entropy H_spec per strategy transform ===
+Model/layer                    Hamming    Cent+Norm L2         Cent L1      PCA-100+L2         Cent L½
+------------------------------------------------------------------------------------------------------
+  DinoV2/layer_0                 4.704           2.098           1.515           1.445           1.515
+  DinoV2/layer_4                 4.127           2.918           2.672           2.518           2.672
+  DinoV2/layer_8                 4.163           3.201           2.891           2.663           2.891
+  DinoV2/layer_12                5.537           4.108           3.944           3.356           3.944
+  DinoV2/layer_16                6.188           4.983           4.946           3.905           4.946
+  DinoV2/layer_20                6.297           5.243           5.225           3.941           5.225
+  DinoV2/layer_24                6.274           5.378           5.377           4.123           5.377
+  ImageGPT/layer_0               5.365           3.313           3.382           3.242           3.382
+  ImageGPT/layer_8               6.353           2.069           1.847           1.817           1.847
+  ImageGPT/layer_16              6.520           2.435           2.165           2.029           2.165
+  ImageGPT/layer_24              6.464           2.975           2.692           2.361           2.692
+  ImageGPT/layer_32              6.474           2.999           2.826           2.547           2.826
+  ImageGPT/layer_40              6.499           3.306           3.202           2.851           3.202
+  ImageGPT/layer_48              5.897           2.324           2.149           2.115           2.149
+
+Computing II...
+Saved results/distance_test.npz
+Saved results/distance_test.pdf/.png
+Saved results/distance_test_entropy.pdf/.png
+
+Finished at: Wed Feb 18 05:20:30 PM CET 2026
+Exit code: 0
