@@ -118,12 +118,13 @@ def process_deepseek_chunk(data, last_k=None, start_token_idx=0):
             layer_means[f"layer_{layer_idx}"].append(mean[layer_idx].numpy())
     return {k: np.stack(v) for k, v in layer_means.items()}
 
-def process_image_chunk(data):
+def process_image_chunk(data, last_k=None):
     """Mean-pool an image-model chunk (dict of layer tensors)."""
     result = {}
     for layer_key, tensor in data.items():
         # tensor: (batch, tokens, embed)
-        # We generally do not apply last_k to images (spatial tokens)
+        if last_k is not None and last_k > 0:
+            tensor = tensor[:, -last_k:, :]
         result[layer_key] = winsorized_mean(tensor, dim=1).numpy()
     return result
 
@@ -137,7 +138,7 @@ def load_and_process(chunk_path, fmt, last_k=None, start_token_idx=0):
     else:
         with open(chunk_path, "rb") as f:
             data = CPU_Unpickler(f).load()
-        return process_image_chunk(data)
+        return process_image_chunk(data, last_k=last_k)
 
 
 # ---------------------------------------------------------------------------
@@ -155,7 +156,7 @@ def main():
     parser.add_argument("--prefix", type=str, default="chunk_",
                         help="File prefix to match (default: chunk_)")
     parser.add_argument("--last_k", type=int, default=0,
-                        help="DeepSeek only: Use last k tokens. 0 = use all tokens (default).")
+                        help="Use last k tokens before pooling. 0 = use all tokens (default).")
     parser.add_argument("--skip-first", dest="skip_first", action="store_true", 
                         help="Skip the first token (BOS) before pooling.")
     parser.add_argument("--verify", action="store_true",
@@ -174,7 +175,7 @@ def main():
     # Detect format from first file
     fmt, first_data = detect_format(files[0])
     print(f"Detected format: {fmt}")
-    if fmt == "deepseek" and args.last_k > 0:
+    if args.last_k > 0:
         print(f"Pooling strategy: Winsorized Mean over LAST {args.last_k} tokens.")
     else:
         print(f"Pooling strategy: Winsorized Mean over ALL tokens.")
@@ -200,7 +201,7 @@ def main():
         if i == 0:
             layer_means = (process_deepseek_chunk(first_data, last_k=args.last_k, start_token_idx=start_idx) 
                            if fmt == "deepseek"
-                           else process_image_chunk(first_data))
+                           else process_image_chunk(first_data, last_k=args.last_k if args.last_k > 0 else None))
         else:
             layer_means = load_and_process(file, fmt, last_k=args.last_k, start_token_idx=start_idx)
 
@@ -224,7 +225,7 @@ def main():
         if fmt == "deepseek":
             expected = process_deepseek_chunk(first_data, last_k=args.last_k, start_token_idx=start_idx)
         else:
-            expected = process_image_chunk(first_data)
+            expected = process_image_chunk(first_data, last_k=args.last_k if args.last_k > 0 else None)
             
         saved = load_file(str(out_path))
 
