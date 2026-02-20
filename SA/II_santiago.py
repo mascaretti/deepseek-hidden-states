@@ -152,8 +152,6 @@ def main(input_path_A,
                     #                                                        k=k)
                     
                     for avg_tokens in avg_flags:
-                        if n_tokens == 1 and avg_tokens == 1:
-                            continue
                         print(f'{avg_tokens=}')
                         alignment = np.zeros(shape=(len(rows),
                                                     len(cols))
@@ -239,14 +237,13 @@ if __name__ == "__main__":
         batch_shuffle = 0
         n_files = 500
         if args.min_token_length <= 40:
-            n_tokens_list = np.array([30,20,10,5,1])
-            n_tokens_list = np.array([20,1])
-            # n_tokens_list = np.array([1,20])
+            # n_tokens_list = np.array([38,35,30,20,10,5,1])
+            n_tokens_list = np.array([1,20])
             assert np.max(n_tokens_list) <= n_loaded_tokens
         elif args.min_token_length == 100:
             n_tokens_list = np.array([1,5,10,20,30,40,50,60,70,80,90,n_loaded_tokens])
         k_list = [10]
-        Nbits_list = [0]
+        Nbits_list = [0,1]
         avg_flags = [0,1]
 
     elif args.dbg == 1:

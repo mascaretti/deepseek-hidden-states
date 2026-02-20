@@ -8,7 +8,36 @@ _repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if _repo_root not in os.sys.path:
     os.sys.path.append(_repo_root)
 
-from utils import makefolder, reduce_list_half_preserve_extremes
+try:
+    from utils import makefolder, reduce_list_half_preserve_extremes
+except ImportError:
+    # Fallbacks for environments where ../../utils.py cannot import optional deps (e.g., jax).
+    def reduce_list_half_preserve_extremes(lst):
+        n = len(lst)
+        if n <= 2:
+            return lst.copy()
+        half_n = max(n // 2, 2)
+        num_points = half_n - 2
+        reduced = [lst[0]]
+        if num_points > 0:
+            step = (n - 2) / (num_points + 1)
+            indices = [int(round(1 + i * step)) for i in range(num_points)]
+            reduced.extend([lst[i] for i in indices])
+        reduced.append(lst[-1])
+        return reduced
+
+    def makefolder(base='./', create_folder=False, precision=5, **kwargs):
+        folder = base
+        for key, value in kwargs.items():
+            if value is None:
+                continue
+            if isinstance(value, float):
+                folder += key + f'_{value:.{precision}f}/'
+            else:
+                folder += key + f'_{value}/'
+        if create_folder:
+            os.makedirs(folder, exist_ok=True)
+        return folder
 
 def _min_token_length(model, languageA,languageB):
     condition0 = (model == 'llama')
@@ -30,7 +59,13 @@ def apply_plot_style(rcpsize=14):
     plt.rcParams['font.size'] = rcpsize
     plt.rcParams.update({'figure.autolayout': True})
 
-    colors = plt.style.library['seaborn-v0_8-dark-palette']['axes.prop_cycle'].by_key()['color']
+    if 'seaborn-v0_8-dark-palette' in plt.style.library:
+        style_name = 'seaborn-v0_8-dark-palette'
+    elif 'seaborn-dark-palette' in plt.style.library:
+        style_name = 'seaborn-dark-palette'
+    else:
+        style_name = 'default'
+    colors = plt.style.library[style_name]['axes.prop_cycle'].by_key()['color']
     plt.rcParams['axes.prop_cycle'] = cycler(color=colors)
 
     markers = ['o', '*']

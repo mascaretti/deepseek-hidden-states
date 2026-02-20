@@ -8,14 +8,15 @@ input_paths["llama"] = {}
 input_paths["bert"] = {}
 
 ### source languages
-input_paths["deepseek"]["english"] = {"spanish": {"source":{},"target":{}}, 
-                                      "italian": {"source":{},"target":{}},
+input_paths["deepseek"]["english"] = {"spanish":   {"source":{},"target":{}}, 
+                                      "italian":   {"source":{},"target":{}},
                                       "hungarian": {"source":{},"target":{}},
-                                      "dutch": {"source":{},"target":{}},
+                                      "dutch":     {"source":{},"target":{}},
+                                      "french":    {"source":{},"target":{}},
                                       }
 input_paths["deepseek"]["spanish"] = {"italian": {"source":{},"target":{}},}
 input_paths["deepseek"]["german"] = {"hungarian": {"source":{},"target":{}},
-                                     "english": {"source":{},"target":{}},}
+                                     "english":   {"source":{},"target":{}},}
 
 input_paths["llama"]["english"] = {"spanish": {"source":{},"target":{}}, 
                                    "italian": {"source":{},"target":{}},
@@ -39,6 +40,9 @@ input_paths["deepseek"]["english"]["hungarian"]['source']['40'] = "/home/laios/a
 input_paths["deepseek"]["english"]["hungarian"]['target']['40'] = "/home/laios/activations/opus_english_hungarian/deepseek_en_hu_target"
 input_paths["deepseek"]["english"]["dutch"]['source']['40'] = "/home/laios/activations/opus_english_dutch/deepseek_en_nl_source"
 input_paths["deepseek"]["english"]["dutch"]['target']['40'] = "/home/laios/activations/opus_english_dutch/deepseek_en_nl_target"
+input_paths["deepseek"]["english"]["french"]['source']['40'] = "/home/laios/activations/ric/results_en_fr_source"
+input_paths["deepseek"]["english"]["french"]['target']['40'] = "/home/laios/activations/ric/results_en_fr_target"
+
 
 input_paths["deepseek"]["english"]["spanish"]["source"]['100'] = "/home/laios/activations/opus_english_spanish/deepseek/100_200_tokens/deepseek_source"
 input_paths["deepseek"]["english"]["spanish"]["target"]['100'] = "/home/laios/activations/opus_english_spanish/deepseek/100_200_tokens/deepseek_target"

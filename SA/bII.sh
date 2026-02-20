@@ -3,13 +3,13 @@
 # All arguments are hard-coded here.
 
 dbg=0
-min_token_length=35
+min_token_length=40
 modelA="deepseek"
 modelB="deepseek"
 aux_A="source"
 aux_B="target"
 languageA="english"
-languageB="italian"
+languageB="french"
 diagonal_constraint=1
 # -----------------------------------------------
 
