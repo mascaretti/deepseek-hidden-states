@@ -60,17 +60,26 @@ def list_chunks(path, prefix="chunk_"):
 def winsorized_mean(tensor, q_low=0.05, q_high=0.95, dim=1):
     """
     Computes the mean after clamping values to the q_low/q_high quantiles.
+
+    Quantiles are computed per sample over all tokens × features jointly
+    (one scalar bound per sample), so inter-feature relative scales are
+    preserved.  Input must be 3-D with the token axis at `dim`.
     """
-    # Convert to float32 for accurate quantile calculation
-    tensor = tensor.to(torch.float64)
-    
-    # Calculate quantiles along the token dimension
-    low_val = torch.quantile(tensor, q_low, dim=dim, keepdim=True)
-    high_val = torch.quantile(tensor, q_high, dim=dim, keepdim=True)
-    
-    # Clamp (Winsorize) and mean
-    clamped = torch.clamp(tensor, min=low_val, max=high_val)
-    return clamped.mean(dim=dim)
+    tensor = tensor.to(torch.float32)
+    B, T, E = tensor.shape
+
+    # Flatten tokens × features → one threshold per sample
+    flat = tensor.reshape(B, T * E)
+    low_val  = torch.quantile(flat, q_low,  dim=1)  # (B,)
+    high_val = torch.quantile(flat, q_high, dim=1)  # (B,)
+
+    # Clip with per-sample scalar bounds, then mean over tokens
+    clamped = torch.clamp(tensor,
+                          min=low_val[:, None, None],
+                          max=high_val[:, None, None])
+    if not torch.isfinite(clamped).all():
+        raise ValueError("Non-finite values after winsorization in chunk.")
+    return clamped.mean(dim=dim).to(torch.float32)
 
 
 # ---------------------------------------------------------------------------

@@ -65,6 +65,11 @@ def load_mean_activations(input_path, subset_size=5000, prefix="mean_"):
     for layer_key, arrays in layer_data.items():
         result[layer_key] = np.concatenate(arrays, axis=0)[:subset_size]
 
+    for layer_key, arr in result.items():
+        assert arr.dtype == np.float32, f"Expected float32, got {arr.dtype} in {layer_key}"
+        if not np.isfinite(arr).all():
+            raise ValueError(f"Non-finite values in {layer_key} from {folder.name}")
+
     sample = result["layer_0"]
     print(f"  {folder.name}: {sample.shape[0]} samples, "
           f"{len(result)} layers, embed={sample.shape[1]}")
