@@ -15,4 +15,8 @@ module load conda
 /cm/shared/apps/miniconda/bin/activate twonn 
 
 # Use all allocated CPUs
-python3 test_twoNN.py
+python3 test_twoNN.py \
+    --input_path /home/laios/image-information-imbalance/windsorised_mean/openai-imagegpt-large \
+    --output_prefix results/twoNN_igpt \
+    --subset_size 5000 \
+    --seed 42
