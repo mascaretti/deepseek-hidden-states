@@ -16,7 +16,7 @@ module load conda
 
 # Use all allocated CPUs
 python3 test_twoNN.py \
-    --input_path /home/laios/image-information-imbalance/windsorised_mean/openai-imagegpt-large \
+    --input_path /home/laios/image-information-imbalance/windsorised_mean/openai-imagegpt-large-full \
     --output_prefix results/twoNN_igpt \
     --subset_size 5000 \
     --seed 42
