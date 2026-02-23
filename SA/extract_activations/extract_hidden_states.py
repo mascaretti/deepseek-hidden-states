@@ -1,11 +1,8 @@
-import os
+import os,sys
 import torch
 import sglang as sgl
 import pickle
-from tqdm import tqdm
-from datasets import load_dataset
 import time
-
 import socket
 
 def get_master_address():
@@ -19,21 +16,39 @@ def batch_generator(lst, batch_size):
     for i in range(0, len(lst), batch_size):
         yield lst[i:i + batch_size]
 
-def main(batch_size=10):
-    file_path = "/home/laios/Data/Text/tokens/corpus_Helsinki-NLP/opus_books/LLMs_deepseek-deepseek/languages_English-Spanish/min_token_length_40/max_token_length_50/target.txt"
-    output_folder_path = "./llama_spanish_from_deepseek_tokenization" #os.path.splitext(file_path)[0]  # removes .txt extension
+def main(model, x, languageA, languageB, batch_size=10, n_prompts=None): # x = "source" or "target"
+    
+    if model == 'deepseek':
+        model_path = "/home/rende/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-V3/snapshots/86518964eaef84e3fdd98e9861759a1384f9c29d"
+        tp_size = 16
+        nnodes = 2
+    elif model == 'llama':
+        model_path = "/home/rende/.cache/huggingface/hub/models--meta-llama--Llama-3.1-8B/snapshots/d04e592bb4f6aa9cfee91e2e20afa771667e1d4b"
+        tp_size = 1
+        nnodes = 1
+
+    if languageA == "en" and languageB == "it":
+        file_path = f"/home/laios/activations/opus_english_italian/deepseek_{x}.txt"
+    elif languageA == "de" and languageB == "en":
+        file_path = f"/home/laios/activations/opus_german_english/deepseek_{x}.txt"
+    else:
+        file_path = f"/home/laios/Data/Text/sentences/corpus_Helsinki-NLP/opus_books/DeepSeek-V3/languages_{languageA}-{languageB}/min_token_length_40/max_token_length_80/{x}.txt"
+
+    output_folder_path = f"./{model}_{languageA}_{languageB}_{x}" #os.path.splitext(file_path)[0]  # removes .txt extension
 
     with open(file_path, "r") as f:
         prompts = [line.strip() for line in f]
+    if n_prompts is not None:
+        prompts = prompts[:n_prompts]
 
     # Create an LLM.
     NODE_RANK = int(os.environ.get("SLURM_NODEID", 0))
 
     llm = sgl.Engine(
-        model_path="/home/rende/.cache/huggingface/hub/models--meta-llama--Llama-3.1-8B/snapshots/d04e592bb4f6aa9cfee91e2e20afa771667e1d4b",
-        tp_size=1,
+        model_path=model_path,
+        tp_size=tp_size,
         return_hidden_states=True,
-        nnodes=1,
+        nnodes=nnodes,
         dist_init_addr=dist_init_addr,
         node_rank=NODE_RANK,
         grammar_backend="xgrammar",
@@ -61,5 +76,11 @@ def main(batch_size=10):
 
 # The __main__ condition is necessary here because we use "spawn" to create subprocesses
 # Spawn starts a fresh program every time, if there is no __main__, it will run into infinite loop to keep spawning processes from sgl.Engine
+
 if __name__ == "__main__":
-    main()
+    model = sys.argv[1] # deepseek or llama
+    x = sys.argv[2] # source or target
+    languageA = sys.argv[3] # in acronym form, e.g., en
+    languageB = sys.argv[4] # in acronym form, e.g., es
+    n_prompts = int(sys.argv[5]) if len(sys.argv) > 5 else None
+    main(model, x, languageA, languageB, n_prompts=n_prompts)

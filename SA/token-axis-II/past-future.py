@@ -2,8 +2,8 @@ import sys,os
 sys.path.append('../')
 sys.path.append('../../')
 dbg = int(sys.argv[1])
-# if dbg:
-#     os.environ["JAX_PLATFORMS"] = "cpu"
+if dbg:
+    os.environ["JAX_PLATFORMS"] = "cpu"
 from collections import defaultdict
 import numpy as np
 import matplotlib.pyplot as plt
@@ -135,16 +135,13 @@ def collect_bert_data(
 
 def main(model,
         input_path_A, 
-        #  input_path_B, 
-         n_loaded_tokens, 
-         mask,
-         n_files,
-         seed_list,
-         k_list,
-         output_folder0,
-        #  avg_flags,
-         Nbits_list,
-        #  diagonal_constraint,
+        n_loaded_tokens, 
+        mask,
+        n_files,
+        seed_list,
+        k_list,
+        output_folder0,
+        Nbits_list,
         take_last,
         batch_shuffle,
         subtract_mean,
@@ -272,14 +269,12 @@ if __name__ == "__main__":
         seed_list = np.arange(0,5,dtype=int)
         k_list = [10]
         Nbits_list = [0]
-        avg_flags = [0]
 
     elif args.dbg == 1:
         n_files = 1
         seed_list = np.arange(0,2+1,dtype=int)
         k_list = [10]
         Nbits_list = [0]
-        avg_flags = [0]
 
     if args.language == "english":
         input_path_A = input_paths[args.modelA][args.language]["spanish"]["source"][str(args.min_token_length)]

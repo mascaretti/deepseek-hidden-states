@@ -27,7 +27,7 @@ from utils import (bf16_torch_to_jax,
                    makefolder,
                    reduce_list_half_preserve_extremes,
                    )
-from utils_loading import collect_data, collect_data_aligned
+from utils_loading import collect_data
 from datapaths import *
 import argparse
 from time import time

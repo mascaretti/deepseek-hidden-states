@@ -9,9 +9,9 @@ start = time()
 print(f'{sys.argv=}')
 dbg = int(sys.argv[1])
 LLM_A = sys.argv[2]
-model_A_id = 1 #int(sys.argv[2])
+model_A_id = 1 
 LLM_B = sys.argv[3]
-model_B_id = model_A_id #int(sys.argv[4])
+model_B_id = model_A_id 
 
 languageA = sys.argv[4]
 languageB = sys.argv[5]
@@ -50,6 +50,8 @@ else:
   # k = 50000
 dataset = dataset["train"].select(range(k))
 print(f'{len(dataset)=}')
+
+print(f'{dataset=}')
 
 ### MODEL A
 _, tokenizer = get_model(

@@ -1,0 +1,284 @@
+import sys,os
+sys.path.append('../')
+dbg = int(sys.argv[1])
+if dbg:
+    os.environ["JAX_PLATFORMS"] = "cpu"
+
+import jax
+jax.config.update("jax_enable_x64", True)
+import jax.numpy as jnp
+
+from datetime import datetime
+now = datetime.now()
+print(now.strftime("%Y-%m-%d %H:%M:%S"))
+
+
+import numpy as np
+
+from utils import (bf16_torch_to_jax,
+                   flatten_tokens_features,
+                   binarize,
+                   clip,
+                   makefolder,
+                   reduce_list_half_preserve_extremes,
+                   )
+from utils_loading import collect_data
+from datapaths import *
+import argparse
+from time import time
+
+
+def linear_cka(X, Y, eps=1e-12):
+    """
+    Linear CKA between two representation matrices.
+
+    Args:
+        X (jnp.ndarray): Shape (n_samples, n_features_x)
+        Y (jnp.ndarray): Shape (n_samples, n_features_y)
+    """
+    X = X - jnp.mean(X, axis=0, keepdims=True)
+    Y = Y - jnp.mean(Y, axis=0, keepdims=True)
+
+    XT_Y = X.T @ Y
+    XT_X = X.T @ X
+    YT_Y = Y.T @ Y
+
+    numerator = jnp.sum(XT_Y * XT_Y)
+    denom = jnp.sqrt(jnp.sum(XT_X * XT_X) * jnp.sum(YT_Y * YT_Y)) + eps
+    return numerator / denom
+
+
+def reshuffle_batch_axis(act, key):
+    """
+    Reshuffles the activations along the batch axis.
+
+    Args:
+        act (jnp.ndarray): Activation matrix of shape (batch_size, ...).
+        key (jax.random.PRNGKey): A PRNG key for randomness.
+
+    Returns:
+        jnp.ndarray: Shuffled activations.
+    """
+    batch_size = act.shape[0]
+    perm = jax.random.permutation(key, batch_size)
+    return act[perm]
+
+
+def reshuffle_batch_and_tokens(act, key):
+    """
+    Reshuffles the activations along the batch and token axes independently.
+
+    Args:
+        act (jnp.ndarray): Activation tensor of shape (batch_size, seq_len, ...).
+        key (jax.random.PRNGKey): A PRNG key for randomness.
+
+    Returns:
+        jnp.ndarray: Shuffled activations.
+    """
+    key_batch, key_token = jax.random.split(key)
+
+    # Shuffle batch
+    batch_size = act.shape[0]
+    batch_perm = jax.random.permutation(key_batch, batch_size)
+    act = act[batch_perm]
+
+    # Shuffle tokens
+    seq_len = act.shape[1]
+    token_perm = jax.random.permutation(key_token, seq_len)
+    act = act[:, token_perm]
+
+    return act
+
+
+def main(input_path_A,
+         input_path_B,
+         n_loaded_tokens,
+         mask,
+         n_files,
+         n_tokens_list,
+         output_folder0,
+         avg_flags,
+         Nbits_list,
+         diagonal_constraint,
+         seed_list,
+         batch_shuffle,
+         ):
+    start_time = time()
+
+    all_activations_A = collect_data(input_path_A,
+                                     n_loaded_tokens=n_loaded_tokens,
+                                     n_files=n_files,
+                                     mask=mask,
+                                     )
+    if input_path_A == input_path_B:
+        all_activations_B = all_activations_A.copy()
+    else:
+        all_activations_B = collect_data(input_path_B,
+                                         n_loaded_tokens=n_loaded_tokens,
+                                         n_files=n_files,
+                                         mask=mask,
+                                         )
+
+    total_sample_size = all_activations_B["layer_0"].shape[0]
+    assert total_sample_size == all_activations_A["layer_0"].shape[0]
+    n_subsamples = total_sample_size // 2
+
+    # dbg:
+    print(f'{total_sample_size=}', flush=True)
+    print(f'{n_subsamples=}', flush=True)
+
+    n_layers_A = len(list(all_activations_A.keys()))
+    n_layers_B = len(list(all_activations_B.keys()))
+
+    B_batch_key = jax.random.key(102)
+
+    rows = [f"layer_{i}" for i in range(1, n_layers_A)]
+    cols = [f"layer_{i}" for i in range(1, n_layers_B)]
+
+    if 1:
+        cols = reduce_list_half_preserve_extremes(cols)
+        rows = reduce_list_half_preserve_extremes(rows)
+
+    for jack_seed_id, jack_seed in enumerate(seed_list):
+        jack_key = jax.random.key(jack_seed)
+        jack_indices = jax.random.choice(key=jack_key, a=total_sample_size, shape=(n_subsamples,), replace=False)
+        print(f"{jack_seed=}")
+
+        for n_tokens_id, n_tokens in enumerate(n_tokens_list):
+            print(f'{n_tokens=}')
+            for Nbits_id, Nbits in enumerate(Nbits_list):
+                print(f'{Nbits=}')
+
+                for avg_tokens in avg_flags:
+                    print(f'{avg_tokens=}')
+                    cka = np.zeros(shape=(len(rows),
+                                          len(cols))
+                                   )
+
+                    for A_counter, layer_A in enumerate(rows):
+                        activations_A = all_activations_A[layer_A]
+
+                        for B_counter, layer_B in enumerate(cols):
+                            activations_B = all_activations_B[layer_B]
+
+                            if diagonal_constraint == 1 and layer_B != layer_A:
+                                continue
+                            act_A = bf16_torch_to_jax(activations_A[:, -n_tokens:, :])
+                            act_B = bf16_torch_to_jax(activations_B[:, -n_tokens:, :])
+
+                            act_A = jax.numpy.take(act_A, jack_indices, axis=0)
+                            act_B = jax.numpy.take(act_B, jack_indices, axis=0)
+
+                            if batch_shuffle == 1:
+                                print(f'batch_shuffling!!! B')
+                                act_B = reshuffle_batch_axis(act_B, B_batch_key)
+
+                            if Nbits == 1:
+                                if avg_tokens == 1:
+                                    act_A = act_A.mean(axis=1, keepdims=True)
+                                    act_B = act_B.mean(axis=1, keepdims=True)
+                                act_A = binarize(act_A)
+                                act_B = binarize(act_B)
+
+                            elif Nbits == 0:
+                                act_A = clip(act_A).astype(jnp.double)  # promote to double after clipping
+                                act_B = clip(act_B).astype(jnp.double)
+                                if avg_tokens == 1:
+                                    act_A = act_A.mean(axis=1, keepdims=True)
+                                    act_B = act_B.mean(axis=1, keepdims=True)
+
+                            act_A = flatten_tokens_features(act_A)
+                            act_B = flatten_tokens_features(act_B)
+
+                            cka[A_counter, B_counter] = float(linear_cka(act_A, act_B))
+
+                    output_folder = makefolder(base=output_folder0,
+                                               create_folder=True,
+                                               Nbits=Nbits,
+                                               seed=jack_seed,
+                                               )
+                    np.save(file=f"{output_folder}/n_tokens_{n_tokens}_avg_{avg_tokens}_cka.npy", arr=cka)
+    print(f'this took {(time()-start_time)/60.} m ')
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description="CKA")
+    parser.add_argument("dbg", type=int)
+    parser.add_argument("min_token_length", type=int)
+    parser.add_argument("modelA", type=str)  # llama or deepseek
+    parser.add_argument("modelB", type=str)
+    parser.add_argument("aux_A", type=str)  # source or target
+    parser.add_argument("aux_B", type=str)
+    parser.add_argument("languageA", type=str)
+    parser.add_argument("languageB", type=str)
+    parser.add_argument("diagonal_constraint", type=int, choices=[0, 1])
+    args = parser.parse_args()
+
+    batch_size = 10
+    mask = 2  # greater than zero
+    n_loaded_tokens = args.min_token_length - mask  # the mask excludes final points and quotes
+    seed_list = [0, 1, 2, 3, 4]
+
+    if args.dbg == 0:
+        batch_shuffle = 0
+        n_files = 500
+        if args.min_token_length <= 40:
+            n_tokens_list = np.array([1, 20])
+            assert np.max(n_tokens_list) <= n_loaded_tokens
+        elif args.min_token_length == 100:
+            n_tokens_list = np.array([1, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, n_loaded_tokens])
+        Nbits_list = [0, 1]
+        avg_flags = [0, 1]
+
+    elif args.dbg == 1:
+        batch_shuffle = 0
+        n_files = 1
+        n_tokens_list = np.array([1])
+        Nbits_list = [0]
+        avg_flags = [0]
+
+    if args.dbg == 2:
+        batch_shuffle = 0
+        n_files = 200
+        n_tokens_list = np.array([20])
+        Nbits_list = [1, 0]
+        avg_flags = [0]
+
+    input_path_A = input_paths[args.modelA][args.languageA][args.languageB][args.aux_A]['40']
+    input_path_B = input_paths[args.modelB][args.languageA][args.languageB][args.aux_B]['40']
+
+    print("Input path A = ", input_path_A, flush=True)
+    print("Input path B = ", input_path_B, flush=True)
+
+    print(f'{Nbits_list=}')
+    print(f'{avg_flags=}')
+    print(f'{args.diagonal_constraint=}')
+
+    output_folder0 = makefolder(base=f'./results/CKA/',
+                                create_folder=True,
+                                batch_shuffle=batch_shuffle,
+                                modelA=args.modelA,
+                                modelB=args.modelB,
+                                aux_A=args.aux_A,
+                                aux_B=args.aux_B,
+                                n_files=n_files,
+                                min_token_length=args.min_token_length,
+                                languageA=args.languageA,
+                                languageB=args.languageB,
+                                mask=mask,
+                                )
+    main(
+        input_path_A=input_path_A,
+        input_path_B=input_path_B,
+        n_loaded_tokens=n_loaded_tokens,
+        mask=mask,
+        n_files=n_files,
+        n_tokens_list=n_tokens_list,
+        output_folder0=output_folder0,
+        avg_flags=avg_flags,
+        Nbits_list=Nbits_list,
+        diagonal_constraint=args.diagonal_constraint,
+        seed_list=seed_list,
+        batch_shuffle=batch_shuffle,
+    )
