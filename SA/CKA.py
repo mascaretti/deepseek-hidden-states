@@ -5,7 +5,7 @@ if dbg:
     os.environ["JAX_PLATFORMS"] = "cpu"
 
 import jax
-jax.config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", False)
 import jax.numpy as jnp
 
 from datetime import datetime
@@ -36,15 +36,19 @@ def linear_cka(X, Y, eps=1e-12):
         X (jnp.ndarray): Shape (n_samples, n_features_x)
         Y (jnp.ndarray): Shape (n_samples, n_features_y)
     """
+    # Memory-efficient equivalent form:
+    # ||X^T Y||_F^2 = <X X^T, Y Y^T>, so we work in sample-space (n x n)
+    # instead of feature-space (d x d), which avoids huge allocations.
+    X = X.astype(jnp.float32)
+    Y = Y.astype(jnp.float32)
     X = X - jnp.mean(X, axis=0, keepdims=True)
     Y = Y - jnp.mean(Y, axis=0, keepdims=True)
 
-    XT_Y = X.T @ Y
-    XT_X = X.T @ X
-    YT_Y = Y.T @ Y
+    K = X @ X.T
+    L = Y @ Y.T
 
-    numerator = jnp.sum(XT_Y * XT_Y)
-    denom = jnp.sqrt(jnp.sum(XT_X * XT_X) * jnp.sum(YT_Y * YT_Y)) + eps
+    numerator = jnp.sum(K * L)
+    denom = jnp.sqrt(jnp.sum(K * K) * jnp.sum(L * L)) + eps
     return numerator / denom
 
 
@@ -181,8 +185,8 @@ def main(input_path_A,
                                 act_B = binarize(act_B)
 
                             elif Nbits == 0:
-                                act_A = clip(act_A).astype(jnp.double)  # promote to double after clipping
-                                act_B = clip(act_B).astype(jnp.double)
+                                act_A = clip(act_A).astype(jnp.float32)
+                                act_B = clip(act_B).astype(jnp.float32)
                                 if avg_tokens == 1:
                                     act_A = act_A.mean(axis=1, keepdims=True)
                                     act_B = act_B.mean(axis=1, keepdims=True)
@@ -222,14 +226,14 @@ if __name__ == "__main__":
 
     if args.dbg == 0:
         batch_shuffle = 0
-        n_files = 500
+        n_files = 100
         if args.min_token_length <= 40:
-            n_tokens_list = np.array([1, 20])
+            n_tokens_list = np.array([1,20])
             assert np.max(n_tokens_list) <= n_loaded_tokens
         elif args.min_token_length == 100:
             n_tokens_list = np.array([1, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, n_loaded_tokens])
-        Nbits_list = [0, 1]
-        avg_flags = [0, 1]
+        Nbits_list = [0]
+        avg_flags = [0,1]
 
     elif args.dbg == 1:
         batch_shuffle = 0

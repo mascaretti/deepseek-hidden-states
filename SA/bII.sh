@@ -9,7 +9,7 @@ modelB="deepseek"
 aux_A="source"
 aux_B="target"
 languageA="english"
-languageB="french"
+languageB="italian"
 diagonal_constraint=1
 # -----------------------------------------------
 
