@@ -10,7 +10,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=END,FAIL
 #SBATCH --mail-user=amascare@sissa.it
-#SBATCH --array=1-26
+#SBATCH --array=1-18
 
 # Compute information imbalance from mean-pooled activations.
 # One comparison per array task, %1 = sequential (shared GPU).
@@ -33,18 +33,20 @@ CLIP_TEXT_MEAN="${MEAN_BASE}/openai-clip-vit-large-patch14-text"
 OUTPUT_BASE="${IMAGE_BASE}/results-mean"
 
 case ${SLURM_ARRAY_TASK_ID} in
+    # --- igpt <-> deepseek ---
     1)
-        NAME="dino_igpt"
-        INPUT_A="${DINOV2_MEAN}"
-        INPUT_B="${IGPT_MEAN}"
-        LAYER_A=24
-        ;;
-    2)
-        NAME="deepseek_clip_text"
+        NAME="deepseek_igpt"
         INPUT_A="${DEEPSEEK_MEAN}"
-        INPUT_B="${CLIP_TEXT_MEAN}"
+        INPUT_B="${IGPT_MEAN}"
         LAYER_A=52
         ;;
+    2)
+        NAME="igpt_deepseek"
+        INPUT_A="${IGPT_MEAN}"
+        INPUT_B="${DEEPSEEK_MEAN}"
+        LAYER_A=20
+        ;;
+    # --- dino (large) <-> deepseek ---
     3)
         NAME="deepseek_dino"
         INPUT_A="${DEEPSEEK_MEAN}"
@@ -52,76 +54,81 @@ case ${SLURM_ARRAY_TASK_ID} in
         LAYER_A=52
         ;;
     4)
-        NAME="deepseek_clip_image"
-        INPUT_A="${DEEPSEEK_MEAN}"
-        INPUT_B="${CLIP_IMAGE_MEAN}"
-        LAYER_A=52
-        ;;
-    5)
-        NAME="clip_text_clip_image"
-        INPUT_A="${CLIP_TEXT_MEAN}"
-        INPUT_B="${CLIP_IMAGE_MEAN}"
-        LAYER_A=12
-        ;;
-    6)
-        NAME="dino_clip_image"
-        INPUT_A="${DINOV2_MEAN}"
-        INPUT_B="${CLIP_IMAGE_MEAN}"
-        LAYER_A=24
-        ;;
-    7)
-        NAME="deepseek_llama"
-        INPUT_A="${DEEPSEEK_MEAN}"
-        INPUT_B="${LLAMA_MEAN}"
-        LAYER_A=52
-        ;;
-    8)
-        NAME="llama_deepseek"
-        INPUT_A="${LLAMA_MEAN}"
-        INPUT_B="${DEEPSEEK_MEAN}"
-        LAYER_A=20  # TODO: pick after exploratory runs
-        ;;
-    9)
-        NAME="llama_clip_text"
-        INPUT_A="${LLAMA_MEAN}"
-        INPUT_B="${CLIP_TEXT_MEAN}"
-        LAYER_A=20  # TODO: pick after exploratory runs
-        ;;
-    10)
-        NAME="llama_clip_image"
-        INPUT_A="${LLAMA_MEAN}"
-        INPUT_B="${CLIP_IMAGE_MEAN}"
-        LAYER_A=20  # TODO: pick after exploratory runs
-        ;;
-    # --- Reverse directions (11-18) ---
-    11)
-        NAME="igpt_dino"
-        INPUT_A="${IGPT_MEAN}"
-        INPUT_B="${DINOV2_MEAN}"
-        LAYER_A=20
-        ;;
-    12)
-        NAME="clip_text_deepseek"
-        INPUT_A="${CLIP_TEXT_MEAN}"
-        INPUT_B="${DEEPSEEK_MEAN}"
-        LAYER_A=12
-        ;;
-    13)
         NAME="dino_deepseek"
         INPUT_A="${DINOV2_MEAN}"
         INPUT_B="${DEEPSEEK_MEAN}"
         LAYER_A=24
         ;;
-    14)
-        NAME="clip_image_deepseek"
-        INPUT_A="${CLIP_IMAGE_MEAN}"
+    # --- dino (base) <-> deepseek ---
+    5)
+        NAME="deepseek_dino_base"
+        INPUT_A="${DEEPSEEK_MEAN}"
+        INPUT_B="${DINOV2_BASE_MEAN}"
+        LAYER_A=52
+        ;;
+    6)
+        NAME="dino_base_deepseek"
+        INPUT_A="${DINOV2_BASE_MEAN}"
         INPUT_B="${DEEPSEEK_MEAN}"
+        LAYER_A=12
+        ;;
+    # --- dino (small) <-> deepseek ---
+    7)
+        NAME="deepseek_dino_small"
+        INPUT_A="${DEEPSEEK_MEAN}"
+        INPUT_B="${DINOV2_SMALL_MEAN}"
+        LAYER_A=52
+        ;;
+    8)
+        NAME="dino_small_deepseek"
+        INPUT_A="${DINOV2_SMALL_MEAN}"
+        INPUT_B="${DEEPSEEK_MEAN}"
+        LAYER_A=12
+        ;;
+    # --- igpt <-> dino (large) ---
+    9)
+        NAME="igpt_dino"
+        INPUT_A="${IGPT_MEAN}"
+        INPUT_B="${DINOV2_MEAN}"
+        LAYER_A=20
+        ;;
+    10)
+        NAME="dino_igpt"
+        INPUT_A="${DINOV2_MEAN}"
+        INPUT_B="${IGPT_MEAN}"
         LAYER_A=24
         ;;
+    # --- igpt <-> llama ---
+    11)
+        NAME="igpt_llama"
+        INPUT_A="${IGPT_MEAN}"
+        INPUT_B="${LLAMA_MEAN}"
+        LAYER_A=20
+        ;;
+    12)
+        NAME="llama_igpt"
+        INPUT_A="${LLAMA_MEAN}"
+        INPUT_B="${IGPT_MEAN}"
+        LAYER_A=20
+        ;;
+    # --- dino (large) <-> llama ---
+    13)
+        NAME="dino_llama"
+        INPUT_A="${DINOV2_MEAN}"
+        INPUT_B="${LLAMA_MEAN}"
+        LAYER_A=24
+        ;;
+    14)
+        NAME="llama_dino"
+        INPUT_A="${LLAMA_MEAN}"
+        INPUT_B="${DINOV2_MEAN}"
+        LAYER_A=20
+        ;;
+    # --- dino (large) <-> clip image ---
     15)
-        NAME="clip_image_clip_text"
-        INPUT_A="${CLIP_IMAGE_MEAN}"
-        INPUT_B="${CLIP_TEXT_MEAN}"
+        NAME="dino_clip_image"
+        INPUT_A="${DINOV2_MEAN}"
+        INPUT_B="${CLIP_IMAGE_MEAN}"
         LAYER_A=24
         ;;
     16)
@@ -130,78 +137,18 @@ case ${SLURM_ARRAY_TASK_ID} in
         INPUT_B="${DINOV2_MEAN}"
         LAYER_A=24
         ;;
+    # --- clip text <-> clip image ---
     17)
-        NAME="clip_text_llama"
+        NAME="clip_text_clip_image"
         INPUT_A="${CLIP_TEXT_MEAN}"
-        INPUT_B="${LLAMA_MEAN}"
+        INPUT_B="${CLIP_IMAGE_MEAN}"
         LAYER_A=12
         ;;
     18)
-        NAME="clip_image_llama"
+        NAME="clip_image_clip_text"
         INPUT_A="${CLIP_IMAGE_MEAN}"
-        INPUT_B="${LLAMA_MEAN}"
+        INPUT_B="${CLIP_TEXT_MEAN}"
         LAYER_A=24
-        ;;
-    19)
-        NAME="deepseek_igpt"
-        INPUT_A="${DEEPSEEK_MEAN}"
-        INPUT_B="${IGPT_MEAN}"
-        LAYER_A=52
-        ;;
-    20)
-        NAME="igpt_deepseek"
-        INPUT_A="${IGPT_MEAN}"
-        INPUT_B="${DEEPSEEK_MEAN}"
-        LAYER_A=20
-        ;;
-    21)
-        NAME="llama_igpt"
-        INPUT_A="${LLAMA_MEAN}"
-        INPUT_B="${IGPT_MEAN}"
-        LAYER_A=20  # TODO: pick after exploratory runs
-        ;;
-    22)
-        NAME="igpt_llama"
-        INPUT_A="${IGPT_MEAN}"
-        INPUT_B="${LLAMA_MEAN}"
-        LAYER_A=20
-        ;;
-    23)
-        NAME="llama_dino"
-        INPUT_A="${LLAMA_MEAN}"
-        INPUT_B="${DINOV2_MEAN}"
-        LAYER_A=20  # TODO: pick after exploratory runs
-        ;;
-    24)
-        NAME="dino_llama"
-        INPUT_A="${DINOV2_MEAN}"
-        INPUT_B="${LLAMA_MEAN}"
-        LAYER_A=24
-        ;;
-    # --- Self-comparisons (sanity checks) ---
-    25)
-        NAME="dino_dino"
-        INPUT_A="${DINOV2_MEAN}"
-        INPUT_B="${DINOV2_MEAN}"
-        LAYER_A=12
-        ;;
-    26)
-        NAME="igpt_igpt"
-        INPUT_A="${IGPT_MEAN}"
-        INPUT_B="${IGPT_MEAN}"
-        LAYER_A=20
-        ;;
-    27)
-        NAME="deepseek_dino_base"
-        INPUT_A="${DEEPSEEK_MEAN}"
-        INPUT_B="${DINO_MEAN_BASE}"
-        LAYER_A=52
-        ;;
-    28)
-        NAME="deepseek_dino_small"
-        INPUT_A="${DEEPSEEK_MEAN}"
-        INPUT_B="${DINO_MEAN_SMALL}"
-        LAYER_A=52
         ;;
     *)
         echo "Invalid array task ID: ${SLURM_ARRAY_TASK_ID}"
