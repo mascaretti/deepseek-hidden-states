@@ -1,0 +1,76 @@
+=========================================
+Mean-pooling: imagegpt
+Job 165420, task 4
+Node: dgx01
+Started at: Sun Feb 22 07:59:31 PM CET 2026
+Input:  /home/laios/image-information-imbalance/openai-imagegpt-large
+Output: /home/laios/image-information-imbalance/windsorised_mean/openai-imagegpt-large
+Prefix: chunk_
+DeepSeek Tokens: 20
+=========================================
+Detected format: image
+Pooling strategy: Winsorized Mean over ALL tokens.
+Found 1000 chunk files in /home/laios/image-information-imbalance/openai-imagegpt-large
+Set first token:
+We start from 0.
+
+Done. 10000 samples, 49 layers, embed=1536.
+Output in: /home/laios/image-information-imbalance/windsorised_mean/openai-imagegpt-large
+
+=== Verification ===
+  MISMATCH layer_0: shape=(10, 1536), max_diff=5.49e-01
+  MISMATCH layer_1: shape=(10, 1536), max_diff=2.35e+01
+  MISMATCH layer_2: shape=(10, 1536), max_diff=2.18e+01
+  MISMATCH layer_3: shape=(10, 1536), max_diff=2.38e+01
+  MISMATCH layer_4: shape=(10, 1536), max_diff=2.23e+01
+  MISMATCH layer_5: shape=(10, 1536), max_diff=2.29e+01
+  MISMATCH layer_6: shape=(10, 1536), max_diff=2.37e+01
+  MISMATCH layer_7: shape=(10, 1536), max_diff=2.37e+01
+  MISMATCH layer_8: shape=(10, 1536), max_diff=2.40e+01
+  MISMATCH layer_9: shape=(10, 1536), max_diff=2.44e+01
+  MISMATCH layer_10: shape=(10, 1536), max_diff=2.49e+01
+  MISMATCH layer_11: shape=(10, 1536), max_diff=2.52e+01
+  MISMATCH layer_12: shape=(10, 1536), max_diff=2.64e+01
+  MISMATCH layer_13: shape=(10, 1536), max_diff=2.69e+01
+  MISMATCH layer_14: shape=(10, 1536), max_diff=2.90e+01
+  MISMATCH layer_15: shape=(10, 1536), max_diff=3.08e+01
+  MISMATCH layer_16: shape=(10, 1536), max_diff=3.27e+01
+  MISMATCH layer_17: shape=(10, 1536), max_diff=3.44e+01
+  MISMATCH layer_18: shape=(10, 1536), max_diff=3.71e+01
+  MISMATCH layer_19: shape=(10, 1536), max_diff=4.09e+01
+  MISMATCH layer_20: shape=(10, 1536), max_diff=4.35e+01
+  MISMATCH layer_21: shape=(10, 1536), max_diff=4.68e+01
+  MISMATCH layer_22: shape=(10, 1536), max_diff=5.00e+01
+  MISMATCH layer_23: shape=(10, 1536), max_diff=5.28e+01
+  MISMATCH layer_24: shape=(10, 1536), max_diff=5.68e+01
+  MISMATCH layer_25: shape=(10, 1536), max_diff=6.24e+01
+  MISMATCH layer_26: shape=(10, 1536), max_diff=6.49e+01
+  MISMATCH layer_27: shape=(10, 1536), max_diff=6.71e+01
+  MISMATCH layer_28: shape=(10, 1536), max_diff=7.14e+01
+  MISMATCH layer_29: shape=(10, 1536), max_diff=7.81e+01
+  MISMATCH layer_30: shape=(10, 1536), max_diff=8.21e+01
+  MISMATCH layer_31: shape=(10, 1536), max_diff=8.59e+01
+  MISMATCH layer_32: shape=(10, 1536), max_diff=8.97e+01
+  MISMATCH layer_33: shape=(10, 1536), max_diff=9.34e+01
+  MISMATCH layer_34: shape=(10, 1536), max_diff=9.77e+01
+  MISMATCH layer_35: shape=(10, 1536), max_diff=1.02e+02
+  MISMATCH layer_36: shape=(10, 1536), max_diff=1.05e+02
+  MISMATCH layer_37: shape=(10, 1536), max_diff=1.07e+02
+  MISMATCH layer_38: shape=(10, 1536), max_diff=1.11e+02
+  MISMATCH layer_39: shape=(10, 1536), max_diff=1.16e+02
+  MISMATCH layer_40: shape=(10, 1536), max_diff=1.21e+02
+  MISMATCH layer_41: shape=(10, 1536), max_diff=1.28e+02
+  MISMATCH layer_42: shape=(10, 1536), max_diff=1.36e+02
+  MISMATCH layer_43: shape=(10, 1536), max_diff=1.39e+02
+  MISMATCH layer_44: shape=(10, 1536), max_diff=1.50e+02
+  MISMATCH layer_45: shape=(10, 1536), max_diff=1.68e+02
+  MISMATCH layer_46: shape=(10, 1536), max_diff=1.86e+02
+  MISMATCH layer_47: shape=(10, 1536), max_diff=2.19e+02
+  MISMATCH layer_48: shape=(10, 1536), max_diff=3.03e-01
+  Shape: (10 samples, 49 layers, 1536 embed)
+  dtype: float32
+  FAILED — see above.
+
+Finished at: Sun Feb 22 10:40:55 PM CET 2026
+Exit code: 0
+Output: 1000 files, 2.9G

@@ -24,6 +24,8 @@ MEAN_BASE="${IMAGE_BASE}/windsorised_mean"
 DEEPSEEK_MEAN="/home/laios/activations/flickr/deepseek_windsorised_mean"
 LLAMA_MEAN="${MEAN_BASE}/llama"
 DINOV2_MEAN="${MEAN_BASE}/facebook-dinov2-large"
+DINOV2_BASE_MEAN="${MEAN_BASE}/facebook-dinov2-base"
+DINOV2_SMALL_MEAN="${MEAN_BASE}/facebook-dinov2-small"
 IGPT_MEAN="${MEAN_BASE}/openai-imagegpt-large"
 CLIP_IMAGE_MEAN="${MEAN_BASE}/openai-clip-vit-large-patch14-image"
 CLIP_TEXT_MEAN="${MEAN_BASE}/openai-clip-vit-large-patch14-text"
@@ -188,6 +190,18 @@ case ${SLURM_ARRAY_TASK_ID} in
         INPUT_A="${IGPT_MEAN}"
         INPUT_B="${IGPT_MEAN}"
         LAYER_A=20
+        ;;
+    27)
+        NAME="deepseek_dino_base"
+        INPUT_A="${DEEPSEEK_MEAN}"
+        INPUT_B="${DINO_MEAN_BASE}"
+        LAYER_A=52
+        ;;
+    28)
+        NAME="deepseek_dino_small"
+        INPUT_A="${DEEPSEEK_MEAN}"
+        INPUT_B="${DINO_MEAN_SMALL}"
+        LAYER_A=52
         ;;
     *)
         echo "Invalid array task ID: ${SLURM_ARRAY_TASK_ID}"

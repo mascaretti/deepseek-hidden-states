@@ -1,0 +1,15 @@
+=========================================
+Mean-pooling: imagegpt
+Job 164580, task 4
+Node: dgx01
+Started at: Fri Feb 20 11:17:07 AM CET 2026
+Input:  /home/laios/image-information-imbalance/openai-imagegpt-large
+Output: /home/laios/image-information-imbalance/windsorised_mean_last_k/openai-imagegpt-large
+Prefix: chunk_
+DeepSeek Tokens: 20
+=========================================
+Detected format: image
+Pooling strategy: Winsorized Mean over LAST 50 tokens.
+Found 1000 chunk files in /home/laios/image-information-imbalance/openai-imagegpt-large
+Set first token:
+We start from 0.

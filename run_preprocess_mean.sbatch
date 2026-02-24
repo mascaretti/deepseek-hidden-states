@@ -48,6 +48,7 @@ case ${SLURM_ARRAY_TASK_ID} in
         INPUT="${IMAGE_BASE}/openai-imagegpt-large"
         OUTPUT="${MEAN_BASE}/openai-imagegpt-large"
         PREFIX="chunk_"
+	## FLAGS="--last_k=50"
         ;;
     5)
         NAME="clip_image"
@@ -60,6 +61,18 @@ case ${SLURM_ARRAY_TASK_ID} in
         INPUT="${IMAGE_BASE}/openai-clip-vit-large-patch14"
         OUTPUT="${MEAN_BASE}/openai-clip-vit-large-patch14-text"
         PREFIX="text-chunk_"
+        ;;
+    7)
+        NAME="dinov2-base"
+        INPUT="${IMAGE_BASE}/facebook-dinov2-base"
+        OUTPUT="${MEAN_BASE}/facebook-dinov2-base"
+        PREFIX="chunk_"
+        ;;
+    8)
+        NAME="dinov2-small"
+        INPUT="${IMAGE_BASE}/facebook-dinov2-small"
+        OUTPUT="${MEAN_BASE}/facebook-dinov2-small"
+        PREFIX="chunk_"
         ;;
     *)
         echo "Invalid array task ID: ${SLURM_ARRAY_TASK_ID}"
@@ -82,7 +95,6 @@ python preprocess_mean.py \
     --input_path "${INPUT}" \
     --output_path "${OUTPUT}" \
     --prefix "${PREFIX}" \
-    --last_k "${DEEPSEEK_TOKENS}"\
     --verify \
     ${FLAGS}
 

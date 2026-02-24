@@ -1,0 +1,9 @@
+=========================================
+Distance strategy test
+Job 172866
+Node: dgx01
+Started at: Mon Feb 23 10:12:01 AM CET 2026
+A: /home/laios/activations/flickr/deepseek_windsorised_mean (layer 52)
+B_dino: /home/laios/image-information-imbalance/windsorised_mean/facebook-dinov2-large
+B_igpt: /home/laios/image-information-imbalance/windsorised_mean/openai-imagegpt-large
+=========================================

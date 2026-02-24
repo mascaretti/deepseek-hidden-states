@@ -1,5 +1,5 @@
 Loading activations...
-  openai-imagegpt-large-full: 5000 samples, 49 layers, embed=1536
+  openai-imagegpt-large: 5000 samples, 49 layers, embed=1536
 ImageGPT: 49 layers, embed=1536
 
 Computing twoNN...

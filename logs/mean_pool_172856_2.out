@@ -1,0 +1,60 @@
+=========================================
+Mean-pooling: llama
+Job 172858, task 2
+Node: dgx01
+Started at: Mon Feb 23 10:05:45 AM CET 2026
+Input:  /home/laios/llama_flickr_cpt_all
+Output: /home/laios/image-information-imbalance/windsorised_mean/llama
+Prefix: chunk_
+DeepSeek Tokens: 20
+=========================================
+Detected format: deepseek
+Pooling strategy: Winsorized Mean over LAST 20 tokens.
+Found 471 chunk files in /home/laios/llama_flickr_cpt_all
+Set first token:
+We start from 1.
+
+Done. 14109 samples, 33 layers, embed=4096.
+Output in: /home/laios/image-information-imbalance/windsorised_mean/llama
+
+=== Verification ===
+  MISMATCH layer_0: shape=(30, 4096), max_diff=1.57e+01
+  MISMATCH layer_1: shape=(30, 4096), max_diff=1.17e-01
+  MISMATCH layer_2: shape=(30, 4096), max_diff=1.62e-01
+  MISMATCH layer_3: shape=(30, 4096), max_diff=4.20e-01
+  MISMATCH layer_4: shape=(30, 4096), max_diff=5.91e-01
+  MISMATCH layer_5: shape=(30, 4096), max_diff=9.43e-01
+  MISMATCH layer_6: shape=(30, 4096), max_diff=1.21e+00
+  MISMATCH layer_7: shape=(30, 4096), max_diff=1.49e+00
+  MISMATCH layer_8: shape=(30, 4096), max_diff=1.46e+00
+  MISMATCH layer_9: shape=(30, 4096), max_diff=1.92e+00
+  MISMATCH layer_10: shape=(30, 4096), max_diff=2.48e+00
+  MISMATCH layer_11: shape=(30, 4096), max_diff=2.43e+00
+  MISMATCH layer_12: shape=(30, 4096), max_diff=2.61e+00
+  MISMATCH layer_13: shape=(30, 4096), max_diff=3.24e+00
+  MISMATCH layer_14: shape=(30, 4096), max_diff=3.19e+00
+  MISMATCH layer_15: shape=(30, 4096), max_diff=3.82e+00
+  MISMATCH layer_16: shape=(30, 4096), max_diff=4.32e+00
+  MISMATCH layer_17: shape=(30, 4096), max_diff=4.91e+00
+  MISMATCH layer_18: shape=(30, 4096), max_diff=4.42e+00
+  MISMATCH layer_19: shape=(30, 4096), max_diff=4.86e+00
+  MISMATCH layer_20: shape=(30, 4096), max_diff=5.30e+00
+  MISMATCH layer_21: shape=(30, 4096), max_diff=6.21e+00
+  MISMATCH layer_22: shape=(30, 4096), max_diff=8.10e+00
+  MISMATCH layer_23: shape=(30, 4096), max_diff=9.89e+00
+  MISMATCH layer_24: shape=(30, 4096), max_diff=1.23e+01
+  MISMATCH layer_25: shape=(30, 4096), max_diff=1.42e+01
+  MISMATCH layer_26: shape=(30, 4096), max_diff=1.51e+01
+  MISMATCH layer_27: shape=(30, 4096), max_diff=1.95e+01
+  MISMATCH layer_28: shape=(30, 4096), max_diff=2.14e+01
+  MISMATCH layer_29: shape=(30, 4096), max_diff=2.38e+01
+  MISMATCH layer_30: shape=(30, 4096), max_diff=2.56e+01
+  MISMATCH layer_31: shape=(30, 4096), max_diff=2.08e+01
+  MISMATCH layer_32: shape=(30, 4096), max_diff=2.51e+01
+  Shape: (30 samples, 33 layers, 4096 embed)
+  dtype: float32
+  FAILED — see above.
+
+Finished at: Mon Feb 23 10:07:12 AM CET 2026
+Exit code: 0
+Output: 471 files, 7.2G

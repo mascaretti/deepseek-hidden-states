@@ -1,0 +1,89 @@
+=========================================
+Mean-pooling: deepseek
+Job 172857, task 1
+Node: dgx01
+Started at: Mon Feb 23 10:01:33 AM CET 2026
+Input:  /home/laios/activations/flickr/deepseek_all
+Output: /home/laios/activations/flickr/deepseek_windsorised_mean
+Prefix: chunk_
+DeepSeek Tokens: 20
+=========================================
+Detected format: deepseek
+Pooling strategy: Winsorized Mean over ALL tokens.
+Found 471 chunk files in /home/laios/activations/flickr/deepseek_all
+Set first token:
+We start from 0.
+
+Done. 14109 samples, 62 layers, embed=7168.
+Output in: /home/laios/activations/flickr/deepseek_windsorised_mean
+
+=== Verification ===
+  MISMATCH layer_0: shape=(30, 7168), max_diff=1.09e+02
+  MISMATCH layer_1: shape=(30, 7168), max_diff=1.39e+00
+  MISMATCH layer_2: shape=(30, 7168), max_diff=1.66e+00
+  MISMATCH layer_3: shape=(30, 7168), max_diff=1.86e+00
+  MISMATCH layer_4: shape=(30, 7168), max_diff=1.84e+00
+  MISMATCH layer_5: shape=(30, 7168), max_diff=2.04e+00
+  MISMATCH layer_6: shape=(30, 7168), max_diff=2.16e+00
+  MISMATCH layer_7: shape=(30, 7168), max_diff=2.36e+00
+  MISMATCH layer_8: shape=(30, 7168), max_diff=2.72e+00
+  MISMATCH layer_9: shape=(30, 7168), max_diff=3.21e+00
+  MISMATCH layer_10: shape=(30, 7168), max_diff=3.76e+00
+  MISMATCH layer_11: shape=(30, 7168), max_diff=4.36e+00
+  MISMATCH layer_12: shape=(30, 7168), max_diff=4.88e+00
+  MISMATCH layer_13: shape=(30, 7168), max_diff=5.24e+00
+  MISMATCH layer_14: shape=(30, 7168), max_diff=5.69e+00
+  MISMATCH layer_15: shape=(30, 7168), max_diff=5.94e+00
+  MISMATCH layer_16: shape=(30, 7168), max_diff=6.46e+00
+  MISMATCH layer_17: shape=(30, 7168), max_diff=6.54e+00
+  MISMATCH layer_18: shape=(30, 7168), max_diff=7.12e+00
+  MISMATCH layer_19: shape=(30, 7168), max_diff=7.11e+00
+  MISMATCH layer_20: shape=(30, 7168), max_diff=7.71e+00
+  MISMATCH layer_21: shape=(30, 7168), max_diff=8.04e+00
+  MISMATCH layer_22: shape=(30, 7168), max_diff=8.90e+00
+  MISMATCH layer_23: shape=(30, 7168), max_diff=8.82e+00
+  MISMATCH layer_24: shape=(30, 7168), max_diff=8.87e+00
+  MISMATCH layer_25: shape=(30, 7168), max_diff=9.78e+00
+  MISMATCH layer_26: shape=(30, 7168), max_diff=1.12e+01
+  MISMATCH layer_27: shape=(30, 7168), max_diff=1.22e+01
+  MISMATCH layer_28: shape=(30, 7168), max_diff=1.33e+01
+  MISMATCH layer_29: shape=(30, 7168), max_diff=1.51e+01
+  MISMATCH layer_30: shape=(30, 7168), max_diff=1.75e+01
+  MISMATCH layer_31: shape=(30, 7168), max_diff=2.04e+01
+  MISMATCH layer_32: shape=(30, 7168), max_diff=2.33e+01
+  MISMATCH layer_33: shape=(30, 7168), max_diff=2.85e+01
+  MISMATCH layer_34: shape=(30, 7168), max_diff=2.96e+01
+  MISMATCH layer_35: shape=(30, 7168), max_diff=3.52e+01
+  MISMATCH layer_36: shape=(30, 7168), max_diff=4.00e+01
+  MISMATCH layer_37: shape=(30, 7168), max_diff=4.37e+01
+  MISMATCH layer_38: shape=(30, 7168), max_diff=4.66e+01
+  MISMATCH layer_39: shape=(30, 7168), max_diff=4.86e+01
+  MISMATCH layer_40: shape=(30, 7168), max_diff=4.50e+01
+  MISMATCH layer_41: shape=(30, 7168), max_diff=5.13e+01
+  MISMATCH layer_42: shape=(30, 7168), max_diff=5.95e+01
+  MISMATCH layer_43: shape=(30, 7168), max_diff=6.85e+01
+  MISMATCH layer_44: shape=(30, 7168), max_diff=6.63e+01
+  MISMATCH layer_45: shape=(30, 7168), max_diff=6.70e+01
+  MISMATCH layer_46: shape=(30, 7168), max_diff=7.47e+01
+  MISMATCH layer_47: shape=(30, 7168), max_diff=8.37e+01
+  MISMATCH layer_48: shape=(30, 7168), max_diff=9.08e+01
+  MISMATCH layer_49: shape=(30, 7168), max_diff=9.99e+01
+  MISMATCH layer_50: shape=(30, 7168), max_diff=1.07e+02
+  MISMATCH layer_51: shape=(30, 7168), max_diff=1.11e+02
+  MISMATCH layer_52: shape=(30, 7168), max_diff=1.25e+02
+  MISMATCH layer_53: shape=(30, 7168), max_diff=1.22e+02
+  MISMATCH layer_54: shape=(30, 7168), max_diff=1.28e+02
+  MISMATCH layer_55: shape=(30, 7168), max_diff=1.33e+02
+  MISMATCH layer_56: shape=(30, 7168), max_diff=1.40e+02
+  MISMATCH layer_57: shape=(30, 7168), max_diff=1.37e+02
+  MISMATCH layer_58: shape=(30, 7168), max_diff=1.19e+02
+  MISMATCH layer_59: shape=(30, 7168), max_diff=1.08e+02
+  MISMATCH layer_60: shape=(30, 7168), max_diff=6.30e+01
+  MISMATCH layer_61: shape=(30, 7168), max_diff=3.76e+00
+  Shape: (30 samples, 62 layers, 7168 embed)
+  dtype: float32
+  FAILED — see above.
+
+Finished at: Mon Feb 23 10:05:44 AM CET 2026
+Exit code: 0
+Output: 471 files, 24G
