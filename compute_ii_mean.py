@@ -21,11 +21,44 @@ from tqdm import tqdm
 
 from information_imbalance_module import (
     L2_distance,
-    build_information_imbalance,
     build_information_matrix,
     hamming_distance,
 )
 from utils import binarize
+
+
+# ---------------------------------------------------------------------------
+# Jackknife
+# ---------------------------------------------------------------------------
+
+def jackknife_ii(ranks, cards, n_col):
+    """Compute II with jackknife standard error from per-row ranks and cards.
+
+    Args:
+        ranks: (n_rows,) array of per-row rank sums.
+        cards:  (n_rows,) array of per-row cardinalities.
+        n_col:  number of column samples used in the II computation.
+
+    Returns:
+        (ii, se): full-sample II estimate and jackknife standard error.
+    """
+    n = len(ranks)
+    total_r = float(ranks.sum())
+    total_c = float(cards.sum())
+    if total_c == 0:
+        return float("nan"), float("nan")
+
+    ii_full = 2.0 * total_r / total_c / (n_col - 1)
+
+    # Leave-one-out estimates
+    loo_r = total_r - ranks
+    loo_c = total_c - cards
+    ii_loo = np.where(loo_c > 0, 2.0 * loo_r / loo_c / (n_col - 1), np.nan)
+
+    # Pseudo-values → SE
+    pseudo = n * ii_full - (n - 1) * ii_loo
+    se = float(np.nanstd(pseudo, ddof=1) / np.sqrt(n))
+    return float(ii_full), se
 
 
 # ---------------------------------------------------------------------------
@@ -138,13 +171,13 @@ def main():
     print(f"Model B layers: {n_layers_B} ({act_B['layer_0'].shape[1]}d)")
     print(f"Sample size: {sample_size}")
 
-    # Setup II computation (two distance functions)
+    # Setup II computation (two distance functions, both return per-row data)
     key = jax.random.key(42)
     key, subkey1, subkey2 = jax.random.split(key, 3)
     hamming_fn = build_information_matrix(
         key=subkey1, sample_size=sample_size, distance_fn=hamming_distance
     )
-    l2_fn = build_information_imbalance(
+    l2_fn = build_information_matrix(
         key=subkey2, sample_size=sample_size, distance_fn=L2_distance
     )
 
@@ -161,6 +194,10 @@ def main():
     if args.l2_normalize:
         a_l2 = l2_normalize(a_l2)
 
+    # n_col for jackknife (must match build_information_matrix's formula)
+    n_row = int(np.floor(0.2 * sample_size))
+    n_col = sample_size - n_row
+
     # Sweep over model B layers
     cols = [f"layer_{i}" for i in range(1, n_layers_B)]
     for layer_B_key in tqdm(cols, desc="Computing II"):
@@ -170,20 +207,29 @@ def main():
         b_hamming = binarize(raw_b)
         result = hamming_fn(a_hamming, b_hamming)
         result_np = {k: np.asarray(v) for k, v in result.items()}
+        ii_h, se_h = jackknife_ii(result_np["ranks"], result_np["cards"], n_col)
+        rii_h, rse_h = jackknife_ii(result_np["r_ranks"], result_np["r_cards"], n_col)
+        result_np["inf_imb"] = np.float32(ii_h)
+        result_np["inf_imb_se"] = np.float32(se_h)
+        result_np["reciprocal_inf_imb"] = np.float32(rii_h)
+        result_np["reciprocal_inf_imb_se"] = np.float32(rse_h)
         save_file(result_np, str(Path(args.output_folder, "hamming", f"{layer_B_key}.safetensors")))
 
-        # L2 (scalar II, no cardinality normalisation — no ties with continuous distances)
+        # L2 (per-row data → jackknife)
         b_l2 = raw_b
         if args.mean_center:
             b_l2 = b_l2 - b_l2.mean(axis=0)
         if args.l2_normalize:
             b_l2 = l2_normalize(b_l2)
-        inf_imb, reciprocal_inf_imb = l2_fn(a_l2, b_l2)
-        l2_result = {
-            "inf_imb": np.asarray(inf_imb),
-            "reciprocal_inf_imb": np.asarray(reciprocal_inf_imb),
-        }
-        save_file(l2_result, str(Path(args.output_folder, l2_label, f"{layer_B_key}.safetensors")))
+        result = l2_fn(a_l2, b_l2)
+        result_np = {k: np.asarray(v) for k, v in result.items()}
+        ii_l2, se_l2 = jackknife_ii(result_np["ranks"], result_np["cards"], n_col)
+        rii_l2, rse_l2 = jackknife_ii(result_np["r_ranks"], result_np["r_cards"], n_col)
+        result_np["inf_imb"] = np.float32(ii_l2)
+        result_np["inf_imb_se"] = np.float32(se_l2)
+        result_np["reciprocal_inf_imb"] = np.float32(rii_l2)
+        result_np["reciprocal_inf_imb_se"] = np.float32(rse_l2)
+        save_file(result_np, str(Path(args.output_folder, l2_label, f"{layer_B_key}.safetensors")))
 
     print(f"\nResults saved to: {args.output_folder}")
 
