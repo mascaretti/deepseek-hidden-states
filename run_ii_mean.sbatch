@@ -218,13 +218,16 @@ echo "A: ${INPUT_A} (layer ${LAYER_A})"
 echo "B: ${INPUT_B}"
 echo "========================================="
 
+METRICS="${METRICS:-hamming l2 cka}"
+
 python compute_ii_mean.py \
     --input_path_A "${INPUT_A}" \
     --input_path_B "${INPUT_B}" \
     --output_folder "${OUTPUT_BASE}/${NAME}" \
     --layer_A ${LAYER_A} \
     --mean_center \
-    --l2_normalize
+    --l2_normalize \
+    --metrics ${METRICS}
 
 STATUS=$?
 
@@ -232,8 +235,11 @@ echo ""
 echo "Finished at: $(date)"
 echo "Exit code: ${STATUS}"
 if [ ${STATUS} -eq 0 ]; then
-    echo "Output (hamming): $(ls ${OUTPUT_BASE}/${NAME}/hamming | wc -l) layer files"
-    echo "Output (l2):      $(ls ${OUTPUT_BASE}/${NAME}/l2_centered_normalized | wc -l) layer files"
+    for m in ${METRICS}; do
+        DIR="${OUTPUT_BASE}/${NAME}/${m}"
+        [ "${m}" = "l2" ] && DIR="${OUTPUT_BASE}/${NAME}/l2_centered_normalized"
+        [ -d "${DIR}" ] && echo "Output (${m}): $(ls ${DIR} | wc -l) layer files"
+    done
 fi
 
 exit ${STATUS}

@@ -62,6 +62,61 @@ def jackknife_ii(ranks, cards, n_col):
 
 
 # ---------------------------------------------------------------------------
+# CKA
+# ---------------------------------------------------------------------------
+
+def _cka_from_gram(K, L):
+    """Linear CKA from precomputed gram matrices K = XX^T, L = YY^T."""
+    n = K.shape[0]
+    # Center: Kc = HKH with H = I - 11^T/n
+    row_mean_K = K.mean(axis=1, keepdims=True)
+    row_mean_L = L.mean(axis=1, keepdims=True)
+    grand_mean_K = K.mean()
+    grand_mean_L = L.mean()
+    Kc = K - row_mean_K - row_mean_K.T + grand_mean_K
+    Lc = L - row_mean_L - row_mean_L.T + grand_mean_L
+
+    hsic_kl = (Kc * Lc).sum()
+    hsic_kk = (Kc * Kc).sum()
+    hsic_ll = (Lc * Lc).sum()
+    denom = np.sqrt(hsic_kk * hsic_ll)
+    if denom < 1e-10:
+        return np.nan
+    return hsic_kl / denom
+
+
+def jackknife_cka(X, Y):
+    """Linear CKA with jackknife standard error.
+
+    Args:
+        X: (n, p) numpy array (model A activations, single layer).
+        Y: (n, q) numpy array (model B activations, single layer).
+
+    Returns:
+        (cka, se): full-sample CKA and jackknife standard error.
+    """
+    X = np.asarray(X, dtype=np.float64)
+    Y = np.asarray(Y, dtype=np.float64)
+    n = X.shape[0]
+
+    K = X @ X.T
+    L = Y @ Y.T
+
+    cka_full = _cka_from_gram(K, L)
+
+    # Leave-one-out on gram matrices (drop row/col i)
+    cka_loo = np.empty(n)
+    for i in range(n):
+        mask = np.ones(n, dtype=bool)
+        mask[i] = False
+        cka_loo[i] = _cka_from_gram(K[np.ix_(mask, mask)], L[np.ix_(mask, mask)])
+
+    pseudo = n * cka_full - (n - 1) * cka_loo
+    se = float(np.std(pseudo, ddof=1) / np.sqrt(n))
+    return float(cka_full), se
+
+
+# ---------------------------------------------------------------------------
 # Loading
 # ---------------------------------------------------------------------------
 
@@ -138,16 +193,25 @@ def main():
                         help="L2-normalise vectors before computing L2 distance (cosine mode)")
     parser.add_argument("--mean_center", action="store_true",
                         help="Subtract per-layer mean before computing L2 distance")
+    parser.add_argument("--metrics", type=str, nargs="+",
+                        default=["hamming", "l2", "cka"],
+                        help="Which metrics to compute (default: hamming l2 cka)")
     args = parser.parse_args()
 
-    Path(args.output_folder, "hamming").mkdir(parents=True, exist_ok=True)
-    l2_parts = ["l2"]
-    if args.mean_center:
-        l2_parts.append("centered")
-    if args.l2_normalize:
-        l2_parts.append("normalized")
-    l2_label = "_".join(l2_parts)
-    Path(args.output_folder, l2_label).mkdir(parents=True, exist_ok=True)
+    metrics = set(args.metrics)
+    if "hamming" in metrics:
+        Path(args.output_folder, "hamming").mkdir(parents=True, exist_ok=True)
+    if "cka" in metrics:
+        Path(args.output_folder, "cka").mkdir(parents=True, exist_ok=True)
+    l2_label = None
+    if "l2" in metrics:
+        l2_parts = ["l2"]
+        if args.mean_center:
+            l2_parts.append("centered")
+        if args.l2_normalize:
+            l2_parts.append("normalized")
+        l2_label = "_".join(l2_parts)
+        Path(args.output_folder, l2_label).mkdir(parents=True, exist_ok=True)
 
     # Load
     print("Loading activations...")
@@ -171,65 +235,82 @@ def main():
     print(f"Model B layers: {n_layers_B} ({act_B['layer_0'].shape[1]}d)")
     print(f"Sample size: {sample_size}")
 
-    # Setup II computation (two distance functions, both return per-row data)
-    key = jax.random.key(42)
-    key, subkey1, subkey2 = jax.random.split(key, 3)
-    hamming_fn = build_information_matrix(
-        key=subkey1, sample_size=sample_size, distance_fn=hamming_distance
-    )
-    l2_fn = build_information_matrix(
-        key=subkey2, sample_size=sample_size, distance_fn=L2_distance
-    )
-
-    # Prepare model A (fixed layer)
-    if args.l2_normalize:
-        print("L2 Normalisation")
-    if args.mean_center:
-        print("Mean centering")
+    # Setup II computation
     raw_a = jnp.array(act_A[layer_A_key])
-    a_hamming = binarize(raw_a)
-    a_l2 = raw_a
-    if args.mean_center:
-        a_l2 = a_l2 - a_l2.mean(axis=0)
-    if args.l2_normalize:
-        a_l2 = l2_normalize(a_l2)
+    key = jax.random.key(42)
 
-    # n_col for jackknife (must match build_information_matrix's formula)
-    n_row = int(np.floor(0.2 * sample_size))
-    n_col = sample_size - n_row
+    hamming_fn = l2_fn = None
+    n_col = None
+    if "hamming" in metrics or "l2" in metrics:
+        n_row = int(np.floor(0.2 * sample_size))
+        n_col = sample_size - n_row
+
+    if "hamming" in metrics:
+        key, subkey = jax.random.split(key)
+        hamming_fn = build_information_matrix(
+            key=subkey, sample_size=sample_size, distance_fn=hamming_distance
+        )
+    if "l2" in metrics:
+        key, subkey = jax.random.split(key)
+        l2_fn = build_information_matrix(
+            key=subkey, sample_size=sample_size, distance_fn=L2_distance
+        )
+
+    # Prepare model A transforms
+    a_hamming = binarize(raw_a) if "hamming" in metrics else None
+    a_l2 = None
+    if "l2" in metrics:
+        if args.l2_normalize:
+            print("L2 Normalisation")
+        if args.mean_center:
+            print("Mean centering")
+        a_l2 = raw_a
+        if args.mean_center:
+            a_l2 = a_l2 - a_l2.mean(axis=0)
+        if args.l2_normalize:
+            a_l2 = l2_normalize(a_l2)
 
     # Sweep over model B layers
+    print(f"Metrics: {', '.join(sorted(metrics))}")
     cols = [f"layer_{i}" for i in range(1, n_layers_B)]
-    for layer_B_key in tqdm(cols, desc="Computing II"):
+    for layer_B_key in tqdm(cols, desc="Computing"):
         raw_b = jnp.array(act_B[layer_B_key])
 
-        # Hamming
-        b_hamming = binarize(raw_b)
-        result = hamming_fn(a_hamming, b_hamming)
-        result_np = {k: np.asarray(v) for k, v in result.items()}
-        ii_h, se_h = jackknife_ii(result_np["ranks"], result_np["cards"], n_col)
-        rii_h, rse_h = jackknife_ii(result_np["r_ranks"], result_np["r_cards"], n_col)
-        result_np["inf_imb"] = np.float32(ii_h)
-        result_np["inf_imb_se"] = np.float32(se_h)
-        result_np["reciprocal_inf_imb"] = np.float32(rii_h)
-        result_np["reciprocal_inf_imb_se"] = np.float32(rse_h)
-        save_file(result_np, str(Path(args.output_folder, "hamming", f"{layer_B_key}.safetensors")))
+        if "hamming" in metrics:
+            b_hamming = binarize(raw_b)
+            result = hamming_fn(a_hamming, b_hamming)
+            result_np = {k: np.asarray(v) for k, v in result.items()}
+            ii_h, se_h = jackknife_ii(result_np["ranks"], result_np["cards"], n_col)
+            rii_h, rse_h = jackknife_ii(result_np["r_ranks"], result_np["r_cards"], n_col)
+            result_np["inf_imb"] = np.float32(ii_h)
+            result_np["inf_imb_se"] = np.float32(se_h)
+            result_np["reciprocal_inf_imb"] = np.float32(rii_h)
+            result_np["reciprocal_inf_imb_se"] = np.float32(rse_h)
+            save_file(result_np, str(Path(args.output_folder, "hamming", f"{layer_B_key}.safetensors")))
 
-        # L2 (per-row data → jackknife)
-        b_l2 = raw_b
-        if args.mean_center:
-            b_l2 = b_l2 - b_l2.mean(axis=0)
-        if args.l2_normalize:
-            b_l2 = l2_normalize(b_l2)
-        result = l2_fn(a_l2, b_l2)
-        result_np = {k: np.asarray(v) for k, v in result.items()}
-        ii_l2, se_l2 = jackknife_ii(result_np["ranks"], result_np["cards"], n_col)
-        rii_l2, rse_l2 = jackknife_ii(result_np["r_ranks"], result_np["r_cards"], n_col)
-        result_np["inf_imb"] = np.float32(ii_l2)
-        result_np["inf_imb_se"] = np.float32(se_l2)
-        result_np["reciprocal_inf_imb"] = np.float32(rii_l2)
-        result_np["reciprocal_inf_imb_se"] = np.float32(rse_l2)
-        save_file(result_np, str(Path(args.output_folder, l2_label, f"{layer_B_key}.safetensors")))
+        if "cka" in metrics:
+            cka_val, cka_se = jackknife_cka(np.asarray(raw_a), np.asarray(raw_b))
+            cka_result = {
+                "cka": np.float32(cka_val),
+                "cka_se": np.float32(cka_se),
+            }
+            save_file(cka_result, str(Path(args.output_folder, "cka", f"{layer_B_key}.safetensors")))
+
+        if "l2" in metrics:
+            b_l2 = raw_b
+            if args.mean_center:
+                b_l2 = b_l2 - b_l2.mean(axis=0)
+            if args.l2_normalize:
+                b_l2 = l2_normalize(b_l2)
+            result = l2_fn(a_l2, b_l2)
+            result_np = {k: np.asarray(v) for k, v in result.items()}
+            ii_l2, se_l2 = jackknife_ii(result_np["ranks"], result_np["cards"], n_col)
+            rii_l2, rse_l2 = jackknife_ii(result_np["r_ranks"], result_np["r_cards"], n_col)
+            result_np["inf_imb"] = np.float32(ii_l2)
+            result_np["inf_imb_se"] = np.float32(se_l2)
+            result_np["reciprocal_inf_imb"] = np.float32(rii_l2)
+            result_np["reciprocal_inf_imb_se"] = np.float32(rse_l2)
+            save_file(result_np, str(Path(args.output_folder, l2_label, f"{layer_B_key}.safetensors")))
 
     print(f"\nResults saved to: {args.output_folder}")
 
