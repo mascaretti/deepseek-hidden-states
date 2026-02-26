@@ -271,18 +271,18 @@ if __name__ == "__main__":
         Nbits_list = [0]
 
     elif args.dbg == 1:
-        n_files = 1
+        n_files = 2
         seed_list = np.arange(0,2+1,dtype=int)
         k_list = [10]
         Nbits_list = [0]
 
     if args.language == "english":
         input_path_A = input_paths[args.modelA][args.language]["spanish"]["source"][str(args.min_token_length)]
-    if args.language == "spanish":
+    if args.language == 'german':
+        input_path_A = input_paths[args.modelA][args.language]["english"]["source"][str(args.min_token_length)]
+    else:
         input_path_A = input_paths[args.modelA]["english"][args.language]["target"][str(args.min_token_length)]
-    if args.language == "italian":
-        input_path_A = input_paths[args.modelA]["english"][args.language]["target"][str(args.min_token_length)]
-    
+   
 
     print("Input path A = ", input_path_A, flush=True)
     
