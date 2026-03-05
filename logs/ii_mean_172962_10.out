@@ -1,0 +1,24 @@
+=========================================
+II (mean-pooled): llama_clip_image
+Job 172972, task 10
+Node: dgx02
+Started at: Tue Feb 24 01:47:23 PM CET 2026
+A: /home/laios/image-information-imbalance/windsorised_mean/llama (layer 20)
+B: /home/laios/image-information-imbalance/windsorised_mean/openai-clip-vit-large-patch14-image
+=========================================
+Loading activations...
+  llama: 5000 samples, 33 layers, embed=4096
+  openai-clip-vit-large-patch14-image: 5000 samples, 25 layers, embed=1024
+
+Model A layer: layer_20 (4096d)
+Model B layers: 25 (1024d)
+Sample size: 5000
+L2 Normalisation
+Mean centering
+
+Results saved to: /home/laios/image-information-imbalance/results-mean/llama_clip_image
+
+Finished at: Tue Feb 24 01:47:44 PM CET 2026
+Exit code: 0
+Output (hamming): 24 layer files
+Output (l2):      24 layer files

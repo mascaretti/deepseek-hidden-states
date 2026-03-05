@@ -1,0 +1,18 @@
+=========================================
+II (mean-pooled): dino_llama
+Job 173012, task 24
+Node: dgx01
+Started at: Tue Feb 24 01:54:24 PM CET 2026
+A: /home/laios/image-information-imbalance/windsorised_mean/facebook-dinov2-large (layer 24)
+B: /home/laios/image-information-imbalance/windsorised_mean/llama
+=========================================
+Loading activations...
+  facebook-dinov2-large: 5000 samples, 25 layers, embed=1024
+  llama: 5000 samples, 33 layers, embed=4096
+
+Model A layer: layer_24 (1024d)
+Model B layers: 33 (4096d)
+Sample size: 5000
+
+Finished at: Tue Feb 24 01:54:30 PM CET 2026
+Exit code: 1

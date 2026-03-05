@@ -1,0 +1,36 @@
+Loading llama:   0%|          | 0/471 [00:00<?, ?it/s]Loading llama:   2%|▏         | 9/471 [00:00<00:05, 88.43it/s]Loading llama:   4%|▍         | 18/471 [00:00<00:05, 88.62it/s]Loading llama:   6%|▌         | 27/471 [00:00<00:04, 89.17it/s]Loading llama:   8%|▊         | 36/471 [00:00<00:04, 89.27it/s]Loading llama:  10%|▉         | 45/471 [00:00<00:04, 89.03it/s]Loading llama:  12%|█▏        | 55/471 [00:00<00:04, 89.63it/s]Loading llama:  14%|█▎        | 64/471 [00:00<00:04, 89.39it/s]Loading llama:  15%|█▌        | 73/471 [00:00<00:04, 89.14it/s]Loading llama:  17%|█▋        | 82/471 [00:00<00:04, 88.94it/s]Loading llama:  20%|█▉        | 94/471 [00:01<00:03, 95.97it/s]Loading llama:  23%|██▎       | 107/471 [00:01<00:03, 103.90it/s]Loading llama:  25%|██▌       | 120/471 [00:01<00:03, 109.50it/s]Loading llama:  28%|██▊       | 132/471 [00:01<00:03, 112.46it/s]Loading llama:  31%|███       | 144/471 [00:01<00:02, 114.44it/s]Loading llama:  33%|███▎      | 157/471 [00:01<00:02, 116.89it/s]                                                                 Loading facebook-dinov2-large:   0%|          | 0/1000 [00:00<?, ?it/s]Loading facebook-dinov2-large:  16%|█▋        | 165/1000 [00:00<00:00, 1642.30it/s]Loading facebook-dinov2-large:  33%|███▎      | 330/1000 [00:00<00:00, 1073.58it/s]Loading facebook-dinov2-large:  46%|████▌     | 457/1000 [00:00<00:00, 1141.41it/s]                                                                                   2026-02-24 13:54:29.515569: E external/xla/xla/stream_executor/cuda/cuda_driver.cc:266] failed call to cuInit: CUDA_ERROR_NO_DEVICE: no CUDA-capable device is detected
+Traceback (most recent call last):
+  File "/home/mascaretti/myjax/lib/python3.9/site-packages/jax/_src/xla_bridge.py", line 879, in backends
+    backend = _init_backend(platform)
+  File "/home/mascaretti/myjax/lib/python3.9/site-packages/jax/_src/xla_bridge.py", line 970, in _init_backend
+    backend = registration.factory()
+  File "/home/mascaretti/myjax/lib/python3.9/site-packages/jax/_src/xla_bridge.py", line 668, in factory
+    return xla_client.make_c_api_client(plugin_name, updated_options, None)
+  File "/home/mascaretti/myjax/lib/python3.9/site-packages/jaxlib/xla_client.py", line 200, in make_c_api_client
+    return _xla.get_c_api_client(plugin_name, options, distributed_client)
+jaxlib.xla_extension.XlaRuntimeError: FAILED_PRECONDITION: No visible GPU devices.
+
+During handling of the above exception, another exception occurred:
+
+jax.errors.SimplifiedTraceback: For simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/mascaretti/deepseek-hidden-states/compute_ii_mean.py", line 319, in <module>
+    main()
+  File "/home/mascaretti/deepseek-hidden-states/compute_ii_mean.py", line 239, in main
+    raw_a = jnp.array(act_A[layer_A_key])
+  File "/home/mascaretti/myjax/lib/python3.9/site-packages/jax/_src/numpy/lax_numpy.py", line 3214, in array
+    out_array: Array = lax_internal._convert_element_type(
+  File "/home/mascaretti/myjax/lib/python3.9/site-packages/jax/_src/lax/lax.py", line 559, in _convert_element_type
+    return convert_element_type_p.bind(operand, new_dtype=new_dtype,
+  File "/home/mascaretti/myjax/lib/python3.9/site-packages/jax/_src/core.py", line 416, in bind
+    return self.bind_with_trace(find_top_trace(args), args, params)
+  File "/home/mascaretti/myjax/lib/python3.9/site-packages/jax/_src/core.py", line 420, in bind_with_trace
+    out = trace.process_primitive(self, map(trace.full_raise, args), params)
+  File "/home/mascaretti/myjax/lib/python3.9/site-packages/jax/_src/core.py", line 921, in process_primitive
+    return primitive.impl(*tracers, **params)
+  File "/home/mascaretti/myjax/lib/python3.9/site-packages/jax/_src/dispatch.py", line 87, in apply_primitive
+    outs = fun(*args)
+RuntimeError: Unable to initialize backend 'cuda': FAILED_PRECONDITION: No visible GPU devices. (you may need to uninstall the failing plugin package, or set JAX_PLATFORMS=cpu to skip this backend.)
