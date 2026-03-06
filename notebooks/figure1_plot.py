@@ -53,6 +53,12 @@ def main():
     if not hasattr(axes, "__len__"):
         axes = [axes]
 
+    # Panel labels
+    labels = [chr(ord("a") + i) for i in range(1 + n_panels_b)]
+    for i, ax in enumerate(axes):
+        ax.text(-0.14, 1.10, f"{labels[i]})", transform=ax.transAxes,
+                fontsize=12, fontweight="bold", va="top")
+
     # ------------------------------------------------------------------
     # Panel A
     # ------------------------------------------------------------------
@@ -76,7 +82,7 @@ def main():
     ax.set_ylim(0, 1.0)
     ax.tick_params(labelsize=11)
     ax.legend(fontsize=6, loc="upper right")
-    ax.set_title(f"$D = {dim}$", fontsize=11)
+    ax.set_title(f"$p = {dim}$", fontsize=11)
 
     # ------------------------------------------------------------------
     # Panel B (one per p)
@@ -94,14 +100,14 @@ def main():
         ]:
             mean = d[key_base]
             se = d[key_base.replace("mean", "se")]
-            ax.plot(fracs, mean, "-o", color=color, markersize=ms,
+            ax.plot(fracs, mean, color=color, markersize=ms,
                     markeredgecolor="black", markeredgewidth=mew, label=label)
             ax.fill_between(fracs, mean - se, mean + se, color=color, alpha=0.2)
 
         ax.set_xlabel("Fraction of shared features", fontsize=11)
         ax.set_ylim(-0.05, 1.05)
         ax.tick_params(labelsize=11)
-        ax.legend(fontsize=6, loc="center right")
+        ## ax.legend(fontsize=6, loc="best")
         ax.set_title(f"$p = {p}$", fontsize=11)
 
     fig.tight_layout()

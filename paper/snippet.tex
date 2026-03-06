@@ -1,0 +1,86 @@
+\subsection{Images with related content}
+
+\paragraph{Within-model analysis.}
+We first compare representations for pairs of images that share the same ImageNet-1k class but depict \emph{different} scenes, using mean-token activations.
+Since the assignment of the two images to the two representation spaces is arbitrary, we report the average Information Imbalance in both directions.
+Results are shown in Fig.~\ref{fig:image-image}\,a).
+For DinoV2, the Information Imbalance decreases monotonically and reaches values close to~$0.35$ around its last layer.
+For ImageGPT, the minimum ($\approx 0.65$) is attained around layer~20 ($42\%$ relative depth, out of 48~layers), after which the Information Imbalance rises again, reaching $\approx 0.85$ at the last layer.
+This is consistent with the respective training objectives: DinoV2's self-supervised objective produces increasingly semantic representations toward the output, whereas ImageGPT, like autoregressive LLMs, concentrates semantic content in the middle of the network and reverts to next-token-specific features near the output.
+
+\paragraph{Cross-model analysis.}
+We next ask whether the semantic layers identified above are also the most mutually predictive \emph{across} the two architectures.
+In Fig.~\ref{fig:image-image}\,b), we fix one model at its most semantic layer---DinoV2 at its last layer, ImageGPT at layer~20---and sweep across all layers of the other model, using the same ImageNet-1k same-class pairs (i.e.\ different images of the same class processed by different models).
+The cross-model Information Imbalance confirms that the semantic layers of one architecture are best predicted by the semantic layers of the other: ImageGPT layers around $40\%$ relative depth are most predictable from DinoV2's last layer, and DinoV2's deepest layers are most predictable from ImageGPT layer~20.
+
+Fig.~\ref{fig:image-image}\,c) repeats the cross-model analysis on Flickr30k, where both models encode the \emph{same} images.
+The qualitative picture is unchanged: the same semantic regions emerge, and the Information Imbalance profiles are consistent with panels~a) and~b), confirming that the identified semantic layers generalize across datasets.
+In both panels~b) and~c), the dashed lines (backward direction) closely track the solid lines (forward), indicating approximately symmetric mutual predictability between the two models at their respective semantic layers.
+
+\begin{figure}[t!]
+      \centering
+      \includegraphics[width=\textwidth]{figs-tmlr/image-captions/fig4a.pdf}
+      \caption{
+      Information Imbalance between ImageGPT and DinoV2 image
+      representations, using mean-token activations.
+      \textbf{a)}~Within-model Information Imbalance for 1,000 same-class \emph{different}
+      image pairs from ImageNet-1k: each model encodes two distinct
+      images of the same class, and the Information Imbalance is computed between the two
+      resulting representations. DinoV2 is evaluated at its last layer;
+      ImageGPT at layer~20.
+      \textbf{b)}~Cross-model Information Imbalance on the same ImageNet-1k pairs.
+      DinoV2 (last layer) is compared against all ImageGPT layers,
+      and ImageGPT (layer~20) against all DinoV2 layers.
+      \textbf{c)}~Cross-model Information Imbalance on Flickr30k, where the \emph{same}
+      images are encoded by both models. DinoV2 (last layer)
+      is swept against all ImageGPT layers, and ImageGPT (layer~20)
+      against all DinoV2 layers.
+      In~(b) and~(c), solid lines denote the forward direction
+      (fixed model$\,\to\,$swept model); dashed lines the backward
+      direction (swept model$\,\to\,$fixed model).}
+      \label{fig:image-image}
+  \end{figure}
+
+
+\subsection{Images and captions: multimodal data sharing semantic content}
+
+Image--caption pairs convey approximately the same meaning in different modalities, similarly to translations of the same sentence in different languages.
+In Fig.~\ref{fig:ds-52}\,a), we report the Information Imbalance between layer~52 of DeepSeek-V3---which lies within the region of maximal mutual predictability between translations (see Fig.~\ref{fig:last-concat-avg})---and each layer of the two vision transformers, on the Flickr30k dataset.
+The cross-modal profile recovers exactly the same semantic regions identified by the image--image analysis: the Information Imbalance decreases monotonically toward the last layer for DinoV2, while it reaches a minimum in the middle for ImageGPT.
+
+For DinoV2, the minimum Information Imbalance is $\approx 0.10$ (at layer~24, the final layer), with a reciprocal value of $\approx 0.12$.
+The two directions are close, indicating approximately balanced cross-modal predictability; the slight advantage of DeepSeek-V3$\to$DinoV2 over DinoV2$\to$DeepSeek-V3 is consistent with DinoV2 being explicitly trained to extract semantically meaningful visual features, so that its final representation is well predicted by a textual semantic summary.
+For ImageGPT, the minimum Information Imbalance from DeepSeek-V3 is $\approx 0.41$ (at layer~20, $42\%$ relative depth), with a reciprocal of $\approx 0.44$.
+The substantially higher values compared to DinoV2 indicate weaker cross-modal alignment.
+The asymmetry between the two directions, with text predicting image representations slightly better than the reverse, is consistent with DeepSeek-V3 producing higher-quality semantic representations than ImageGPT.
+
+To test whether joint text--image training facilitates cross-modal alignment, we compare in Fig.~\ref{fig:ds-52}\,b) the ViT-L/14 visual encoder of the multimodal CLIP system~\citep{radford2021learning} against both DinoV2-large (a within-modality comparison) and CLIP-Text (a cross-modal comparison).
+The minimum Information Imbalance from CLIP-Image to CLIP-Text is $\approx 0.22$ (at layer~19), compared to $\approx 0.05$ from CLIP-Image to DinoV2, showing that two vision models trained with different objectives share more representational structure than a vision and a text encoder, even when jointly trained.
+
+Finally, to probe whether the observed cross-modal alignment depends on the scale of the vision model, we repeat the DeepSeek-V3--DinoV2 analysis with three DinoV2 variants: large (24~layers), base (12~layers), and small (12~layers); see Fig.~\ref{fig:llama-52}\,b).
+The minimum Information Imbalance is $0.10$ for DinoV2-large, $0.10$ for DinoV2-base, and $0.15$ for DinoV2-small.
+All three profiles reach their minimum at the last layer, confirming that the semantic region is robustly identified regardless of vision model size.
+The small gap between the large and base variants, together with the higher value for the small model, suggests that the quality of cross-modal alignment saturates once the vision model reaches a sufficient capacity, consistent with the results on translations in Fig.~\ref{fig:compare-langs-models}.
+We report the analysis with LLama3.1-8B as the text encoder in Supp.~Inf.~\ref{appendix:image-captions}.
+
+\begin{figure}[t!]
+      \centering
+      \includegraphics[width=\textwidth]{figs-tmlr/image-captions/fig4b.pdf}
+      \caption{
+      Information Imbalance between image and caption representations
+      on Flickr30k, using centered and normalized mean-token activations.
+      \textbf{a)}~Images encoded with DinoV2-large and ImageGPT; captions
+      with DeepSeek-V3 (layer~52). Results shown as a function of
+      relative ViT depth.
+      \textbf{b)}~CLIP-Image (layer~24, last) compared against DinoV2-large
+      (within modality) and CLIP-Text (cross-modal).
+      In both panels, solid lines denote the forward direction
+      (target$\,\to\,$sweep model); dashed lines denote the backward
+      direction (sweep model$\,\to\,$target).
+      Uncertainty estimated via bootstrapping
+      (100 replicas of 750 samples in~(a);
+      2,000 replicas of 200 samples in~(b);
+      both over 5,000 total).
+      }
+      \label{fig:ds-52}
+  \end{figure}

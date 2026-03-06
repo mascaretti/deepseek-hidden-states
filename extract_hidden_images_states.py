@@ -56,18 +56,32 @@ def extract_image_hidden_states(model_name: str, dataset: Dataset, img_column: s
             pickle.dump(all_hidden_states, f)
 
 def main():
-    subset_size = 5000
-    print(subset_size)
-    image_model_name = ["openai/imagegpt-small", "openai/imagegpt-medium", "openai/imagegpt-large", "facebook/dinov2-large", "facebook/dinov2-base", "facebook/dinov2-small", "openai/clip-vit-large-patch14"][0]
-    print(image_model_name)
-    dataset = load_from_disk("/home/datasets/flickr30k/")
-    print(len(dataset))
-    batch_size = 10
+    import argparse
+    parser = argparse.ArgumentParser(description="Extract image hidden states from a vision transformer.")
+    parser.add_argument("--model", type=str, default="openai/imagegpt-small",
+                        help="HuggingFace model name")
+    parser.add_argument("--output", type=str, default=None,
+                        help="Output directory (default: /home/laios/image-information-imbalance/<model>)")
+    parser.add_argument("--dataset", type=str, default="/home/datasets/flickr30k/",
+                        help="Path to the dataset on disk")
+    parser.add_argument("--subset_size", type=int, default=5000)
+    parser.add_argument("--batch_size", type=int, default=10)
+    args = parser.parse_args()
+
+    image_model_name = args.model
+    output_directory = Path(args.output) if args.output else Path("/home/laios/image-information-imbalance", image_model_name.replace('/', '-'))
+
+    print(f"Model: {image_model_name}")
+    print(f"Output: {output_directory}")
+    dataset = load_from_disk(args.dataset)
+    print(f"Dataset size: {len(dataset)}")
 
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(DEVICE)
+    print(f"Device: {DEVICE}")
 
-    extract_image_hidden_states(model_name=image_model_name, dataset=dataset, img_column='jpg', batch_size=batch_size, subset_size=subset_size, device=DEVICE, output_directory=Path("/home/laios/image-information-imbalance", image_model_name.replace('/', '-')))
+    extract_image_hidden_states(model_name=image_model_name, dataset=dataset, img_column='jpg',
+                                batch_size=args.batch_size, subset_size=args.subset_size,
+                                device=DEVICE, output_directory=output_directory)
     
 if __name__ == "__main__":
     main()
