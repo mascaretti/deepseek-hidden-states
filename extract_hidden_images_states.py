@@ -58,7 +58,7 @@ def extract_image_hidden_states(model_name: str, dataset: Dataset, img_column: s
 def main():
     subset_size = 5000
     print(subset_size)
-    image_model_name = ["openai/imagegpt-large", "facebook/dinov2-large", "facebook/dinov2-base", "facebook/dinov2-small", "openai/clip-vit-large-patch14"][2]
+    image_model_name = ["openai/imagegpt-small", "openai/imagegpt-medium", "openai/imagegpt-large", "facebook/dinov2-large", "facebook/dinov2-base", "facebook/dinov2-small", "openai/clip-vit-large-patch14"][0]
     print(image_model_name)
     dataset = load_from_disk("/home/datasets/flickr30k/")
     print(len(dataset))
