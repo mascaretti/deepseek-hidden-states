@@ -297,8 +297,8 @@ cross_igpt_dino_bwd = [cross_dino_to_igpt_mean[1:, igpt_layer_dino], cross_dino_
 
 
 ylim = (0.0, 1)
-figsize = (3.5, 3.5)
-fontsize_label = 13
+figsize = (4.5, 4.5)
+fontsize_label = 15
 x = {key:np.linspace(0, 1, N_LAYERS[key]) for key in N_LAYERS.keys()}
 
 
@@ -392,14 +392,17 @@ plt.savefig(Path("/home/masca/GitHub/deepseek-hidden-states/plots/fig4c.pdf"), d
 # In[24]:
 
 
-# ---- Figure 4a: ImageNet1k (within + cross) + Image-image Flickr30k ----
+clipi_clipt_fwd, clipi_clipt_bwd = make_comparison(to_model="clip_image", from_model="clip_text", rng=rng, n_replicas=n_replicas, bootstrap_size=bootstrap_size, sample_size=sample_size, base_dir=base_dir, hamming=DO_HAMMING)
+clipi_dino_fwd, clipi_dino_bwd = make_comparison(to_model="clip_image", from_model="dino", rng=rng, n_replicas=n_replicas, bootstrap_size=bootstrap_size, sample_size=sample_size, base_dir=base_dir, hamming=DO_HAMMING)
+
+# ---- Figure 4a: ImageNet1k within-model + Image-Captions Flickr30k ----
 x_igpt_imagenet = np.arange(48) / 48  # igpt 49 layers, skip layer 0 → 48 points
 x_dino_imagenet = np.arange(39) / 39  # dino-huge 40 layers, skip layer 0 → 39 points
 
-fig, axes = plt.subplots(1, 3, figsize=(3.5 * figsize[0], figsize[1]), sharey=True)
+fig, axes = plt.subplots(1, 2, figsize=(3.5 * figsize[0], figsize[1]), sharey=True)
 
 for i, ax in enumerate(axes):
-    ax.text(-0.14, 1.10, f"{chr(ord('a') + i)})", transform=ax.transAxes,
+    ax.text(-0.12, 1.08, f"{chr(ord('a') + i)})", transform=ax.transAxes,
             fontsize=12, fontweight="bold", va="top")
 
 # a) ImageNet1k — within-model
@@ -416,63 +419,44 @@ ax.plot(x_dino_imagenet, imagenet_dino_igpt_fwd[0], '-', color=MODEL_COLORS['din
         markersize=3, markeredgecolor='black', markeredgewidth=0.3)
 ax.fill_between(x_dino_imagenet, imagenet_dino_igpt_fwd[0] - imagenet_dino_igpt_fwd[1], imagenet_dino_igpt_fwd[0] + imagenet_dino_igpt_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
 
-ax.set_title("ImageNet1k (within-model)", fontsize=12)
+ax.set_title("Same-class images (ImageNet-1k)", fontsize=12)
 ax.set_xlabel("Relative depth", fontsize=fontsize_label)
 ax.set_ylabel("Information Imbalance", fontsize=fontsize_label)
 ax.tick_params(axis='both', labelsize=fontsize_label)
 ax.set_ylim(ylim)
 ax.legend(fontsize=fontsize_label, loc='best')
 
-# b) ImageNet1k — cross-model
+# b) Image-Captions on Flickr30k: DeepSeek ↔ igpt/dino + CLIP-Image → CLIP-Text
 ax = axes[1]
-# DinoV2-huge[39] → ImageGPT[layer] (solid) and reverse (dashed)
-label_forward = f"{MODEL_NAMES['dino']} → {MODEL_NAMES['igpt']}"
-ax.plot(x_igpt_imagenet, cross_dino_igpt_fwd[0], '-', color=MODEL_COLORS['igpt'],
+label_forward = f"{MODEL_NAMES['deepseek']} → {MODEL_NAMES['igpt']}"
+ax.plot(x['igpt'], igpt_fwd[0], '-', color=MODEL_COLORS['igpt'],
         label=label_forward, linewidth=2, marker='o',
         markersize=3, markeredgecolor='black', markeredgewidth=0.3)
-ax.fill_between(x_igpt_imagenet, cross_dino_igpt_fwd[0] - cross_dino_igpt_fwd[1], cross_dino_igpt_fwd[0] + cross_dino_igpt_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
-ax.plot(x_igpt_imagenet, cross_dino_igpt_bwd[0], '--', color=MODEL_COLORS['igpt'], linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
-ax.fill_between(x_igpt_imagenet, cross_dino_igpt_bwd[0] - cross_dino_igpt_bwd[1], cross_dino_igpt_bwd[0] + cross_dino_igpt_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
+ax.fill_between(x['igpt'], igpt_fwd[0] - igpt_fwd[1], igpt_fwd[0] + igpt_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
+ax.plot(x['igpt'], igpt_bwd[0], '--', color=MODEL_COLORS['igpt'], linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x['igpt'], igpt_bwd[0] - igpt_bwd[1], igpt_bwd[0] + igpt_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
 
-# ImageGPT[20] → DinoV2-huge[layer] (solid) and reverse (dashed)
-label_forward = f"{MODEL_NAMES['igpt']} → {MODEL_NAMES['dino']}"
-ax.plot(x_dino_imagenet, cross_igpt_dino_fwd[0], '-', color=MODEL_COLORS['dino'],
+label_forward = f"{MODEL_NAMES['deepseek']} → {MODEL_NAMES['dino']}"
+ax.plot(x['dino'], dino_fwd[0], '-', color=MODEL_COLORS['dino'],
         label=label_forward, linewidth=2, marker='o',
         markersize=3, markeredgecolor='black', markeredgewidth=0.3)
-ax.fill_between(x_dino_imagenet, cross_igpt_dino_fwd[0] - cross_igpt_dino_fwd[1], cross_igpt_dino_fwd[0] + cross_igpt_dino_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
-ax.plot(x_dino_imagenet, cross_igpt_dino_bwd[0], '--', color=MODEL_COLORS['dino'], linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
-ax.fill_between(x_dino_imagenet, cross_igpt_dino_bwd[0] - cross_igpt_dino_bwd[1], cross_igpt_dino_bwd[0] + cross_igpt_dino_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
+ax.fill_between(x['dino'], dino_fwd[0] - dino_fwd[1], dino_fwd[0] + dino_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
+ax.plot(x['dino'], dino_bwd[0], '--', color=MODEL_COLORS['dino'], linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x['dino'], dino_bwd[0] - dino_bwd[1], dino_bwd[0] + dino_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
 
-ax.set_title("ImageNet1k (cross-model)", fontsize=12)
+# CLIP-Image → CLIP-Text
+label_forward = f"{MODEL_NAMES['clip_image']} → {MODEL_NAMES['clip_text']}"
+ax.plot(x['clip_text'], clipi_clipt_fwd[0], '-', color=MODEL_COLORS['clip_text'],
+        label=label_forward, linewidth=2, marker='o',
+        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x['clip_text'], clipi_clipt_fwd[0] - clipi_clipt_fwd[1], clipi_clipt_fwd[0] + clipi_clipt_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['clip_text'])
+ax.plot(x['clip_text'], clipi_clipt_bwd[0], '--', color=MODEL_COLORS['clip_text'], linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x['clip_text'], clipi_clipt_bwd[0] - clipi_clipt_bwd[1], clipi_clipt_bwd[0] + clipi_clipt_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['clip_text'])
+
+ax.set_title("Image--caption pairs (Flickr30k)", fontsize=12)
 ax.set_xlabel("Relative depth", fontsize=fontsize_label)
 ax.tick_params(axis='both', labelsize=fontsize_label)
 ax.set_ylim(ylim)
-ax.legend(fontsize=fontsize_label, loc='best')
-
-# c) Image-image on Flickr30k
-ax = axes[2]
-# DinoV2[24] → ImageGPT[layer] (solid) and reverse (dashed)
-label_forward = f"{MODEL_NAMES['dino']} → {MODEL_NAMES['igpt']}"
-ax.plot(x['igpt'], dino_igpt_fwd[0], '-', color=MODEL_COLORS['igpt'],
-        label=label_forward, linewidth=2, marker='o',
-        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
-ax.fill_between(x['igpt'], dino_igpt_fwd[0] - dino_igpt_fwd[1], dino_igpt_fwd[0] + dino_igpt_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
-ax.plot(x['igpt'], dino_igpt_bwd[0], '--', color=MODEL_COLORS['igpt'], linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
-ax.fill_between(x['igpt'], dino_igpt_bwd[0] - dino_igpt_bwd[1], dino_igpt_bwd[0] + dino_igpt_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
-
-# ImageGPT[20] → DinoV2[layer] (solid) and reverse (dashed)
-label_forward = f"{MODEL_NAMES['igpt']} → {MODEL_NAMES['dino']}"
-ax.plot(x['dino'], igpt_dino_fwd[0], '-', color=MODEL_COLORS['dino'],
-        label=label_forward, linewidth=2, marker='o',
-        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
-ax.fill_between(x['dino'], igpt_dino_fwd[0] - igpt_dino_fwd[1], igpt_dino_fwd[0] + igpt_dino_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
-ax.plot(x['dino'], igpt_dino_bwd[0], '--', color=MODEL_COLORS['dino'], linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
-ax.fill_between(x['dino'], igpt_dino_bwd[0] - igpt_dino_bwd[1], igpt_dino_bwd[0] + igpt_dino_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
-
-ax.set_title("Image-image on Flickr30k", fontsize=12)
-ax.set_xlabel("Relative depth", fontsize=fontsize_label)
-ax.set_ylim(ylim)
-ax.tick_params(axis='both', labelsize=fontsize_label)
 ax.legend(fontsize=fontsize_label, loc='best')
 
 plt.tight_layout()
@@ -492,13 +476,6 @@ igpt_fwd_ll, igpt_bwd_ll = compare_llama(from_model="igpt")
 dino_fwd_ll, dino_bwd_ll = compare_llama(from_model="dino")
 
 
-# In[27]:
-
-
-clipi_clipt_fwd, clipi_clipt_bwd = make_comparison(to_model="clip_image", from_model="clip_text", rng=rng, n_replicas=n_replicas, bootstrap_size=bootstrap_size, sample_size=sample_size, base_dir=base_dir, hamming=DO_HAMMING)
-clipi_dino_fwd, clipi_dino_bwd = make_comparison(to_model="clip_image", from_model="dino", rng=rng, n_replicas=n_replicas, bootstrap_size=bootstrap_size, sample_size=sample_size, base_dir=base_dir, hamming=DO_HAMMING)
-
-
 # In[28]:
 
 
@@ -509,44 +486,65 @@ dino_fwd_small, dino_bwd_small = compare_deepseek(from_model="dino_small")
 # In[29]:
 
 
-# ---- Figure 4b: Image-Captions Flickr30k + Target CLIP-Image ----
-fig, axes = plt.subplots(1, 2, figsize=(2.5 * figsize[0], figsize[1]), sharey=True)
+# ---- Figure 4b: Cross-model ImageNet + Cross-model Flickr30k + CLIP-Image↔DinoV2 ----
+fig, axes = plt.subplots(1, 3, figsize=(3.5 * figsize[0], figsize[1]), sharey=True)
 ylim = (0.0, 1)
 
 for i, ax in enumerate(axes):
     ax.text(-0.14, 1.10, f"{chr(ord('a') + i)})", transform=ax.transAxes,
             fontsize=12, fontweight="bold", va="top")
 
-# a) Image-Captions on Flickr30k (was fig4 b)
+# a) ImageNet1k — cross-model
 ax = axes[0]
-label_forward = f"{MODEL_NAMES['deepseek']} → {MODEL_NAMES['igpt']}"
-ax.plot(x['igpt'], igpt_fwd[0], '-', color=MODEL_COLORS['igpt'],
+label_forward = f"{MODEL_NAMES['dino']} → {MODEL_NAMES['igpt']}"
+ax.plot(x_igpt_imagenet, cross_dino_igpt_fwd[0], '-', color=MODEL_COLORS['igpt'],
         label=label_forward, linewidth=2, marker='o',
         markersize=3, markeredgecolor='black', markeredgewidth=0.3)
-ax.fill_between(x['igpt'], igpt_fwd[0] - igpt_fwd[1], igpt_fwd[0] + igpt_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
-label_backward = f"{MODEL_NAMES['igpt']} → {MODEL_NAMES['deepseek']}"
-ax.plot(x['igpt'], igpt_bwd[0], '--', color=MODEL_COLORS['igpt'], linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
-ax.fill_between(x['igpt'], igpt_bwd[0] - igpt_bwd[1], igpt_bwd[0] + igpt_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
+ax.fill_between(x_igpt_imagenet, cross_dino_igpt_fwd[0] - cross_dino_igpt_fwd[1], cross_dino_igpt_fwd[0] + cross_dino_igpt_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
+ax.plot(x_igpt_imagenet, cross_dino_igpt_bwd[0], '--', color=MODEL_COLORS['igpt'], linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x_igpt_imagenet, cross_dino_igpt_bwd[0] - cross_dino_igpt_bwd[1], cross_dino_igpt_bwd[0] + cross_dino_igpt_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
 
-label_forward = f"{MODEL_NAMES['deepseek']} → {MODEL_NAMES['dino']}"
-ax.plot(x['dino'], dino_fwd[0], '-', color=MODEL_COLORS['dino'],
+label_forward = f"{MODEL_NAMES['igpt']} → {MODEL_NAMES['dino']}"
+ax.plot(x_dino_imagenet, cross_igpt_dino_fwd[0], '-', color=MODEL_COLORS['dino'],
         label=label_forward, linewidth=2, marker='o',
         markersize=3, markeredgecolor='black', markeredgewidth=0.3)
-ax.fill_between(x['dino'], dino_fwd[0] - dino_fwd[1], dino_fwd[0] + dino_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
-label_backward = f"{MODEL_NAMES['dino']} → {MODEL_NAMES['deepseek']}"
-ax.plot(x['dino'], dino_bwd[0], '--', color=MODEL_COLORS['dino'], linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
-ax.fill_between(x['dino'], dino_bwd[0] - dino_bwd[1], dino_bwd[0] + dino_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
+ax.fill_between(x_dino_imagenet, cross_igpt_dino_fwd[0] - cross_igpt_dino_fwd[1], cross_igpt_dino_fwd[0] + cross_igpt_dino_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
+ax.plot(x_dino_imagenet, cross_igpt_dino_bwd[0], '--', color=MODEL_COLORS['dino'], linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x_dino_imagenet, cross_igpt_dino_bwd[0] - cross_igpt_dino_bwd[1], cross_igpt_dino_bwd[0] + cross_igpt_dino_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
 
-ax.set_title("Image-Captions on Flickr30k", fontsize=12)
+ax.set_title("ImageNet1k (cross-model)", fontsize=12)
 ax.set_xlabel("Relative depth", fontsize=fontsize_label)
 ax.set_ylabel("Information Imbalance", fontsize=fontsize_label)
 ax.tick_params(axis='both', labelsize=fontsize_label)
 ax.set_ylim(ylim)
 ax.legend(fontsize=fontsize_label, loc='best')
 
-# b) Target: CLIP-Image (was fig4_appendix b)
+# b) Image-image on Flickr30k
 ax = axes[1]
+label_forward = f"{MODEL_NAMES['dino']} → {MODEL_NAMES['igpt']}"
+ax.plot(x['igpt'], dino_igpt_fwd[0], '-', color=MODEL_COLORS['igpt'],
+        label=label_forward, linewidth=2, marker='o',
+        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x['igpt'], dino_igpt_fwd[0] - dino_igpt_fwd[1], dino_igpt_fwd[0] + dino_igpt_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
+ax.plot(x['igpt'], dino_igpt_bwd[0], '--', color=MODEL_COLORS['igpt'], linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x['igpt'], dino_igpt_bwd[0] - dino_igpt_bwd[1], dino_igpt_bwd[0] + dino_igpt_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
 
+label_forward = f"{MODEL_NAMES['igpt']} → {MODEL_NAMES['dino']}"
+ax.plot(x['dino'], igpt_dino_fwd[0], '-', color=MODEL_COLORS['dino'],
+        label=label_forward, linewidth=2, marker='o',
+        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x['dino'], igpt_dino_fwd[0] - igpt_dino_fwd[1], igpt_dino_fwd[0] + igpt_dino_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
+ax.plot(x['dino'], igpt_dino_bwd[0], '--', color=MODEL_COLORS['dino'], linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x['dino'], igpt_dino_bwd[0] - igpt_dino_bwd[1], igpt_dino_bwd[0] + igpt_dino_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
+
+ax.set_title("Image-image on Flickr30k", fontsize=12)
+ax.set_xlabel("Relative depth", fontsize=fontsize_label)
+ax.tick_params(axis='both', labelsize=fontsize_label)
+ax.set_ylim(ylim)
+ax.legend(fontsize=fontsize_label, loc='best')
+
+# c) CLIP-Image ↔ DinoV2
+ax = axes[2]
 label_forward = f"{MODEL_NAMES['clip_image']} → {MODEL_NAMES['dino']}"
 ax.plot(x['clip_image'], clipi_dino_fwd[0], '-', color=MODEL_COLORS['dino'],
         label=label_forward, linewidth=2, marker='o',
@@ -555,13 +553,7 @@ ax.fill_between(x['clip_image'], clipi_dino_fwd[0] - clipi_dino_fwd[1], clipi_di
 ax.plot(x['dino'], clipi_dino_bwd[0], '--', color=MODEL_COLORS['dino'], linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
 ax.fill_between(x['clip_image'], clipi_dino_bwd[0] - clipi_dino_bwd[1], clipi_dino_bwd[0] + clipi_dino_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
 
-label_forward = f"{MODEL_NAMES['clip_image']} → {MODEL_NAMES['clip_text']}"
-ax.plot(x['clip_text'], clipi_clipt_fwd[0], '-', color=MODEL_COLORS['clip_text'],
-        label=label_forward, linewidth=2, marker='o',
-        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
-ax.fill_between(x['clip_text'], clipi_clipt_fwd[0] - clipi_clipt_fwd[1], clipi_clipt_fwd[0] + clipi_clipt_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['clip_text'])
-ax.plot(x['clip_text'], clipi_clipt_bwd[0], '--', color=MODEL_COLORS['clip_text'], linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
-ax.fill_between(x['clip_text'], clipi_clipt_bwd[0] - clipi_clipt_bwd[1], clipi_clipt_bwd[0] + clipi_clipt_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['clip_text'])
+ax.set_title("CLIP-Image vs DinoV2", fontsize=12)
 ax.set_xlabel("Relative depth", fontsize=fontsize_label)
 ax.tick_params(axis='both', labelsize=fontsize_label)
 ax.set_ylim(ylim)
@@ -570,14 +562,14 @@ ax.legend(fontsize=fontsize_label, loc='best')
 plt.tight_layout()
 plt.savefig(Path("/home/masca/GitHub/deepseek-hidden-states/plots/fig4b.pdf"), dpi=300)
 
-# ---- Figure 4c: Target Llama + Target DeepSeek (dino sizes) ----
-fig, axes = plt.subplots(1, 2, figsize=(2.5 * figsize[0], figsize[1]), sharey=True)
+# ---- Figure 4c: Target Llama + DinoV2 sizes + Sweep DeepSeek layers ----
+fig, axes = plt.subplots(1, 3, figsize=(3.5 * figsize[0], figsize[1]), sharey=True)
 
 for i, ax in enumerate(axes):
-    ax.text(-0.14, 1.10, f"{chr(ord('a') + i)})", transform=ax.transAxes,
+    ax.text(-0.12, 1.08, f"{chr(ord('a') + i)})", transform=ax.transAxes,
             fontsize=12, fontweight="bold", va="top")
 
-# a) Target: Llama (was fig4_appendix a)
+# a) Target: Llama
 ax = axes[0]
 label_forward = f"{MODEL_NAMES['llama']} → {MODEL_NAMES['igpt']}"
 ax.plot(x['igpt'], igpt_fwd_ll[0], '-', color=MODEL_COLORS['igpt'],
@@ -637,16 +629,40 @@ ax.tick_params(axis='both', labelsize=fontsize_label)
 ax.set_ylim(ylim)
 ax.legend(fontsize=fontsize_label, loc='best')
 
+# c) Image models → DeepSeek (all layers)
+ds_dino_fwd, ds_dino_bwd = make_comparison(to_model="dino", from_model="deepseek", rng=rng, n_replicas=n_replicas, bootstrap_size=bootstrap_size, sample_size=sample_size, base_dir=base_dir, hamming=DO_HAMMING)
+ds_igpt_fwd, ds_igpt_bwd = make_comparison(to_model="igpt", from_model="deepseek", rng=rng, n_replicas=n_replicas, bootstrap_size=bootstrap_size, sample_size=sample_size, base_dir=base_dir, hamming=DO_HAMMING)
+ds_llama_fwd, ds_llama_bwd = make_comparison(to_model="llama", from_model="deepseek", rng=rng, n_replicas=n_replicas, bootstrap_size=bootstrap_size, sample_size=sample_size, base_dir=base_dir, hamming=DO_HAMMING)
+
+ax = axes[2]
+# DinoV2 (last layer) → DeepSeek[layer]
+label_forward = f"{MODEL_NAMES['dino']} → {MODEL_NAMES['deepseek']}"
+ax.plot(x['deepseek'], ds_dino_fwd[0], '-', color=MODEL_COLORS['dino'],
+        label=label_forward, linewidth=2, marker='o',
+        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x['deepseek'], ds_dino_fwd[0] - ds_dino_fwd[1], ds_dino_fwd[0] + ds_dino_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
+ax.plot(x['deepseek'], ds_dino_bwd[0], '--', color=MODEL_COLORS['dino'], linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x['deepseek'], ds_dino_bwd[0] - ds_dino_bwd[1], ds_dino_bwd[0] + ds_dino_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
+
+# ImageGPT (~42% depth) → DeepSeek[layer]
+label_forward = f"{MODEL_NAMES['igpt']} → {MODEL_NAMES['deepseek']}"
+ax.plot(x['deepseek'], ds_igpt_fwd[0], '-', color=MODEL_COLORS['igpt'],
+        label=label_forward, linewidth=2, marker='o',
+        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x['deepseek'], ds_igpt_fwd[0] - ds_igpt_fwd[1], ds_igpt_fwd[0] + ds_igpt_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
+ax.plot(x['deepseek'], ds_igpt_bwd[0], '--', color=MODEL_COLORS['igpt'], linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x['deepseek'], ds_igpt_bwd[0] - ds_igpt_bwd[1], ds_igpt_bwd[0] + ds_igpt_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
+
+ax.set_xlabel("DeepSeek-V3 relative depth", fontsize=fontsize_label)
+ax.tick_params(axis='both', labelsize=fontsize_label)
+ax.set_ylim(ylim)
+ax.legend(fontsize=fontsize_label, loc='best')
+
 plt.tight_layout()
 plt.savefig(Path("/home/masca/GitHub/deepseek-hidden-states/plots/fig4c.pdf"), dpi=300)
 
 
 # In[30]:
-
-
-ds_dino_fwd, ds_dino_bwd = make_comparison(to_model="dino", from_model="deepseek", rng=rng, n_replicas=n_replicas, bootstrap_size=bootstrap_size, sample_size=sample_size, base_dir=base_dir, hamming=DO_HAMMING)
-ds_igpt_fwd, ds_igpt_bwd = make_comparison(to_model="igpt", from_model="deepseek", rng=rng, n_replicas=n_replicas, bootstrap_size=bootstrap_size, sample_size=sample_size, base_dir=base_dir, hamming=DO_HAMMING)
-ds_llama_fwd, ds_llama_bwd = make_comparison(to_model="llama", from_model="deepseek", rng=rng, n_replicas=n_replicas, bootstrap_size=bootstrap_size, sample_size=sample_size, base_dir=base_dir, hamming=DO_HAMMING)
 
 
 # In[31]:

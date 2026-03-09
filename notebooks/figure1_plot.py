@@ -77,7 +77,7 @@ def main():
                 markeredgecolor="black", markeredgewidth=mew, label=label)
         ax.fill_between(rel, mean - se, mean + se, color=color, alpha=0.2)
 
-    ax.set_xlabel("Index $r$", fontsize=11)
+    ax.set_xlabel("Index $r/p$", fontsize=11)
     ax.set_ylabel("II / CKA / NO", fontsize=11)
     ax.set_ylim(0, 1.0)
     ax.tick_params(labelsize=11)

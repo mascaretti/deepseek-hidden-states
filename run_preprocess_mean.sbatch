@@ -74,6 +74,18 @@ case ${SLURM_ARRAY_TASK_ID} in
         OUTPUT="${MEAN_BASE}/facebook-dinov2-small"
         PREFIX="chunk_"
         ;;
+    9)
+        NAME="imagegpt-medium"
+        INPUT="${IMAGE_BASE}/openai-imagegpt-medium"
+        OUTPUT="${MEAN_BASE}/openai-imagegpt-medium"
+        PREFIX="chunk_"
+        ;;
+    10)
+        NAME="imagegpt-small"
+        INPUT="${IMAGE_BASE}/openai-imagegpt-small"
+        OUTPUT="${MEAN_BASE}/openai-imagegpt-small"
+        PREFIX="chunk_"
+        ;;
     *)
         echo "Invalid array task ID: ${SLURM_ARRAY_TASK_ID}"
         exit 1

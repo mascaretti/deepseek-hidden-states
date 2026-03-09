@@ -10,7 +10,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=END,FAIL
 #SBATCH --mail-user=amascare@sissa.it
-#SBATCH --array=1-18
+#SBATCH --array=1-30%1
 
 # Compute information imbalance from mean-pooled activations.
 # One comparison per array task, %1 = sequential (shared GPU).
@@ -27,6 +27,8 @@ DINOV2_MEAN="${MEAN_BASE}/facebook-dinov2-large"
 DINOV2_BASE_MEAN="${MEAN_BASE}/facebook-dinov2-base"
 DINOV2_SMALL_MEAN="${MEAN_BASE}/facebook-dinov2-small"
 IGPT_MEAN="${MEAN_BASE}/openai-imagegpt-large"
+IGPT_MED_MEAN="${MEAN_BASE}/openai-imagegpt-medium"
+IGPT_SMALL_MEAN="${MEAN_BASE}/openai-imagegpt-small"
 CLIP_IMAGE_MEAN="${MEAN_BASE}/openai-clip-vit-large-patch14-image"
 CLIP_TEXT_MEAN="${MEAN_BASE}/openai-clip-vit-large-patch14-text"
 
@@ -148,6 +150,84 @@ case ${SLURM_ARRAY_TASK_ID} in
         NAME="clip_image_clip_text"
         INPUT_A="${CLIP_IMAGE_MEAN}"
         INPUT_B="${CLIP_TEXT_MEAN}"
+        LAYER_A=24
+        ;;
+    # --- igpt-medium <-> deepseek ---
+    19)
+        NAME="deepseek_igpt_medium"
+        INPUT_A="${DEEPSEEK_MEAN}"
+        INPUT_B="${IGPT_MED_MEAN}"
+        LAYER_A=52
+        ;;
+    20)
+        NAME="igpt_medium_deepseek"
+        INPUT_A="${IGPT_MED_MEAN}"
+        INPUT_B="${DEEPSEEK_MEAN}"
+        LAYER_A=15
+        ;;
+    # --- igpt-medium <-> llama ---
+    21)
+        NAME="igpt_medium_llama"
+        INPUT_A="${IGPT_MED_MEAN}"
+        INPUT_B="${LLAMA_MEAN}"
+        LAYER_A=15
+        ;;
+    22)
+        NAME="llama_igpt_medium"
+        INPUT_A="${LLAMA_MEAN}"
+        INPUT_B="${IGPT_MED_MEAN}"
+        LAYER_A=20
+        ;;
+    # --- igpt-medium <-> dino (large) ---
+    23)
+        NAME="igpt_medium_dino"
+        INPUT_A="${IGPT_MED_MEAN}"
+        INPUT_B="${DINOV2_MEAN}"
+        LAYER_A=15
+        ;;
+    24)
+        NAME="dino_igpt_medium"
+        INPUT_A="${DINOV2_MEAN}"
+        INPUT_B="${IGPT_MED_MEAN}"
+        LAYER_A=24
+        ;;
+    # --- igpt-small <-> deepseek ---
+    25)
+        NAME="deepseek_igpt_small"
+        INPUT_A="${DEEPSEEK_MEAN}"
+        INPUT_B="${IGPT_SMALL_MEAN}"
+        LAYER_A=52
+        ;;
+    26)
+        NAME="igpt_small_deepseek"
+        INPUT_A="${IGPT_SMALL_MEAN}"
+        INPUT_B="${DEEPSEEK_MEAN}"
+        LAYER_A=10
+        ;;
+    # --- igpt-small <-> llama ---
+    27)
+        NAME="igpt_small_llama"
+        INPUT_A="${IGPT_SMALL_MEAN}"
+        INPUT_B="${LLAMA_MEAN}"
+        LAYER_A=10
+        ;;
+    28)
+        NAME="llama_igpt_small"
+        INPUT_A="${LLAMA_MEAN}"
+        INPUT_B="${IGPT_SMALL_MEAN}"
+        LAYER_A=20
+        ;;
+    # --- igpt-small <-> dino (large) ---
+    29)
+        NAME="igpt_small_dino"
+        INPUT_A="${IGPT_SMALL_MEAN}"
+        INPUT_B="${DINOV2_MEAN}"
+        LAYER_A=10
+        ;;
+    30)
+        NAME="dino_igpt_small"
+        INPUT_A="${DINOV2_MEAN}"
+        INPUT_B="${IGPT_SMALL_MEAN}"
         LAYER_A=24
         ;;
     *)
