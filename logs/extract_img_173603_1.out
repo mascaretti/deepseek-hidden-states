@@ -1,0 +1,19 @@
+=========================================
+Extract image hidden states: openai/imagegpt-medium
+Job 173603, task 1
+Node: dgx01
+Started at: Fri Mar  6 03:30:59 PM CET 2026
+Output: /home/laios/image-information-imbalance/openai-imagegpt-medium
+=========================================
+Model: openai/imagegpt-medium
+Output: /home/laios/image-information-imbalance/openai-imagegpt-medium
+Dataset size: 14109
+Device: cuda
+/home/laios/image-information-imbalance/openai-imagegpt-medium
+cuda
+Batch size: 10; Total iterations: 500.
+Compute activations for images
+
+Finished at: Fri Mar  6 09:25:27 PM CET 2026
+Exit code: 0
+Output: 500 files, 723G

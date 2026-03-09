@@ -1,0 +1,4 @@
+`use_fast` is set to `True` but the image processor class does not have a fast version.  Falling back to the slow version.
+Xet Storage is enabled for this repo, but the 'hf_xet' package is not installed. Falling back to regular HTTP download. For better performance, install the package with: `pip install huggingface_hub[hf_xet]` or `pip install hf_xet`
+Processing image batch.:   0%|          | 0/500 [00:00<?, ?it/s]Xet Storage is enabled for this repo, but the 'hf_xet' package is not installed. Falling back to regular HTTP download. For better performance, install the package with: `pip install huggingface_hub[hf_xet]` or `pip install hf_xet`
+Processing image batch.:   0%|          | 1/500 [00:57<7:57:41, 57.44s/it]slurmstepd: error: *** JOB 173602 ON dgx01 CANCELLED AT 2026-03-06T15:29:29 ***

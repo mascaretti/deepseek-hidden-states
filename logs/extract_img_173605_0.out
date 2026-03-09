@@ -1,0 +1,19 @@
+=========================================
+Extract image hidden states: openai/imagegpt-small
+Job 173605, task 0
+Node: dgx01
+Started at: Fri Mar  6 05:22:18 PM CET 2026
+Output: /home/laios/image-information-imbalance/openai-imagegpt-small
+=========================================
+Model: openai/imagegpt-small
+Output: /home/laios/image-information-imbalance/openai-imagegpt-small
+Dataset size: 14109
+Device: cuda
+/home/laios/image-information-imbalance/openai-imagegpt-small
+cuda
+Batch size: 10; Total iterations: 500.
+Compute activations for images
+
+Finished at: Fri Mar  6 09:56:48 PM CET 2026
+Exit code: 0
+Output: 500 files, 245G

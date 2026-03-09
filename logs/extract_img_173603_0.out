@@ -1,0 +1,8 @@
+=========================================
+Extract image hidden states: openai/imagegpt-small
+Job 173604, task 0
+Node: dgx01
+Started at: Fri Mar  6 03:30:59 PM CET 2026
+Output: /home/laios/image-information-imbalance/openai-imagegpt-small
+=========================================
+Activations already exist at /home/laios/image-information-imbalance/openai-imagegpt-small (1 chunks). Skipping.

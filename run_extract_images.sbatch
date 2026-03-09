@@ -12,7 +12,7 @@
 #SBATCH --mail-user=amascare@sissa.it
 #SBATCH --array=0-1%1
 
-source /home/mascaretti/myjax/bin/activate
+source /home/mascaretti/mysglang/bin/activate
 cd /home/mascaretti/deepseek-hidden-states
 mkdir -p logs
 
