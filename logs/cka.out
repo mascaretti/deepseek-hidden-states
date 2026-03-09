@@ -1,2 +1,4 @@
 Panel A: 10 reps, dim=10, L=10, k_nn=10
 Panel B: 10 reps, p=100
+Panel B: 10 reps, p=10000
+Saved notebooks/figure1_data.npz
