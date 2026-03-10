@@ -186,8 +186,8 @@ def main():
     parser.add_argument("--input_path_B", type=str, required=True,
                         help="Directory with mean-pooled safetensors for model B")
     parser.add_argument("--output_folder", type=str, required=True)
-    parser.add_argument("--layer_A", type=int, required=True,
-                        help="Fixed layer index for model A")
+    parser.add_argument("--layer_A", type=int, nargs="+", required=True,
+                        help="Fixed layer index(es) for model A (multiple = sweep)")
     parser.add_argument("--subset_size", type=int, default=5000)
     parser.add_argument("--l2_normalize", action="store_true",
                         help="L2-normalise vectors before computing L2 distance (cosine mode)")
@@ -199,10 +199,6 @@ def main():
     args = parser.parse_args()
 
     metrics = set(args.metrics)
-    if "hamming" in metrics:
-        Path(args.output_folder, "hamming").mkdir(parents=True, exist_ok=True)
-    if "cka" in metrics:
-        Path(args.output_folder, "cka").mkdir(parents=True, exist_ok=True)
     l2_label = None
     if "l2" in metrics:
         l2_parts = ["l2"]
@@ -211,108 +207,126 @@ def main():
         if args.l2_normalize:
             l2_parts.append("normalized")
         l2_label = "_".join(l2_parts)
-        Path(args.output_folder, l2_label).mkdir(parents=True, exist_ok=True)
 
-    # Load
+    # Load once
     print("Loading activations...")
     act_A = load_mean_activations(args.input_path_A, subset_size=args.subset_size)
     act_B = load_mean_activations(args.input_path_B, subset_size=args.subset_size)
 
-    # Validate
-    layer_A_key = f"layer_{args.layer_A}"
-    if layer_A_key not in act_A:
-        available = sorted(act_A.keys(), key=lambda k: int(k.split("_")[1]))
-        raise ValueError(f"{layer_A_key} not in model A. Available: {available}")
+    # Validate all requested layers exist
+    layer_A_list = args.layer_A
+    for la in layer_A_list:
+        if f"layer_{la}" not in act_A:
+            available = sorted(act_A.keys(), key=lambda k: int(k.split("_")[1]))
+            raise ValueError(f"layer_{la} not in model A. Available: {available}")
 
-    sample_size_A = act_A[layer_A_key].shape[0]
+    sample_size_A = act_A["layer_0"].shape[0]
     sample_size_B = act_B["layer_0"].shape[0]
     if sample_size_A != sample_size_B:
         raise ValueError(f"Sample size mismatch: A={sample_size_A}, B={sample_size_B}")
     sample_size = sample_size_A
-
     n_layers_B = len(act_B)
-    print(f"\nModel A layer: {layer_A_key} ({act_A[layer_A_key].shape[1]}d)")
+
+    print(f"\nModel A target layers: {layer_A_list}")
     print(f"Model B layers: {n_layers_B} ({act_B['layer_0'].shape[1]}d)")
     print(f"Sample size: {sample_size}")
 
-    # Setup II computation
-    raw_a = jnp.array(act_A[layer_A_key])
-    key = jax.random.key(42)
+    # Loop over target layers (data already loaded)
+    for layer_A_idx in layer_A_list:
+        layer_A_key = f"layer_{layer_A_idx}"
 
-    hamming_fn = l2_fn = None
-    n_col = None
-    if "hamming" in metrics or "l2" in metrics:
-        n_row = int(np.floor(0.2 * sample_size))
-        n_col = sample_size - n_row
-
-    if "hamming" in metrics:
-        key, subkey = jax.random.split(key)
-        hamming_fn = build_information_matrix(
-            key=subkey, sample_size=sample_size, distance_fn=hamming_distance
-        )
-    if "l2" in metrics:
-        key, subkey = jax.random.split(key)
-        l2_fn = build_information_matrix(
-            key=subkey, sample_size=sample_size, distance_fn=L2_distance
-        )
-
-    # Prepare model A transforms
-    a_hamming = binarize(raw_a) if "hamming" in metrics else None
-    a_l2 = None
-    if "l2" in metrics:
-        if args.l2_normalize:
-            print("L2 Normalisation")
-        if args.mean_center:
-            print("Mean centering")
-        a_l2 = raw_a
-        if args.mean_center:
-            a_l2 = a_l2 - a_l2.mean(axis=0)
-        if args.l2_normalize:
-            a_l2 = l2_normalize(a_l2)
-
-    # Sweep over model B layers
-    print(f"Metrics: {', '.join(sorted(metrics))}")
-    cols = [f"layer_{i}" for i in range(1, n_layers_B)]
-    for layer_B_key in tqdm(cols, desc="Computing"):
-        raw_b = jnp.array(act_B[layer_B_key])
+        # Output folder: use subfolder per layer_A when sweeping multiple
+        if len(layer_A_list) > 1:
+            out_folder = Path(args.output_folder, f"layer_{layer_A_idx}")
+        else:
+            out_folder = Path(args.output_folder)
 
         if "hamming" in metrics:
-            b_hamming = binarize(raw_b)
-            result = hamming_fn(a_hamming, b_hamming)
-            result_np = {k: np.asarray(v) for k, v in result.items()}
-            ii_h, se_h = jackknife_ii(result_np["ranks"], result_np["cards"], n_col)
-            rii_h, rse_h = jackknife_ii(result_np["r_ranks"], result_np["r_cards"], n_col)
-            result_np["inf_imb"] = np.float32(ii_h)
-            result_np["inf_imb_se"] = np.float32(se_h)
-            result_np["reciprocal_inf_imb"] = np.float32(rii_h)
-            result_np["reciprocal_inf_imb_se"] = np.float32(rse_h)
-            save_file(result_np, str(Path(args.output_folder, "hamming", f"{layer_B_key}.safetensors")))
-
+            Path(out_folder, "hamming").mkdir(parents=True, exist_ok=True)
         if "cka" in metrics:
-            cka_val, cka_se = jackknife_cka(np.asarray(raw_a), np.asarray(raw_b))
-            cka_result = {
-                "cka": np.float32(cka_val),
-                "cka_se": np.float32(cka_se),
-            }
-            save_file(cka_result, str(Path(args.output_folder, "cka", f"{layer_B_key}.safetensors")))
+            Path(out_folder, "cka").mkdir(parents=True, exist_ok=True)
+        if l2_label:
+            Path(out_folder, l2_label).mkdir(parents=True, exist_ok=True)
 
+        print(f"\n--- layer_A = {layer_A_idx} ({act_A[layer_A_key].shape[1]}d) ---")
+
+        raw_a = jnp.array(act_A[layer_A_key])
+        key = jax.random.key(42)
+
+        hamming_fn = l2_fn = None
+        n_col = None
+        if "hamming" in metrics or "l2" in metrics:
+            n_row = int(np.floor(0.2 * sample_size))
+            n_col = sample_size - n_row
+
+        if "hamming" in metrics:
+            key, subkey = jax.random.split(key)
+            hamming_fn = build_information_matrix(
+                key=subkey, sample_size=sample_size, distance_fn=hamming_distance
+            )
         if "l2" in metrics:
-            b_l2 = raw_b
-            if args.mean_center:
-                b_l2 = b_l2 - b_l2.mean(axis=0)
-            if args.l2_normalize:
-                b_l2 = l2_normalize(b_l2)
-            result = l2_fn(a_l2, b_l2)
-            result_np = {k: np.asarray(v) for k, v in result.items()}
-            ii_l2, se_l2 = jackknife_ii(result_np["ranks"], result_np["cards"], n_col)
-            rii_l2, rse_l2 = jackknife_ii(result_np["r_ranks"], result_np["r_cards"], n_col)
-            result_np["inf_imb"] = np.float32(ii_l2)
-            result_np["inf_imb_se"] = np.float32(se_l2)
-            result_np["reciprocal_inf_imb"] = np.float32(rii_l2)
-            result_np["reciprocal_inf_imb_se"] = np.float32(rse_l2)
-            save_file(result_np, str(Path(args.output_folder, l2_label, f"{layer_B_key}.safetensors")))
+            key, subkey = jax.random.split(key)
+            l2_fn = build_information_matrix(
+                key=subkey, sample_size=sample_size, distance_fn=L2_distance
+            )
 
-    print(f"\nResults saved to: {args.output_folder}")
+        # Prepare model A transforms
+        a_hamming = binarize(raw_a) if "hamming" in metrics else None
+        a_l2 = None
+        if "l2" in metrics:
+            if args.l2_normalize:
+                print("L2 Normalisation")
+            if args.mean_center:
+                print("Mean centering")
+            a_l2 = raw_a
+            if args.mean_center:
+                a_l2 = a_l2 - a_l2.mean(axis=0)
+            if args.l2_normalize:
+                a_l2 = l2_normalize(a_l2)
+
+        # Sweep over model B layers
+        print(f"Metrics: {', '.join(sorted(metrics))}")
+        cols = [f"layer_{i}" for i in range(1, n_layers_B)]
+        for layer_B_key in tqdm(cols, desc=f"layer_A={layer_A_idx}"):
+            raw_b = jnp.array(act_B[layer_B_key])
+
+            if "hamming" in metrics:
+                b_hamming = binarize(raw_b)
+                result = hamming_fn(a_hamming, b_hamming)
+                result_np = {k: np.asarray(v) for k, v in result.items()}
+                ii_h, se_h = jackknife_ii(result_np["ranks"], result_np["cards"], n_col)
+                rii_h, rse_h = jackknife_ii(result_np["r_ranks"], result_np["r_cards"], n_col)
+                result_np["inf_imb"] = np.float32(ii_h)
+                result_np["inf_imb_se"] = np.float32(se_h)
+                result_np["reciprocal_inf_imb"] = np.float32(rii_h)
+                result_np["reciprocal_inf_imb_se"] = np.float32(rse_h)
+                save_file(result_np, str(Path(out_folder, "hamming", f"{layer_B_key}.safetensors")))
+
+            if "cka" in metrics:
+                cka_val, cka_se = jackknife_cka(np.asarray(raw_a), np.asarray(raw_b))
+                cka_result = {
+                    "cka": np.float32(cka_val),
+                    "cka_se": np.float32(cka_se),
+                }
+                save_file(cka_result, str(Path(out_folder, "cka", f"{layer_B_key}.safetensors")))
+
+            if "l2" in metrics:
+                b_l2 = raw_b
+                if args.mean_center:
+                    b_l2 = b_l2 - b_l2.mean(axis=0)
+                if args.l2_normalize:
+                    b_l2 = l2_normalize(b_l2)
+                result = l2_fn(a_l2, b_l2)
+                result_np = {k: np.asarray(v) for k, v in result.items()}
+                ii_l2, se_l2 = jackknife_ii(result_np["ranks"], result_np["cards"], n_col)
+                rii_l2, rse_l2 = jackknife_ii(result_np["r_ranks"], result_np["r_cards"], n_col)
+                result_np["inf_imb"] = np.float32(ii_l2)
+                result_np["inf_imb_se"] = np.float32(se_l2)
+                result_np["reciprocal_inf_imb"] = np.float32(rii_l2)
+                result_np["reciprocal_inf_imb_se"] = np.float32(rse_l2)
+                save_file(result_np, str(Path(out_folder, l2_label, f"{layer_B_key}.safetensors")))
+
+        print(f"Results saved to: {out_folder}")
 
 
 if __name__ == "__main__":

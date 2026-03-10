@@ -84,12 +84,12 @@ def main():
         (
             "ImageGPT[20] -> sweep DeepSeek",
             base / "igpt_deepseek",
-            sweep / "igpt_deepseek" / "igpt_layer_20",
+            sweep / "igpt_deepseek" / "layer_20",
         ),
         (
             "DinoV2[24] -> sweep DeepSeek",
             base / "dino_deepseek",
-            sweep / "dino_deepseek" / "dino_layer_24",
+            sweep / "dino_deepseek" / "layer_24",
         ),
     ]
 
@@ -97,9 +97,9 @@ def main():
         compare(name, orig, swp)
 
     print("\nNote: DeepSeek[52] is not in the every-5th sweep grid (50, 55 are).")
-    print("If you add layer 52 to DS_LAYERS, also check:")
-    print("  deepseek_igpt  vs  sweep/deepseek_igpt/ds_layer_52")
-    print("  deepseek_dino  vs  sweep/deepseek_dino/ds_layer_52")
+    print("Add 52 to LAYERS_A in run_ii_sweep.sbatch to also validate:")
+    print("  deepseek_igpt  vs  sweep/deepseek_igpt/layer_52")
+    print("  deepseek_dino  vs  sweep/deepseek_dino/layer_52")
 
 
 if __name__ == "__main__":
