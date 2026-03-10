@@ -12,11 +12,9 @@
 #SBATCH --mail-user=amascare@sissa.it
 #SBATCH --array=1-4%1
 
-# Sweep multiple target layers for DeepSeek <-> ImageGPT and DeepSeek <-> DinoV2.
+# Sweep ALL target layers for DeepSeek <-> ImageGPT and DeepSeek <-> DinoV2.
 # 4 jobs total: one per direction. Data is loaded once per job, then all target
 # layers are computed in a loop (no redundant I/O).
-#
-# To go from every-k-th to all layers, just change the LAYERS_A strings below.
 
 source /home/mascaretti/myjax/bin/activate
 cd /home/mascaretti/deepseek-hidden-states
@@ -36,32 +34,32 @@ case ${SLURM_ARRAY_TASK_ID} in
         NAME="deepseek_igpt"
         INPUT_A="${DEEPSEEK_MEAN}"
         INPUT_B="${IGPT_MEAN}"
-        # Every 5th layer of DeepSeek (60 layers)
-        LAYERS_A="5 10 15 20 25 30 35 40 45 50 55"
+        # All DeepSeek layers (1-60)
+        LAYERS_A="$(seq 1 60)"
         ;;
     # ImageGPT[varied] -> sweep all DeepSeek layers
     2)
         NAME="igpt_deepseek"
         INPUT_A="${IGPT_MEAN}"
         INPUT_B="${DEEPSEEK_MEAN}"
-        # Every 4th layer of ImageGPT (48 layers)
-        LAYERS_A="4 8 12 16 20 24 28 32 36 40 44 48"
+        # All ImageGPT layers (1-48)
+        LAYERS_A="$(seq 1 48)"
         ;;
     # DeepSeek[varied] -> sweep all DinoV2 layers
     3)
         NAME="deepseek_dino"
         INPUT_A="${DEEPSEEK_MEAN}"
         INPUT_B="${DINOV2_MEAN}"
-        # Every 5th layer of DeepSeek (60 layers)
-        LAYERS_A="5 10 15 20 25 30 35 40 45 50 55"
+        # All DeepSeek layers (1-60)
+        LAYERS_A="$(seq 1 60)"
         ;;
     # DinoV2[varied] -> sweep all DeepSeek layers
     4)
         NAME="dino_deepseek"
         INPUT_A="${DINOV2_MEAN}"
         INPUT_B="${DEEPSEEK_MEAN}"
-        # Every 2nd layer of DinoV2 (24 layers)
-        LAYERS_A="2 4 6 8 10 12 14 16 18 20 22 24"
+        # All DinoV2 layers (1-24)
+        LAYERS_A="$(seq 1 24)"
         ;;
     *)
         echo "Invalid array task ID: ${SLURM_ARRAY_TASK_ID}"

@@ -251,7 +251,12 @@ def main():
         print(f"\n--- layer_A = {layer_A_idx} ({act_A[layer_A_key].shape[1]}d) ---")
 
         raw_a = jnp.array(act_A[layer_A_key])
-        key = jax.random.key(42)
+
+        # Deterministic per-metric keys: each metric always gets the same
+        # subkey regardless of which other metrics are enabled.
+        base_key = jax.random.key(42)
+        hamming_key = jax.random.fold_in(base_key, 0)
+        l2_key = jax.random.fold_in(base_key, 1)
 
         hamming_fn = l2_fn = None
         n_col = None
@@ -260,14 +265,12 @@ def main():
             n_col = sample_size - n_row
 
         if "hamming" in metrics:
-            key, subkey = jax.random.split(key)
             hamming_fn = build_information_matrix(
-                key=subkey, sample_size=sample_size, distance_fn=hamming_distance
+                key=hamming_key, sample_size=sample_size, distance_fn=hamming_distance
             )
         if "l2" in metrics:
-            key, subkey = jax.random.split(key)
             l2_fn = build_information_matrix(
-                key=subkey, sample_size=sample_size, distance_fn=L2_distance
+                key=l2_key, sample_size=sample_size, distance_fn=L2_distance
             )
 
         # Prepare model A transforms
