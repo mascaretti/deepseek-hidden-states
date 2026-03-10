@@ -61,60 +61,6 @@ def jackknife_ii(ranks, cards, n_col):
     return float(ii_full), se
 
 
-# ---------------------------------------------------------------------------
-# CKA
-# ---------------------------------------------------------------------------
-
-def _cka_from_gram(K, L):
-    """Linear CKA from precomputed gram matrices K = XX^T, L = YY^T."""
-    n = K.shape[0]
-    # Center: Kc = HKH with H = I - 11^T/n
-    row_mean_K = K.mean(axis=1, keepdims=True)
-    row_mean_L = L.mean(axis=1, keepdims=True)
-    grand_mean_K = K.mean()
-    grand_mean_L = L.mean()
-    Kc = K - row_mean_K - row_mean_K.T + grand_mean_K
-    Lc = L - row_mean_L - row_mean_L.T + grand_mean_L
-
-    hsic_kl = (Kc * Lc).sum()
-    hsic_kk = (Kc * Kc).sum()
-    hsic_ll = (Lc * Lc).sum()
-    denom = np.sqrt(hsic_kk * hsic_ll)
-    if denom < 1e-10:
-        return np.nan
-    return hsic_kl / denom
-
-
-def jackknife_cka(X, Y):
-    """Linear CKA with jackknife standard error.
-
-    Args:
-        X: (n, p) numpy array (model A activations, single layer).
-        Y: (n, q) numpy array (model B activations, single layer).
-
-    Returns:
-        (cka, se): full-sample CKA and jackknife standard error.
-    """
-    X = np.asarray(X, dtype=np.float64)
-    Y = np.asarray(Y, dtype=np.float64)
-    n = X.shape[0]
-
-    K = X @ X.T
-    L = Y @ Y.T
-
-    cka_full = _cka_from_gram(K, L)
-
-    # Leave-one-out on gram matrices (drop row/col i)
-    cka_loo = np.empty(n)
-    for i in range(n):
-        mask = np.ones(n, dtype=bool)
-        mask[i] = False
-        cka_loo[i] = _cka_from_gram(K[np.ix_(mask, mask)], L[np.ix_(mask, mask)])
-
-    pseudo = n * cka_full - (n - 1) * cka_loo
-    se = float(np.std(pseudo, ddof=1) / np.sqrt(n))
-    return float(cka_full), se
-
 
 # ---------------------------------------------------------------------------
 # Loading
@@ -194,8 +140,8 @@ def main():
     parser.add_argument("--mean_center", action="store_true",
                         help="Subtract per-layer mean before computing L2 distance")
     parser.add_argument("--metrics", type=str, nargs="+",
-                        default=["hamming", "l2", "cka"],
-                        help="Which metrics to compute (default: hamming l2 cka)")
+                        default=["hamming", "l2"],
+                        help="Which metrics to compute (default: hamming l2)")
     args = parser.parse_args()
 
     metrics = set(args.metrics)
@@ -243,8 +189,7 @@ def main():
 
         if "hamming" in metrics:
             Path(out_folder, "hamming").mkdir(parents=True, exist_ok=True)
-        if "cka" in metrics:
-            Path(out_folder, "cka").mkdir(parents=True, exist_ok=True)
+
         if l2_label:
             Path(out_folder, l2_label).mkdir(parents=True, exist_ok=True)
 
@@ -305,13 +250,6 @@ def main():
                 result_np["reciprocal_inf_imb_se"] = np.float32(rse_h)
                 save_file(result_np, str(Path(out_folder, "hamming", f"{layer_B_key}.safetensors")))
 
-            if "cka" in metrics:
-                cka_val, cka_se = jackknife_cka(np.asarray(raw_a), np.asarray(raw_b))
-                cka_result = {
-                    "cka": np.float32(cka_val),
-                    "cka_se": np.float32(cka_se),
-                }
-                save_file(cka_result, str(Path(out_folder, "cka", f"{layer_B_key}.safetensors")))
 
             if "l2" in metrics:
                 b_l2 = raw_b

@@ -245,7 +245,7 @@ echo "A: ${INPUT_A} (layer ${LAYER_A})"
 echo "B: ${INPUT_B}"
 echo "========================================="
 
-METRICS="${METRICS:-hamming l2 cka}"
+METRICS="${METRICS:-hamming l2}"
 
 python compute_ii_mean.py \
     --input_path_A "${INPUT_A}" \
