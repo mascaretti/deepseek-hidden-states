@@ -41,9 +41,9 @@ except ImportError:
 
 def _min_token_length(model, languageA,languageB):
     condition0 = (model == 'llama')
-    conditio1 = (languageA == 'english' and languageB == 'spanish')
+    condition1 = (languageA == 'english' and languageB == 'spanish')
     condition2 = (languageA == 'german' and languageB == 'english')
-    if condition0 and (conditio1 or condition2):
+    if condition0 and (condition1 or condition2):
         return 40
     elif model == 'deepseek':
         return 40

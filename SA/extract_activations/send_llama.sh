@@ -7,8 +7,6 @@
 #SBATCH --output=./log_output/%x.o%j              # Standard output
 #SBATCH --error=./log_output/%x.o%j               # Standard error
 
-# deps=$(squeue -u "$USER" -h -o "%i" | paste -sd: -)
-
 ARGS=("$@")
 echo "Arguments passed: ${ARGS[@]}"
 srun /home/rende/mysglang/bin/python3 extract_hidden_states.py "${ARGS[@]}"
