@@ -1,0 +1,19 @@
+=========================================
+II sweep: sweep/deepseek_igpt/ds_layer_5
+Job 173910, task 1
+Node: dgx01
+Started at: Tue Mar 10 01:23:23 PM CET 2026
+A: /home/laios/activations/flickr/deepseek_windsorised_mean (layer 5)
+B: /home/laios/image-information-imbalance/windsorised_mean/openai-imagegpt-large
+Output: /home/laios/image-information-imbalance/results-mean/sweep/sweep/deepseek_igpt/ds_layer_5
+=========================================
+Loading activations...
+  deepseek_windsorised_mean: 5000 samples, 62 layers, embed=7168
+  openai-imagegpt-large: 5000 samples, 49 layers, embed=1536
+
+Model A layer: layer_5 (7168d)
+Model B layers: 49 (1536d)
+Sample size: 5000
+L2 Normalisation
+Mean centering
+Metrics: cka, hamming, l2

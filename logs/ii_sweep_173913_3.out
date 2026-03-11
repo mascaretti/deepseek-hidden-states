@@ -1,0 +1,85 @@
+=========================================
+II sweep: deepseek_dino
+Job 173916, task 3
+Node: dgx01
+Started at: Tue Mar 10 01:36:50 PM CET 2026
+A: /home/laios/activations/flickr/deepseek_windsorised_mean
+B: /home/laios/image-information-imbalance/windsorised_mean/facebook-dinov2-large
+Target layers: 5 10 15 20 25 30 35 40 45 50 55
+=========================================
+Loading activations...
+  deepseek_windsorised_mean: 5000 samples, 62 layers, embed=7168
+  facebook-dinov2-large: 5000 samples, 25 layers, embed=1024
+
+Model A target layers: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]
+Model B layers: 25 (1024d)
+Sample size: 5000
+
+--- layer_A = 5 (7168d) ---
+L2 Normalisation
+Mean centering
+Metrics: l2
+Results saved to: /home/laios/image-information-imbalance/results-mean/sweep/deepseek_dino/layer_5
+
+--- layer_A = 10 (7168d) ---
+L2 Normalisation
+Mean centering
+Metrics: l2
+Results saved to: /home/laios/image-information-imbalance/results-mean/sweep/deepseek_dino/layer_10
+
+--- layer_A = 15 (7168d) ---
+L2 Normalisation
+Mean centering
+Metrics: l2
+Results saved to: /home/laios/image-information-imbalance/results-mean/sweep/deepseek_dino/layer_15
+
+--- layer_A = 20 (7168d) ---
+L2 Normalisation
+Mean centering
+Metrics: l2
+Results saved to: /home/laios/image-information-imbalance/results-mean/sweep/deepseek_dino/layer_20
+
+--- layer_A = 25 (7168d) ---
+L2 Normalisation
+Mean centering
+Metrics: l2
+Results saved to: /home/laios/image-information-imbalance/results-mean/sweep/deepseek_dino/layer_25
+
+--- layer_A = 30 (7168d) ---
+L2 Normalisation
+Mean centering
+Metrics: l2
+Results saved to: /home/laios/image-information-imbalance/results-mean/sweep/deepseek_dino/layer_30
+
+--- layer_A = 35 (7168d) ---
+L2 Normalisation
+Mean centering
+Metrics: l2
+Results saved to: /home/laios/image-information-imbalance/results-mean/sweep/deepseek_dino/layer_35
+
+--- layer_A = 40 (7168d) ---
+L2 Normalisation
+Mean centering
+Metrics: l2
+Results saved to: /home/laios/image-information-imbalance/results-mean/sweep/deepseek_dino/layer_40
+
+--- layer_A = 45 (7168d) ---
+L2 Normalisation
+Mean centering
+Metrics: l2
+Results saved to: /home/laios/image-information-imbalance/results-mean/sweep/deepseek_dino/layer_45
+
+--- layer_A = 50 (7168d) ---
+L2 Normalisation
+Mean centering
+Metrics: l2
+Results saved to: /home/laios/image-information-imbalance/results-mean/sweep/deepseek_dino/layer_50
+
+--- layer_A = 55 (7168d) ---
+L2 Normalisation
+Mean centering
+Metrics: l2
+Results saved to: /home/laios/image-information-imbalance/results-mean/sweep/deepseek_dino/layer_55
+
+Finished at: Tue Mar 10 01:37:44 PM CET 2026
+Exit code: 0
