@@ -10,10 +10,11 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=END,FAIL
 #SBATCH --mail-user=amascare@sissa.it
-#SBATCH --array=1-4%1
+#SBATCH --array=1-10%1
 
-# Sweep ALL target layers for DeepSeek <-> ImageGPT and DeepSeek <-> DinoV2.
-# 4 jobs total: one per direction. Data is loaded once per job, then all target
+# Sweep ALL target layers for DeepSeek <-> ImageGPT, DeepSeek <-> DinoV2,
+# Llama <-> ImageGPT, Llama <-> DinoV2, and CLIP-Text <-> CLIP-Image.
+# 10 jobs total: one per direction. Data is loaded once per job, then all target
 # layers are computed in a loop (no redundant I/O).
 
 source /home/mascaretti/myjax/bin/activate
@@ -23,8 +24,11 @@ mkdir -p logs
 IMAGE_BASE="/home/laios/image-information-imbalance"
 MEAN_BASE="${IMAGE_BASE}/windsorised_mean"
 DEEPSEEK_MEAN="/home/laios/activations/flickr/deepseek_windsorised_mean"
+LLAMA_MEAN="${MEAN_BASE}/llama"
 DINOV2_MEAN="${MEAN_BASE}/facebook-dinov2-large"
 IGPT_MEAN="${MEAN_BASE}/openai-imagegpt-large"
+CLIP_IMAGE_MEAN="${MEAN_BASE}/openai-clip-vit-large-patch14-image"
+CLIP_TEXT_MEAN="${MEAN_BASE}/openai-clip-vit-large-patch14-text"
 
 OUTPUT_BASE="${IMAGE_BASE}/results-mean/sweep"
 
@@ -59,6 +63,54 @@ case ${SLURM_ARRAY_TASK_ID} in
         INPUT_A="${DINOV2_MEAN}"
         INPUT_B="${DEEPSEEK_MEAN}"
         # All DinoV2 layers (1-24)
+        LAYERS_A="$(seq 1 24)"
+        ;;
+    # Llama[varied] -> sweep all ImageGPT layers
+    5)
+        NAME="llama_igpt"
+        INPUT_A="${LLAMA_MEAN}"
+        INPUT_B="${IGPT_MEAN}"
+        # All Llama layers (1-32)
+        LAYERS_A="$(seq 1 32)"
+        ;;
+    # ImageGPT[varied] -> sweep all Llama layers
+    6)
+        NAME="igpt_llama"
+        INPUT_A="${IGPT_MEAN}"
+        INPUT_B="${LLAMA_MEAN}"
+        # All ImageGPT layers (1-48)
+        LAYERS_A="$(seq 1 48)"
+        ;;
+    # Llama[varied] -> sweep all DinoV2 layers
+    7)
+        NAME="llama_dino"
+        INPUT_A="${LLAMA_MEAN}"
+        INPUT_B="${DINOV2_MEAN}"
+        # All Llama layers (1-32)
+        LAYERS_A="$(seq 1 32)"
+        ;;
+    # DinoV2[varied] -> sweep all Llama layers
+    8)
+        NAME="dino_llama"
+        INPUT_A="${DINOV2_MEAN}"
+        INPUT_B="${LLAMA_MEAN}"
+        # All DinoV2 layers (1-24)
+        LAYERS_A="$(seq 1 24)"
+        ;;
+    # CLIP-Text[varied] -> sweep all CLIP-Image layers
+    9)
+        NAME="clip_text_clip_image"
+        INPUT_A="${CLIP_TEXT_MEAN}"
+        INPUT_B="${CLIP_IMAGE_MEAN}"
+        # All CLIP-Text layers (1-12)
+        LAYERS_A="$(seq 1 12)"
+        ;;
+    # CLIP-Image[varied] -> sweep all CLIP-Text layers
+    10)
+        NAME="clip_image_clip_text"
+        INPUT_A="${CLIP_IMAGE_MEAN}"
+        INPUT_B="${CLIP_TEXT_MEAN}"
+        # All CLIP-Image layers (1-24)
         LAYERS_A="$(seq 1 24)"
         ;;
     *)

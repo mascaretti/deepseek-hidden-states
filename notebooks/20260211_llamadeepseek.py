@@ -64,7 +64,7 @@ MODEL_NAMES = {
 }
 
 TARGET_LAYERS = {
-    'deepseek' : 52,
+    'deepseek' : 55,
     'llama' : 20,
     'dino' : 24,
     'clip_text' : 12,
@@ -187,7 +187,7 @@ def save_bootstrap_results(output_path, forward_data, backward_data, config):
 
 def make_comparison(to_model, from_model, rng, n_replicas = 100, bootstrap_size = 750, sample_size = 5_000, base_dir=None, hamming=False):
     if base_dir is None:
-        base_dir = Path("data", "results-mean")
+        base_dir = Path("data")
     AtoB = make_path(Path(base_dir, f"{to_model}_{from_model}", "l2_centered_normalized")) if hamming is False else make_path(Path(base_dir, f"{to_model}_{from_model}", "hamming"))
     print(f"Loading {AtoB}")
     inf_imb = load_inf_imb_data(AtoB, N_LAYERS[from_model])
@@ -207,7 +207,7 @@ rng = np.random.default_rng(2019)
 n_replicas = 2_000
 bootstrap_size = 200
 sample_size = 5_000
-base_dir = make_path(Path("data", "results-mean"))
+base_dir = make_path(Path("data"))
 assert Path(base_dir).is_dir() == True, f"{base_dir} doesn't exist!"
 
 
@@ -256,41 +256,41 @@ igpt_dino_fwd, igpt_dino_bwd = make_comparison(to_model="igpt", from_model="dino
 # In[17]:
 
 
-imagenet_path = make_path(Path("data", "imagenet"))
+try:
+    imagenet_path = make_path(Path("data", "ImageNet"))
+    HAS_IMAGENET = True
+except AssertionError:
+    HAS_IMAGENET = False
+    print("WARNING: ImageNet data not found, skipping ImageNet panels")
 
 
 # In[18]:
 
 
-dino_igpt_layer = 39
-imagenet_dino_igpt_fwd = []
-imagenet_dino_igpt_fwd.append(np.load(Path(imagenet_path, "dino_ii_mean.npy"))[dino_igpt_layer, 1:])
-imagenet_dino_igpt_fwd.append(np.load(Path(imagenet_path, "dino_ii_std.npy"))[dino_igpt_layer, 1:])
+if HAS_IMAGENET:
+    dino_igpt_layer = 39
+    imagenet_dino_igpt_fwd = []
+    imagenet_dino_igpt_fwd.append(np.load(Path(imagenet_path, "dino_ii_mean.npy"))[dino_igpt_layer, 1:])
+    imagenet_dino_igpt_fwd.append(np.load(Path(imagenet_path, "dino_ii_std.npy"))[dino_igpt_layer, 1:])
 
+    igpt_layer_dino = 20
+    imagenet_igpt_dino_fwd = []
+    imagenet_igpt_dino_fwd.append(np.load(Path(imagenet_path, "igpt_ii_mean.npy"))[igpt_layer_dino, 1:])
+    imagenet_igpt_dino_fwd.append(np.load(Path(imagenet_path, "igpt_ii_std.npy"))[igpt_layer_dino, 1:])
 
-# In[19]:
+    # Cross-model ImageNet: DinoV2-huge (40 layers) ↔ ImageGPT (49 layers)
+    cross_dino_to_igpt_mean = np.load(Path(imagenet_path, "cross_dino_to_igpt_mean.npy"))
+    cross_dino_to_igpt_std = np.load(Path(imagenet_path, "cross_dino_to_igpt_std.npy"))
+    cross_igpt_to_dino_mean = np.load(Path(imagenet_path, "cross_igpt_to_dino_mean.npy"))
+    cross_igpt_to_dino_std = np.load(Path(imagenet_path, "cross_igpt_to_dino_std.npy"))
 
+    # Fix dino at last layer (39), sweep igpt layers (skip layer 0)
+    cross_dino_igpt_fwd = [cross_dino_to_igpt_mean[dino_igpt_layer, 1:], cross_dino_to_igpt_std[dino_igpt_layer, 1:]]
+    cross_dino_igpt_bwd = [cross_igpt_to_dino_mean[1:, dino_igpt_layer], cross_igpt_to_dino_std[1:, dino_igpt_layer]]
 
-igpt_layer_dino = 20
-imagenet_igpt_dino_fwd = []
-imagenet_igpt_dino_fwd.append(np.load(Path(imagenet_path, "igpt_ii_mean.npy"))[igpt_layer_dino, 1:])
-imagenet_igpt_dino_fwd.append(np.load(Path(imagenet_path, "igpt_ii_std.npy"))[igpt_layer_dino, 1:])
-
-# Cross-model ImageNet: DinoV2-huge (40 layers) ↔ ImageGPT (49 layers)
-# cross_dino_to_igpt[dino_layer, igpt_layer] = II(dino → igpt)
-# cross_igpt_to_dino[igpt_layer, dino_layer] = II(igpt → dino)
-cross_dino_to_igpt_mean = np.load(Path(imagenet_path, "cross_dino_to_igpt_mean.npy"))
-cross_dino_to_igpt_std = np.load(Path(imagenet_path, "cross_dino_to_igpt_std.npy"))
-cross_igpt_to_dino_mean = np.load(Path(imagenet_path, "cross_igpt_to_dino_mean.npy"))
-cross_igpt_to_dino_std = np.load(Path(imagenet_path, "cross_igpt_to_dino_std.npy"))
-
-# Fix dino at last layer (39), sweep igpt layers (skip layer 0)
-cross_dino_igpt_fwd = [cross_dino_to_igpt_mean[dino_igpt_layer, 1:], cross_dino_to_igpt_std[dino_igpt_layer, 1:]]
-cross_dino_igpt_bwd = [cross_igpt_to_dino_mean[1:, dino_igpt_layer], cross_igpt_to_dino_std[1:, dino_igpt_layer]]
-
-# Fix igpt at layer 20, sweep dino layers (skip layer 0)
-cross_igpt_dino_fwd = [cross_igpt_to_dino_mean[igpt_layer_dino, 1:], cross_igpt_to_dino_std[igpt_layer_dino, 1:]]
-cross_igpt_dino_bwd = [cross_dino_to_igpt_mean[1:, igpt_layer_dino], cross_dino_to_igpt_std[1:, igpt_layer_dino]]
+    # Fix igpt at layer 20, sweep dino layers (skip layer 0)
+    cross_igpt_dino_fwd = [cross_igpt_to_dino_mean[igpt_layer_dino, 1:], cross_igpt_to_dino_std[igpt_layer_dino, 1:]]
+    cross_igpt_dino_bwd = [cross_dino_to_igpt_mean[1:, igpt_layer_dino], cross_dino_to_igpt_std[1:, igpt_layer_dino]]
 
 
 # In[20]:
@@ -305,28 +305,26 @@ x = {key:np.linspace(0, 1, N_LAYERS[key]) for key in N_LAYERS.keys()}
 # In[21]:
 
 
-fig, ax = plt.subplots(1, 1, figsize=figsize)
-
-label_forward = f"{MODEL_NAMES['igpt']}"
-ax.plot(x['igpt'], imagenet_igpt_dino_fwd[0], '-', color=MODEL_COLORS['igpt'], 
-        label=label_forward, linewidth=2, marker='o', 
-        markersize=3, markeredgecolor='black', markeredgewidth=0.3)    
-ax.fill_between(x['igpt'], imagenet_igpt_dino_fwd[0] - imagenet_igpt_dino_fwd[1], imagenet_igpt_dino_fwd[0] + imagenet_igpt_dino_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
-
-label_forward = f"{MODEL_NAMES['dino']}"
-ax.plot(np.arange(39)/39, imagenet_dino_igpt_fwd[0], '-', color=MODEL_COLORS['dino'], 
-        label=label_forward, linewidth=2, marker='o', 
-        markersize=3, markeredgecolor='black', markeredgewidth=0.3)    
-ax.fill_between(np.arange(39)/39, imagenet_dino_igpt_fwd[0] - imagenet_dino_igpt_fwd[1], imagenet_dino_igpt_fwd[0] + imagenet_dino_igpt_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
-
-title = f"Dataset: ImageNet1k"
-ax.set_title(title, fontsize=12)
-ax.set_xlabel("Relative depth", fontsize=fontsize_label)
-ax.set_ylabel("Information Imbalance", fontsize=fontsize_label)
-ax.tick_params(axis='both', labelsize=fontsize_label)
-ax.set_ylim(ylim)
-ax.legend(fontsize=fontsize_label, loc='best')
-plt.savefig(Path("/home/masca/GitHub/deepseek-hidden-states/plots/fig4a.pdf"), dpi = 300)
+if HAS_IMAGENET:
+    fig, ax = plt.subplots(1, 1, figsize=figsize)
+    label_forward = f"{MODEL_NAMES['igpt']}"
+    ax.plot(x['igpt'], imagenet_igpt_dino_fwd[0], '-', color=MODEL_COLORS['igpt'],
+            label=label_forward, linewidth=2, marker='o',
+            markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+    ax.fill_between(x['igpt'], imagenet_igpt_dino_fwd[0] - imagenet_igpt_dino_fwd[1], imagenet_igpt_dino_fwd[0] + imagenet_igpt_dino_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
+    label_forward = f"{MODEL_NAMES['dino']}"
+    ax.plot(np.arange(39)/39, imagenet_dino_igpt_fwd[0], '-', color=MODEL_COLORS['dino'],
+            label=label_forward, linewidth=2, marker='o',
+            markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+    ax.fill_between(np.arange(39)/39, imagenet_dino_igpt_fwd[0] - imagenet_dino_igpt_fwd[1], imagenet_dino_igpt_fwd[0] + imagenet_dino_igpt_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
+    title = f"Dataset: ImageNet1k"
+    ax.set_title(title, fontsize=12)
+    ax.set_xlabel("Relative depth", fontsize=fontsize_label)
+    ax.set_ylabel("Information Imbalance", fontsize=fontsize_label)
+    ax.tick_params(axis='both', labelsize=fontsize_label)
+    ax.set_ylim(ylim)
+    ax.legend(fontsize=fontsize_label, loc='best')
+    plt.savefig(Path("/home/masca/GitHub/deepseek-hidden-states/plots/fig4a.pdf"), dpi = 300)
 
 
 # In[22]:
@@ -396,8 +394,9 @@ clipi_clipt_fwd, clipi_clipt_bwd = make_comparison(to_model="clip_image", from_m
 clipi_dino_fwd, clipi_dino_bwd = make_comparison(to_model="clip_image", from_model="dino", rng=rng, n_replicas=n_replicas, bootstrap_size=bootstrap_size, sample_size=sample_size, base_dir=base_dir, hamming=DO_HAMMING)
 
 # ---- Figure 4a: ImageNet1k within-model + Image-Captions Flickr30k ----
-x_igpt_imagenet = np.arange(48) / 48  # igpt 49 layers, skip layer 0 → 48 points
-x_dino_imagenet = np.arange(39) / 39  # dino-huge 40 layers, skip layer 0 → 39 points
+if HAS_IMAGENET:
+    x_igpt_imagenet = np.arange(48) / 48  # igpt 49 layers, skip layer 0 → 48 points
+    x_dino_imagenet = np.arange(39) / 39  # dino-huge 40 layers, skip layer 0 → 39 points
 
 fig, axes = plt.subplots(1, 2, figsize=(3.5 * figsize[0], figsize[1]), sharey=True)
 
@@ -407,17 +406,21 @@ for i, ax in enumerate(axes):
 
 # a) ImageNet1k — within-model
 ax = axes[0]
-label_forward = f"{MODEL_NAMES['igpt']} → {MODEL_NAMES['igpt']}"
-ax.plot(x_igpt_imagenet, imagenet_igpt_dino_fwd[0], '-', color=MODEL_COLORS['igpt'],
-        label=label_forward, linewidth=2, marker='o',
-        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
-ax.fill_between(x_igpt_imagenet, imagenet_igpt_dino_fwd[0] - imagenet_igpt_dino_fwd[1], imagenet_igpt_dino_fwd[0] + imagenet_igpt_dino_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
+if HAS_IMAGENET:
+    label_forward = f"{MODEL_NAMES['igpt']} → {MODEL_NAMES['igpt']}"
+    ax.plot(x_igpt_imagenet, imagenet_igpt_dino_fwd[0], '-', color=MODEL_COLORS['igpt'],
+            label=label_forward, linewidth=2, marker='o',
+            markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+    ax.fill_between(x_igpt_imagenet, imagenet_igpt_dino_fwd[0] - imagenet_igpt_dino_fwd[1], imagenet_igpt_dino_fwd[0] + imagenet_igpt_dino_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
 
-label_forward = f"{MODEL_NAMES['dino']} → {MODEL_NAMES['dino']}"
-ax.plot(x_dino_imagenet, imagenet_dino_igpt_fwd[0], '-', color=MODEL_COLORS['dino'],
-        label=label_forward, linewidth=2, marker='o',
-        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
-ax.fill_between(x_dino_imagenet, imagenet_dino_igpt_fwd[0] - imagenet_dino_igpt_fwd[1], imagenet_dino_igpt_fwd[0] + imagenet_dino_igpt_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
+    label_forward = f"{MODEL_NAMES['dino']} → {MODEL_NAMES['dino']}"
+    ax.plot(x_dino_imagenet, imagenet_dino_igpt_fwd[0], '-', color=MODEL_COLORS['dino'],
+            label=label_forward, linewidth=2, marker='o',
+            markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+    ax.fill_between(x_dino_imagenet, imagenet_dino_igpt_fwd[0] - imagenet_dino_igpt_fwd[1], imagenet_dino_igpt_fwd[0] + imagenet_dino_igpt_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
+else:
+    ax.text(0.5, 0.5, "ImageNet data\nnot available", transform=ax.transAxes,
+            ha='center', va='center', fontsize=12, color='gray')
 
 ax.set_title("Same-class images (ImageNet-1k)", fontsize=12)
 ax.set_xlabel("Relative depth", fontsize=fontsize_label)
@@ -496,21 +499,25 @@ for i, ax in enumerate(axes):
 
 # a) ImageNet1k — cross-model
 ax = axes[0]
-label_forward = f"{MODEL_NAMES['dino']} → {MODEL_NAMES['igpt']}"
-ax.plot(x_igpt_imagenet, cross_dino_igpt_fwd[0], '-', color=MODEL_COLORS['igpt'],
-        label=label_forward, linewidth=2, marker='o',
-        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
-ax.fill_between(x_igpt_imagenet, cross_dino_igpt_fwd[0] - cross_dino_igpt_fwd[1], cross_dino_igpt_fwd[0] + cross_dino_igpt_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
-ax.plot(x_igpt_imagenet, cross_dino_igpt_bwd[0], '--', color=MODEL_COLORS['igpt'], linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
-ax.fill_between(x_igpt_imagenet, cross_dino_igpt_bwd[0] - cross_dino_igpt_bwd[1], cross_dino_igpt_bwd[0] + cross_dino_igpt_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
+if HAS_IMAGENET:
+    label_forward = f"{MODEL_NAMES['dino']} → {MODEL_NAMES['igpt']}"
+    ax.plot(x_igpt_imagenet, cross_dino_igpt_fwd[0], '-', color=MODEL_COLORS['igpt'],
+            label=label_forward, linewidth=2, marker='o',
+            markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+    ax.fill_between(x_igpt_imagenet, cross_dino_igpt_fwd[0] - cross_dino_igpt_fwd[1], cross_dino_igpt_fwd[0] + cross_dino_igpt_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
+    ax.plot(x_igpt_imagenet, cross_dino_igpt_bwd[0], '--', color=MODEL_COLORS['igpt'], linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+    ax.fill_between(x_igpt_imagenet, cross_dino_igpt_bwd[0] - cross_dino_igpt_bwd[1], cross_dino_igpt_bwd[0] + cross_dino_igpt_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
 
-label_forward = f"{MODEL_NAMES['igpt']} → {MODEL_NAMES['dino']}"
-ax.plot(x_dino_imagenet, cross_igpt_dino_fwd[0], '-', color=MODEL_COLORS['dino'],
-        label=label_forward, linewidth=2, marker='o',
-        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
-ax.fill_between(x_dino_imagenet, cross_igpt_dino_fwd[0] - cross_igpt_dino_fwd[1], cross_igpt_dino_fwd[0] + cross_igpt_dino_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
-ax.plot(x_dino_imagenet, cross_igpt_dino_bwd[0], '--', color=MODEL_COLORS['dino'], linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
-ax.fill_between(x_dino_imagenet, cross_igpt_dino_bwd[0] - cross_igpt_dino_bwd[1], cross_igpt_dino_bwd[0] + cross_igpt_dino_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
+    label_forward = f"{MODEL_NAMES['igpt']} → {MODEL_NAMES['dino']}"
+    ax.plot(x_dino_imagenet, cross_igpt_dino_fwd[0], '-', color=MODEL_COLORS['dino'],
+            label=label_forward, linewidth=2, marker='o',
+            markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+    ax.fill_between(x_dino_imagenet, cross_igpt_dino_fwd[0] - cross_igpt_dino_fwd[1], cross_igpt_dino_fwd[0] + cross_igpt_dino_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
+    ax.plot(x_dino_imagenet, cross_igpt_dino_bwd[0], '--', color=MODEL_COLORS['dino'], linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+    ax.fill_between(x_dino_imagenet, cross_igpt_dino_bwd[0] - cross_igpt_dino_bwd[1], cross_igpt_dino_bwd[0] + cross_igpt_dino_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
+else:
+    ax.text(0.5, 0.5, "ImageNet data\nnot available", transform=ax.transAxes,
+            ha='center', va='center', fontsize=12, color='gray')
 
 ax.set_title("ImageNet1k (cross-model)", fontsize=12)
 ax.set_xlabel("Relative depth", fontsize=fontsize_label)
@@ -884,5 +891,123 @@ ax.legend(fontsize=fontsize_label, loc='best')
 # In[ ]:
 
 
+# ---- Heatmaps: layer x layer II matrices from sweep data ----
+from safetensors.numpy import load_file as sf_load
+
+def load_sweep_matrix(sweep_dir):
+    """Load full layer_A x layer_B forward II matrix from sweep results."""
+    layer_dirs = sorted(Path(sweep_dir).glob('layer_*'), key=lambda p: int(p.name.split('_')[1]))
+    layer_A_indices = [int(p.name.split('_')[1]) for p in layer_dirs]
+
+    metric_dir = layer_dirs[0] / 'l2_centered_normalized'
+    layer_B_files = sorted(metric_dir.glob('layer_*.safetensors'), key=lambda f: int(f.stem.split('_')[1]))
+    layer_B_indices = [int(f.stem.split('_')[1]) for f in layer_B_files]
+
+    fwd = np.full((len(layer_A_indices), len(layer_B_indices)), np.nan)
+    bwd = np.full((len(layer_A_indices), len(layer_B_indices)), np.nan)
+
+    for i, ld in enumerate(layer_dirs):
+        metric_dir = ld / 'l2_centered_normalized'
+        for j, lb in enumerate(layer_B_indices):
+            f = metric_dir / f'layer_{lb}.safetensors'
+            if f.exists():
+                data = sf_load(str(f))
+                fwd[i, j] = float(data['inf_imb'])
+                bwd[i, j] = float(data['reciprocal_inf_imb'])
+
+    return fwd, bwd, np.array(layer_A_indices), np.array(layer_B_indices)
+
+sweep_base = make_path(Path("data", "sweep"))
+
+# Load matrices — DeepSeek sweeps (always available)
+ds_igpt_hm_fwd, ds_igpt_hm_bwd, ds_igpt_la, ds_igpt_lb = load_sweep_matrix(Path(sweep_base, "deepseek_igpt"))
+ds_dino_hm_fwd, ds_dino_hm_bwd, ds_dino_la, ds_dino_lb = load_sweep_matrix(Path(sweep_base, "deepseek_dino"))
+
+ds_igpt_hm_avg = (ds_igpt_hm_fwd + ds_igpt_hm_bwd) / 2
+ds_dino_hm_avg = (ds_dino_hm_fwd + ds_dino_hm_bwd) / 2
+
+min_igpt = np.unravel_index(np.nanargmin(ds_igpt_hm_avg), ds_igpt_hm_avg.shape)
+min_dino = np.unravel_index(np.nanargmin(ds_dino_hm_avg), ds_dino_hm_avg.shape)
+
+print(f"DeepSeek-ImageGPT min avg II: {ds_igpt_hm_avg[min_igpt]:.4f} at DS layer {ds_igpt_la[min_igpt[0]]}, IGPT layer {ds_igpt_lb[min_igpt[1]]}")
+print(f"DeepSeek-DinoV2   min avg II: {ds_dino_hm_avg[min_dino]:.4f} at DS layer {ds_dino_la[min_dino[0]]}, Dino layer {ds_dino_lb[min_dino[1]]}")
+
+# Load matrices — Llama and CLIP sweeps (may not be available yet)
+sweep_pairs_extra = {
+    'llama_igpt': ('llama', 'igpt', 'LLama3.1-8B', 'ImageGPT'),
+    'llama_dino': ('llama', 'dino', 'LLama3.1-8B', 'DinoV2'),
+    'clip_text_clip_image': ('clip_text', 'clip_image', 'CLIP-Text', 'CLIP-Image'),
+}
+
+extra_heatmaps = {}
+for sweep_name, (model_a, model_b, label_a, label_b) in sweep_pairs_extra.items():
+    sweep_dir = Path(sweep_base, sweep_name)
+    if sweep_dir.exists() and any(sweep_dir.glob('layer_*')):
+        try:
+            hm_fwd, hm_bwd, la, lb = load_sweep_matrix(sweep_dir)
+            hm_avg = (hm_fwd + hm_bwd) / 2
+            hm_min = np.unravel_index(np.nanargmin(hm_avg), hm_avg.shape)
+            extra_heatmaps[sweep_name] = {
+                'avg': hm_avg, 'la': la, 'lb': lb, 'min': hm_min,
+                'model_a': model_a, 'model_b': model_b,
+                'label_a': label_a, 'label_b': label_b,
+            }
+            print(f"{label_a}-{label_b} min avg II: {hm_avg[hm_min]:.4f} at {label_a} layer {la[hm_min[0]]}, {label_b} layer {lb[hm_min[1]]}")
+        except Exception as e:
+            print(f"WARNING: Could not load {sweep_name} sweep: {e}")
+
+n_heatmaps = 2 + len(extra_heatmaps)
+
+# Plot heatmaps
+fig, axes = plt.subplots(1, n_heatmaps, figsize=(1.4 * n_heatmaps * figsize[0], figsize[1]))
+if n_heatmaps == 1:
+    axes = [axes]
+
+for i, ax in enumerate(axes):
+    ax.text(-0.12, 1.08, f"{chr(ord('a') + i)})", transform=ax.transAxes,
+            fontsize=12, fontweight="bold", va="top")
+
+# a) DeepSeek vs ImageGPT
+ax = axes[0]
+x_rel = ds_igpt_la / N_LAYERS['deepseek']
+y_rel = ds_igpt_lb / N_LAYERS['igpt']
+im = ax.pcolormesh(x_rel, y_rel, ds_igpt_hm_avg.T, shading='auto', cmap='viridis_r')
+ax.plot(x_rel[min_igpt[0]], y_rel[min_igpt[1]], 'r*', markersize=15, markeredgecolor='white', markeredgewidth=0.5)
+ax.set_xlabel("DeepSeek-V3 relative depth", fontsize=fontsize_label)
+ax.set_ylabel("ImageGPT relative depth", fontsize=fontsize_label)
+ax.set_title("DeepSeek-V3 vs ImageGPT", fontsize=12)
+ax.tick_params(axis='both', labelsize=fontsize_label)
+cb = fig.colorbar(im, ax=ax, shrink=0.8)
+cb.set_label("Information Imbalance (avg)", fontsize=fontsize_label - 2)
+
+# b) DeepSeek vs DinoV2
+ax = axes[1]
+x_rel = ds_dino_la / N_LAYERS['deepseek']
+y_rel = ds_dino_lb / N_LAYERS['dino']
+im = ax.pcolormesh(x_rel, y_rel, ds_dino_hm_avg.T, shading='auto', cmap='viridis_r')
+ax.plot(x_rel[min_dino[0]], y_rel[min_dino[1]], 'r*', markersize=15, markeredgecolor='white', markeredgewidth=0.5)
+ax.set_xlabel("DeepSeek-V3 relative depth", fontsize=fontsize_label)
+ax.set_ylabel("DinoV2 relative depth", fontsize=fontsize_label)
+ax.set_title("DeepSeek-V3 vs DinoV2", fontsize=12)
+ax.tick_params(axis='both', labelsize=fontsize_label)
+cb = fig.colorbar(im, ax=ax, shrink=0.8)
+cb.set_label("Information Imbalance (avg)", fontsize=fontsize_label - 2)
+
+# Extra heatmaps (Llama×IGPT, Llama×DinoV2, CLIP-Text×CLIP-Image)
+for panel_idx, (sweep_name, hm) in enumerate(extra_heatmaps.items(), start=2):
+    ax = axes[panel_idx]
+    x_rel = hm['la'] / N_LAYERS[hm['model_a']]
+    y_rel = hm['lb'] / N_LAYERS[hm['model_b']]
+    im = ax.pcolormesh(x_rel, y_rel, hm['avg'].T, shading='auto', cmap='viridis_r')
+    ax.plot(x_rel[hm['min'][0]], y_rel[hm['min'][1]], 'r*', markersize=15, markeredgecolor='white', markeredgewidth=0.5)
+    ax.set_xlabel(f"{hm['label_a']} relative depth", fontsize=fontsize_label)
+    ax.set_ylabel(f"{hm['label_b']} relative depth", fontsize=fontsize_label)
+    ax.set_title(f"{hm['label_a']} vs {hm['label_b']}", fontsize=12)
+    ax.tick_params(axis='both', labelsize=fontsize_label)
+    cb = fig.colorbar(im, ax=ax, shrink=0.8)
+    cb.set_label("Information Imbalance (avg)", fontsize=fontsize_label - 2)
+
+plt.tight_layout()
+plt.savefig(Path("/home/masca/GitHub/deepseek-hidden-states/plots/heatmap_ii.pdf"), dpi=300)
 
 
