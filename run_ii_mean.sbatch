@@ -10,7 +10,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mail-type=END,FAIL
 #SBATCH --mail-user=amascare@sissa.it
-#SBATCH --array=1-30%1
+#SBATCH --array=1-32%1
 
 # Compute information imbalance from mean-pooled activations.
 # One comparison per array task, %1 = sequential (shared GPU).
@@ -40,7 +40,7 @@ case ${SLURM_ARRAY_TASK_ID} in
         NAME="deepseek_igpt"
         INPUT_A="${DEEPSEEK_MEAN}"
         INPUT_B="${IGPT_MEAN}"
-        LAYER_A=55
+        LAYER_A=33
         ;;
     2)
         NAME="igpt_deepseek"
@@ -53,7 +53,7 @@ case ${SLURM_ARRAY_TASK_ID} in
         NAME="deepseek_dino"
         INPUT_A="${DEEPSEEK_MEAN}"
         INPUT_B="${DINOV2_MEAN}"
-        LAYER_A=55
+        LAYER_A=33
         ;;
     4)
         NAME="dino_deepseek"
@@ -66,7 +66,7 @@ case ${SLURM_ARRAY_TASK_ID} in
         NAME="deepseek_dino_base"
         INPUT_A="${DEEPSEEK_MEAN}"
         INPUT_B="${DINOV2_BASE_MEAN}"
-        LAYER_A=55
+        LAYER_A=33
         ;;
     6)
         NAME="dino_base_deepseek"
@@ -79,7 +79,7 @@ case ${SLURM_ARRAY_TASK_ID} in
         NAME="deepseek_dino_small"
         INPUT_A="${DEEPSEEK_MEAN}"
         INPUT_B="${DINOV2_SMALL_MEAN}"
-        LAYER_A=55
+        LAYER_A=33
         ;;
     8)
         NAME="dino_small_deepseek"
@@ -111,7 +111,7 @@ case ${SLURM_ARRAY_TASK_ID} in
         NAME="llama_igpt"
         INPUT_A="${LLAMA_MEAN}"
         INPUT_B="${IGPT_MEAN}"
-        LAYER_A=20
+        LAYER_A=18
         ;;
     # --- dino (large) <-> llama ---
     13)
@@ -124,7 +124,7 @@ case ${SLURM_ARRAY_TASK_ID} in
         NAME="llama_dino"
         INPUT_A="${LLAMA_MEAN}"
         INPUT_B="${DINOV2_MEAN}"
-        LAYER_A=20
+        LAYER_A=18
         ;;
     # --- dino (large) <-> clip image ---
     15)
@@ -144,20 +144,20 @@ case ${SLURM_ARRAY_TASK_ID} in
         NAME="clip_text_clip_image"
         INPUT_A="${CLIP_TEXT_MEAN}"
         INPUT_B="${CLIP_IMAGE_MEAN}"
-        LAYER_A=12
+        LAYER_A=11
         ;;
     18)
         NAME="clip_image_clip_text"
         INPUT_A="${CLIP_IMAGE_MEAN}"
         INPUT_B="${CLIP_TEXT_MEAN}"
-        LAYER_A=24
+        LAYER_A=20
         ;;
     # --- igpt-medium <-> deepseek ---
     19)
         NAME="deepseek_igpt_medium"
         INPUT_A="${DEEPSEEK_MEAN}"
         INPUT_B="${IGPT_MED_MEAN}"
-        LAYER_A=55
+        LAYER_A=33
         ;;
     20)
         NAME="igpt_medium_deepseek"
@@ -176,7 +176,7 @@ case ${SLURM_ARRAY_TASK_ID} in
         NAME="llama_igpt_medium"
         INPUT_A="${LLAMA_MEAN}"
         INPUT_B="${IGPT_MED_MEAN}"
-        LAYER_A=20
+        LAYER_A=18
         ;;
     # --- igpt-medium <-> dino (large) ---
     23)
@@ -196,7 +196,7 @@ case ${SLURM_ARRAY_TASK_ID} in
         NAME="deepseek_igpt_small"
         INPUT_A="${DEEPSEEK_MEAN}"
         INPUT_B="${IGPT_SMALL_MEAN}"
-        LAYER_A=55
+        LAYER_A=33
         ;;
     26)
         NAME="igpt_small_deepseek"
@@ -215,7 +215,7 @@ case ${SLURM_ARRAY_TASK_ID} in
         NAME="llama_igpt_small"
         INPUT_A="${LLAMA_MEAN}"
         INPUT_B="${IGPT_SMALL_MEAN}"
-        LAYER_A=20
+        LAYER_A=18
         ;;
     # --- igpt-small <-> dino (large) ---
     29)
@@ -229,6 +229,19 @@ case ${SLURM_ARRAY_TASK_ID} in
         INPUT_A="${DINOV2_MEAN}"
         INPUT_B="${IGPT_SMALL_MEAN}"
         LAYER_A=24
+        ;;
+    # --- deepseek <-> llama ---
+    31)
+        NAME="deepseek_llama"
+        INPUT_A="${DEEPSEEK_MEAN}"
+        INPUT_B="${LLAMA_MEAN}"
+        LAYER_A=33
+        ;;
+    32)
+        NAME="llama_deepseek"
+        INPUT_A="${LLAMA_MEAN}"
+        INPUT_B="${DEEPSEEK_MEAN}"
+        LAYER_A=18
         ;;
     *)
         echo "Invalid array task ID: ${SLURM_ARRAY_TASK_ID}"

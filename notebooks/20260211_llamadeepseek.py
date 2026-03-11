@@ -63,12 +63,27 @@ MODEL_NAMES = {
     'dino_small': 'DinoV2-small'
 }
 
-TARGET_LAYERS = {
-    'deepseek' : 55,
-    'llama' : 20,
-    'dino' : 24,
-    'clip_text' : 12,
-    'igpt' : 20
+# Anchor layer for (to_model, from_model): the layer of to_model held fixed
+# when sweeping from_model layers.
+# LLM anchors fixed at ~55% relative depth; vision models at sweep minima.
+ANCHOR_LAYER = {
+    ('deepseek', 'igpt'): 33,       # ~55% of 60
+    ('deepseek', 'dino'): 33,       # ~55% of 60
+    ('deepseek', 'dino_base'): 33,  # ~55% of 60
+    ('deepseek', 'dino_small'): 33, # ~55% of 60
+    ('deepseek', 'llama'): 33,      # ~55% of 60
+    ('llama', 'igpt'): 18,          # ~55% of 32
+    ('llama', 'dino'): 18,          # ~55% of 32
+    ('dino', 'igpt'): 24,
+    ('igpt', 'dino'): 20,
+    ('clip_image', 'clip_text'): 20,  # sweep: CLIP↔CLIP min at (20, 11)
+    ('clip_image', 'dino'): 24,
+    # Reverse directions (image/text model anchor, sweep LLM layers)
+    ('dino', 'deepseek'): 24,
+    ('igpt', 'deepseek'): 20,
+    ('dino', 'llama'): 24,
+    ('igpt', 'llama'): 20,
+    ('llama', 'deepseek'): 18,      # ~55% of 32
 }
 
 N_LAYERS = {
@@ -188,7 +203,19 @@ def save_bootstrap_results(output_path, forward_data, backward_data, config):
 def make_comparison(to_model, from_model, rng, n_replicas = 100, bootstrap_size = 750, sample_size = 5_000, base_dir=None, hamming=False):
     if base_dir is None:
         base_dir = Path("data")
-    AtoB = make_path(Path(base_dir, f"{to_model}_{from_model}", "l2_centered_normalized")) if hamming is False else make_path(Path(base_dir, f"{to_model}_{from_model}", "hamming"))
+    metric = "hamming" if hamming else "l2_centered_normalized"
+    pair = (to_model, from_model)
+    # Try sweep path first (layer×layer data), fall back to legacy single-slice
+    if pair in ANCHOR_LAYER:
+        sweep_path = Path(base_dir, "sweep", f"{to_model}_{from_model}",
+                          f"layer_{ANCHOR_LAYER[pair]}", metric)
+        if sweep_path.is_dir():
+            AtoB = sweep_path
+        else:
+            AtoB = make_path(Path(base_dir, f"{to_model}_{from_model}", metric))
+            print(f"  (no sweep data, using legacy path)")
+    else:
+        AtoB = make_path(Path(base_dir, f"{to_model}_{from_model}", metric))
     print(f"Loading {AtoB}")
     inf_imb = load_inf_imb_data(AtoB, N_LAYERS[from_model])
     inf_matrix, mult_matrix, n_rows = extract_matrices(inf_imb, N_LAYERS[from_model])
@@ -695,7 +722,7 @@ ax.set_ylabel("", fontsize=fontsize_label)
 ax.tick_params(axis='both', labelsize=fontsize_label)
 ax.set_ylim(ylim)
 ax.legend(fontsize=fontsize_label, loc='best')
-title = f"Target: {MODEL_NAMES['igpt']}[{TARGET_LAYERS['igpt']}]"
+title = f"Target: {MODEL_NAMES['igpt']}[{ANCHOR_LAYER[('igpt', 'deepseek')]}]"
 ax.set_title(title, fontsize=12)
 
 ax = axes[1]
@@ -715,7 +742,7 @@ ax.set_ylabel("", fontsize=fontsize_label)
 ax.tick_params(axis='both', labelsize=fontsize_label)
 ax.set_ylim(ylim)
 ax.legend(fontsize=fontsize_label, loc='best')
-title = f"Target: {MODEL_NAMES['dino']}[{TARGET_LAYERS['dino']}]"
+title = f"Target: {MODEL_NAMES['dino']}[{ANCHOR_LAYER[('dino', 'deepseek')]}]"
 ax.set_title(title, fontsize=12)
 ## ax.grid(True, alpha=0.3)
 
@@ -733,7 +760,7 @@ ax.set_ylabel("", fontsize=fontsize_label)
 ax.tick_params(axis='both', labelsize=fontsize_label)
 ax.set_ylim(ylim)
 ax.legend(fontsize=fontsize_label, loc='best')
-title = f"Target: {MODEL_NAMES['llama']}[{TARGET_LAYERS['llama']}]"
+title = f"Target: {MODEL_NAMES['llama']}[{ANCHOR_LAYER[('llama', 'deepseek')]}]"
 ax.set_title(title, fontsize=12)
 ## ax.grid(True, alpha=0.3)
 
@@ -751,17 +778,17 @@ for i, ax in enumerate(axes):
             fontsize=12, fontweight="bold", va="top")
 
 ax = axes[0]
-label_forward = f"{MODEL_NAMES['deepseek']}[{TARGET_LAYERS['deepseek']}] → {MODEL_NAMES['dino']}"
-ax.plot(x['dino'], dino_fwd[0], '-', color=MODEL_COLORS['dino'], 
-        label=label_forward, linewidth=2, marker='o', 
-        markersize=3, markeredgecolor='black', markeredgewidth=0.3)    
+label_forward = f"{MODEL_NAMES['deepseek']}[{ANCHOR_LAYER[('deepseek', 'dino')]}] → {MODEL_NAMES['dino']}"
+ax.plot(x['dino'], dino_fwd[0], '-', color=MODEL_COLORS['dino'],
+        label=label_forward, linewidth=2, marker='o',
+        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
 ax.fill_between(x['dino'], dino_fwd[0] - dino_fwd[1], dino_fwd[0] + dino_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
-label_backward = f"{MODEL_NAMES['dino']} → {MODEL_NAMES['deepseek']}[{TARGET_LAYERS['deepseek']}]"
+label_backward = f"{MODEL_NAMES['dino']} → {MODEL_NAMES['deepseek']}[{ANCHOR_LAYER[('deepseek', 'dino')]}]"
 ax.plot(x['dino'], dino_bwd[0], '--', color=MODEL_COLORS['dino'], label = label_backward, linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
 ax.fill_between(x['dino'], dino_bwd[0] - dino_bwd[1], dino_bwd[0] + dino_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
-ax.vlines(x = TARGET_LAYERS['dino']/N_LAYERS['dino'], ymin=ylim[0], ymax=ylim[1], alpha=0.2, color="black")
-ax.hlines(y = ds_dino_bwd[0][TARGET_LAYERS['deepseek']], xmin=-0., xmax=1.05, alpha=0.6, color="black")
-ax.hlines(y = ds_dino_fwd[0][TARGET_LAYERS['deepseek']], xmin=-0., xmax=1.05, alpha=0.6, color="red")
+ax.vlines(x = ANCHOR_LAYER[('dino', 'deepseek')]/N_LAYERS['dino'], ymin=ylim[0], ymax=ylim[1], alpha=0.2, color="black")
+ax.hlines(y = ds_dino_bwd[0][ANCHOR_LAYER[('deepseek', 'dino')]], xmin=-0., xmax=1.05, alpha=0.6, color="black")
+ax.hlines(y = ds_dino_fwd[0][ANCHOR_LAYER[('deepseek', 'dino')]], xmin=-0., xmax=1.05, alpha=0.6, color="red")
 
 ax.set_title("Image-Captions on Flickr30k", fontsize=12)
 ax.set_xlabel("Relative depth", fontsize=fontsize_label)
@@ -772,17 +799,17 @@ ax.legend(fontsize=fontsize_label, loc='best')
 
 
 ax = axes[1]
-label_forward = f"{MODEL_NAMES['dino']}[{TARGET_LAYERS['dino']}] → {MODEL_NAMES['deepseek']}"
-ax.plot(x['deepseek'], ds_dino_fwd[0], '-', color=MODEL_COLORS['deepseek'], 
-        label=label_forward, linewidth=2, marker='o', 
-        markersize=3, markeredgecolor='black', markeredgewidth=0.3)    
+label_forward = f"{MODEL_NAMES['dino']}[{ANCHOR_LAYER[('dino', 'deepseek')]}] → {MODEL_NAMES['deepseek']}"
+ax.plot(x['deepseek'], ds_dino_fwd[0], '-', color=MODEL_COLORS['deepseek'],
+        label=label_forward, linewidth=2, marker='o',
+        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
 ax.fill_between(x['deepseek'], ds_dino_fwd[0] - ds_dino_fwd[1], ds_dino_fwd[0] + ds_dino_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['deepseek'])
-label_backward = f"{MODEL_NAMES['deepseek']} → {MODEL_NAMES['dino']}[{TARGET_LAYERS['dino']}]"
+label_backward = f"{MODEL_NAMES['deepseek']} → {MODEL_NAMES['dino']}[{ANCHOR_LAYER[('dino', 'deepseek')]}]"
 ax.plot(x['deepseek'], ds_dino_bwd[0], '--', color=MODEL_COLORS['deepseek'], label = label_backward, linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
 ax.fill_between(x['deepseek'], ds_dino_bwd[0] - ds_dino_bwd[1], ds_dino_bwd[0] + ds_dino_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['deepseek'])
-ax.vlines(x = TARGET_LAYERS['deepseek']/N_LAYERS['deepseek'], ymin=ylim[0], ymax=ylim[1], alpha=0.2, color="black")
-ax.hlines(y = ds_dino_bwd[0][TARGET_LAYERS['deepseek']], xmin=-0., xmax=1.05, alpha=0.6, color="black")
-ax.hlines(y = ds_dino_fwd[0][TARGET_LAYERS['deepseek']], xmin=-0., xmax=1.05, alpha=0.6, color="red")
+ax.vlines(x = ANCHOR_LAYER[('deepseek', 'dino')]/N_LAYERS['deepseek'], ymin=ylim[0], ymax=ylim[1], alpha=0.2, color="black")
+ax.hlines(y = ds_dino_bwd[0][ANCHOR_LAYER[('deepseek', 'dino')]], xmin=-0., xmax=1.05, alpha=0.6, color="black")
+ax.hlines(y = ds_dino_fwd[0][ANCHOR_LAYER[('deepseek', 'dino')]], xmin=-0., xmax=1.05, alpha=0.6, color="red")
 ax.set_xlabel("Relative depth", fontsize=fontsize_label)
 ax.set_ylabel("", fontsize=fontsize_label)
 ax.tick_params(axis='both', labelsize=fontsize_label)
@@ -800,17 +827,17 @@ for i, ax in enumerate(axes):
             fontsize=12, fontweight="bold", va="top")
 
 ax = axes[0]
-label_forward = f"{MODEL_NAMES['deepseek']}[{TARGET_LAYERS['deepseek']}] → {MODEL_NAMES['igpt']}"
-ax.plot(x['igpt'], igpt_fwd[0], '-', color=MODEL_COLORS['igpt'], 
-        label=label_forward, linewidth=2, marker='o', 
-        markersize=3, markeredgecolor='black', markeredgewidth=0.3)    
+label_forward = f"{MODEL_NAMES['deepseek']}[{ANCHOR_LAYER[('deepseek', 'igpt')]}] → {MODEL_NAMES['igpt']}"
+ax.plot(x['igpt'], igpt_fwd[0], '-', color=MODEL_COLORS['igpt'],
+        label=label_forward, linewidth=2, marker='o',
+        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
 ax.fill_between(x['igpt'], igpt_fwd[0] - igpt_fwd[1], igpt_fwd[0] + igpt_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
-label_backward = f"{MODEL_NAMES['igpt']} → {MODEL_NAMES['deepseek']}[{TARGET_LAYERS['deepseek']}]"
+label_backward = f"{MODEL_NAMES['igpt']} → {MODEL_NAMES['deepseek']}[{ANCHOR_LAYER[('deepseek', 'igpt')]}]"
 ax.plot(x['igpt'], igpt_bwd[0], '--', color=MODEL_COLORS['igpt'], label = label_backward, linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
 ax.fill_between(x['igpt'], igpt_bwd[0] - igpt_bwd[1], igpt_bwd[0] + igpt_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
-ax.vlines(x = TARGET_LAYERS['igpt']/N_LAYERS['igpt'], ymin=ylim[0], ymax=ylim[1], alpha=0.2, color="black")
-ax.hlines(y = ds_igpt_bwd[0][TARGET_LAYERS['deepseek']], xmin=-0., xmax=1.05, alpha=0.6, color="black")
-ax.hlines(y = ds_igpt_fwd[0][TARGET_LAYERS['deepseek']], xmin=-0., xmax=1.05, alpha=0.6, color="red")
+ax.vlines(x = ANCHOR_LAYER[('igpt', 'deepseek')]/N_LAYERS['igpt'], ymin=ylim[0], ymax=ylim[1], alpha=0.2, color="black")
+ax.hlines(y = ds_igpt_bwd[0][ANCHOR_LAYER[('deepseek', 'igpt')]], xmin=-0., xmax=1.05, alpha=0.6, color="black")
+ax.hlines(y = ds_igpt_fwd[0][ANCHOR_LAYER[('deepseek', 'igpt')]], xmin=-0., xmax=1.05, alpha=0.6, color="red")
 
 ## ax.set_title("Image-Captions on Flickr30k", fontsize=12)
 ax.set_xlabel("Relative depth", fontsize=fontsize_label)
@@ -821,17 +848,17 @@ ax.legend(fontsize=fontsize_label, loc='best')
 
 
 ax = axes[1]
-label_forward = f"{MODEL_NAMES['igpt']}[{TARGET_LAYERS['igpt']}] → {MODEL_NAMES['deepseek']}"
-ax.plot(x['deepseek'], ds_igpt_fwd[0], '-', color=MODEL_COLORS['deepseek'], 
-        label=label_forward, linewidth=2, marker='o', 
-        markersize=3, markeredgecolor='black', markeredgewidth=0.3)    
+label_forward = f"{MODEL_NAMES['igpt']}[{ANCHOR_LAYER[('igpt', 'deepseek')]}] → {MODEL_NAMES['deepseek']}"
+ax.plot(x['deepseek'], ds_igpt_fwd[0], '-', color=MODEL_COLORS['deepseek'],
+        label=label_forward, linewidth=2, marker='o',
+        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
 ax.fill_between(x['deepseek'], ds_igpt_fwd[0] - ds_igpt_fwd[1], ds_igpt_fwd[0] + ds_igpt_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['deepseek'])
-label_backward = f"{MODEL_NAMES['deepseek']} → {MODEL_NAMES['igpt']}[{TARGET_LAYERS['igpt']}]"
+label_backward = f"{MODEL_NAMES['deepseek']} → {MODEL_NAMES['igpt']}[{ANCHOR_LAYER[('igpt', 'deepseek')]}]"
 ax.plot(x['deepseek'], ds_igpt_bwd[0], '--', color=MODEL_COLORS['deepseek'], label = label_backward, linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
 ax.fill_between(x['deepseek'], ds_igpt_bwd[0] - ds_igpt_bwd[1], ds_igpt_bwd[0] + ds_igpt_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['deepseek'])
-ax.vlines(x = TARGET_LAYERS['deepseek']/N_LAYERS['deepseek'], ymin=ylim[0], ymax=ylim[1], alpha=0.2, color="black")
-ax.hlines(y = ds_igpt_bwd[0][TARGET_LAYERS['deepseek']], xmin=-0., xmax=1.05, alpha=0.6, color="black")
-ax.hlines(y = ds_igpt_fwd[0][TARGET_LAYERS['deepseek']], xmin=-0., xmax=1.05, alpha=0.6, color="red")
+ax.vlines(x = ANCHOR_LAYER[('deepseek', 'igpt')]/N_LAYERS['deepseek'], ymin=ylim[0], ymax=ylim[1], alpha=0.2, color="black")
+ax.hlines(y = ds_igpt_bwd[0][ANCHOR_LAYER[('deepseek', 'igpt')]], xmin=-0., xmax=1.05, alpha=0.6, color="black")
+ax.hlines(y = ds_igpt_fwd[0][ANCHOR_LAYER[('deepseek', 'igpt')]], xmin=-0., xmax=1.05, alpha=0.6, color="red")
 ax.set_xlabel("Relative depth", fontsize=fontsize_label)
 ax.set_ylabel("", fontsize=fontsize_label)
 ax.tick_params(axis='both', labelsize=fontsize_label)
@@ -849,17 +876,17 @@ for i, ax in enumerate(axes):
             fontsize=12, fontweight="bold", va="top")
 
 ax = axes[0]
-label_forward = f"{MODEL_NAMES['deepseek']}[{TARGET_LAYERS['deepseek']}] → {MODEL_NAMES['llama']}"
-ax.plot(x['llama'], llama_fwd[0], '-', color=MODEL_COLORS['llama'], 
-        label=label_forward, linewidth=2, marker='o', 
-        markersize=3, markeredgecolor='black', markeredgewidth=0.3)    
+label_forward = f"{MODEL_NAMES['deepseek']}[{ANCHOR_LAYER[('deepseek', 'llama')]}] → {MODEL_NAMES['llama']}"
+ax.plot(x['llama'], llama_fwd[0], '-', color=MODEL_COLORS['llama'],
+        label=label_forward, linewidth=2, marker='o',
+        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
 ax.fill_between(x['llama'], llama_fwd[0] - llama_fwd[1], llama_fwd[0] + llama_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['llama'])
-label_backward = f"{MODEL_NAMES['llama']} → {MODEL_NAMES['deepseek']}[{TARGET_LAYERS['deepseek']}]"
+label_backward = f"{MODEL_NAMES['llama']} → {MODEL_NAMES['deepseek']}[{ANCHOR_LAYER[('deepseek', 'llama')]}]"
 ax.plot(x['llama'], llama_bwd[0], '--', color=MODEL_COLORS['llama'], label = label_backward, linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
 ax.fill_between(x['llama'], llama_bwd[0] - llama_bwd[1], llama_bwd[0] + llama_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['llama'])
-ax.vlines(x = TARGET_LAYERS['llama']/N_LAYERS['llama'], ymin=ylim[0], ymax=ylim[1], alpha=0.2, color="black")
-ax.hlines(y = ds_llama_bwd[0][TARGET_LAYERS['deepseek']], xmin=-0., xmax=1.05, alpha=0.6, color="black")
-ax.hlines(y = ds_llama_fwd[0][TARGET_LAYERS['deepseek']], xmin=-0., xmax=1.05, alpha=0.6, color="red")
+ax.vlines(x = ANCHOR_LAYER[('llama', 'deepseek')]/N_LAYERS['llama'], ymin=ylim[0], ymax=ylim[1], alpha=0.2, color="black")
+ax.hlines(y = ds_llama_bwd[0][ANCHOR_LAYER[('deepseek', 'llama')]], xmin=-0., xmax=1.05, alpha=0.6, color="black")
+ax.hlines(y = ds_llama_fwd[0][ANCHOR_LAYER[('deepseek', 'llama')]], xmin=-0., xmax=1.05, alpha=0.6, color="red")
 
 ## ax.set_title("Image-Captions on Flickr30k", fontsize=12)
 ax.set_xlabel("Relative depth", fontsize=fontsize_label)
@@ -870,17 +897,17 @@ ax.legend(fontsize=fontsize_label, loc='best')
 
 
 ax = axes[1]
-label_forward = f"{MODEL_NAMES['llama']}[{TARGET_LAYERS['llama']}] → {MODEL_NAMES['deepseek']}"
-ax.plot(x['deepseek'], ds_llama_fwd[0], '-', color=MODEL_COLORS['deepseek'], 
-        label=label_forward, linewidth=2, marker='o', 
-        markersize=3, markeredgecolor='black', markeredgewidth=0.3)    
+label_forward = f"{MODEL_NAMES['llama']}[{ANCHOR_LAYER[('llama', 'deepseek')]}] → {MODEL_NAMES['deepseek']}"
+ax.plot(x['deepseek'], ds_llama_fwd[0], '-', color=MODEL_COLORS['deepseek'],
+        label=label_forward, linewidth=2, marker='o',
+        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
 ax.fill_between(x['deepseek'], ds_llama_fwd[0] - ds_llama_fwd[1], ds_llama_fwd[0] + ds_llama_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['deepseek'])
-label_backward = f"{MODEL_NAMES['deepseek']} → {MODEL_NAMES['llama']}[{TARGET_LAYERS['llama']}]"
+label_backward = f"{MODEL_NAMES['deepseek']} → {MODEL_NAMES['llama']}[{ANCHOR_LAYER[('llama', 'deepseek')]}]"
 ax.plot(x['deepseek'], ds_llama_bwd[0], '--', color=MODEL_COLORS['deepseek'], label = label_backward, linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
 ax.fill_between(x['deepseek'], ds_llama_bwd[0] - ds_llama_bwd[1], ds_llama_bwd[0] + ds_llama_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['deepseek'])
-ax.vlines(x = TARGET_LAYERS['deepseek']/N_LAYERS['deepseek'], ymin=ylim[0], ymax=ylim[1], alpha=0.2, color="black")
-ax.hlines(y = ds_llama_bwd[0][TARGET_LAYERS['deepseek']], xmin=-0., xmax=1.05, alpha=0.6, color="black")
-ax.hlines(y = ds_llama_fwd[0][TARGET_LAYERS['deepseek']], xmin=-0., xmax=1.05, alpha=0.6, color="red")
+ax.vlines(x = ANCHOR_LAYER[('deepseek', 'llama')]/N_LAYERS['deepseek'], ymin=ylim[0], ymax=ylim[1], alpha=0.2, color="black")
+ax.hlines(y = ds_llama_bwd[0][ANCHOR_LAYER[('deepseek', 'llama')]], xmin=-0., xmax=1.05, alpha=0.6, color="black")
+ax.hlines(y = ds_llama_fwd[0][ANCHOR_LAYER[('deepseek', 'llama')]], xmin=-0., xmax=1.05, alpha=0.6, color="red")
 ax.set_xlabel("Relative depth", fontsize=fontsize_label)
 ax.set_ylabel("", fontsize=fontsize_label)
 ax.tick_params(axis='both', labelsize=fontsize_label)
@@ -1009,5 +1036,142 @@ for panel_idx, (sweep_name, hm) in enumerate(extra_heatmaps.items(), start=2):
 
 plt.tight_layout()
 plt.savefig(Path("/home/masca/GitHub/deepseek-hidden-states/plots/heatmap_ii.pdf"), dpi=300)
+
+
+# In[ ]:
+
+
+# ==========================================================================
+# Aggregation comparison: DinoV2 image-side token pooling strategies
+# Parallels the text-side last/concat/avg comparison (Fig. last-concat-avg)
+# ==========================================================================
+
+AGG_RESULTS = Path("data", "aggregation_test")
+
+# Average variants: (label, subfolder, n_dino_layers)
+AVG_VARIANTS = [
+    ("Last 1 token",     "deepseek_dino_avg_last1",    24),
+    ("CLS only",         "deepseek_dino_avg_cls",      24),
+    ("Last 10 tokens",   "deepseek_dino_avg_last10",   24),
+    ("Last 50 tokens",   "deepseek_dino_avg_last50",   24),
+    ("Last 100 tokens",  "deepseek_dino_avg_last100",  24),
+    ("All 257 tokens",   "deepseek_dino_avg_all",      24),
+]
+
+# Concatenation variants
+CONCAT_VARIANTS = [
+    ("Last 1 (baseline)", "deepseek_dino_concat_last1",   24),
+    ("Concat 10 tokens",  "deepseek_dino_concat_last10",  24),
+    ("Concat 50 tokens",  "deepseek_dino_concat_last50",  24),
+    ("Concat 100 tokens", "deepseek_dino_concat_last100", 24),
+]
+
+
+def load_agg_ii(base_dir, variant_dir, n_layers):
+    """Load II results for an aggregation variant, return (forward_mean, forward_se) arrays."""
+    result_dir = make_path(Path(base_dir, variant_dir, "l2_centered_normalized"))
+    fwd_means = np.zeros(n_layers)
+    fwd_ses = np.zeros(n_layers)
+    for i in range(1, n_layers + 1):
+        data = load_file(Path(result_dir, f"layer_{i}.safetensors"))
+        ranks = data["ranks"]
+        cards = data["cards"]
+        n_rows = len(ranks)
+        n_col = sample_size - n_rows
+        total_r = float(ranks.sum())
+        total_c = float(cards.sum())
+        if total_c > 0:
+            ii_full = 2.0 * total_r / total_c / (n_col - 1)
+        else:
+            ii_full = float("nan")
+        # Jackknife SE
+        loo_r = total_r - ranks
+        loo_c = total_c - cards
+        ii_loo = np.where(loo_c > 0, 2.0 * loo_r / loo_c / (n_col - 1), np.nan)
+        pseudo = n_rows * ii_full - (n_rows - 1) * ii_loo
+        se = float(np.nanstd(pseudo, ddof=1) / np.sqrt(n_rows))
+        fwd_means[i - 1] = ii_full
+        fwd_ses[i - 1] = se
+    return fwd_means, fwd_ses
+
+
+# In[ ]:
+
+
+# Load all variants
+try:
+    agg_base = make_path(AGG_RESULTS)
+    HAS_AGG = True
+except (AssertionError, AssertionError):
+    HAS_AGG = False
+    print("WARNING: Aggregation test results not found, skipping aggregation plot")
+
+if HAS_AGG:
+    avg_data = {}
+    for label, subdir, nl in AVG_VARIANTS:
+        try:
+            avg_data[label] = load_agg_ii(agg_base, subdir, nl)
+        except Exception as e:
+            print(f"  Skipping avg variant '{label}': {e}")
+
+    concat_data = {}
+    for label, subdir, nl in CONCAT_VARIANTS:
+        try:
+            concat_data[label] = load_agg_ii(agg_base, subdir, nl)
+        except Exception as e:
+            print(f"  Skipping concat variant '{label}': {e}")
+
+    print(f"Loaded {len(avg_data)} average variants, {len(concat_data)} concat variants")
+
+
+# In[ ]:
+
+
+if HAS_AGG and (avg_data or concat_data):
+    x_dino = np.linspace(0, 1, N_LAYERS['dino'])
+
+    fig, axes = plt.subplots(1, 2, figsize=(9, 4.5), sharey=True)
+
+    # Color gradient: fewer tokens = lighter, more tokens = darker
+    avg_colors = ['#D4A5A5', '#C0392B', '#F39C12', '#3498DB', '#8E44AD', '#0A5EB0']
+    concat_colors = ['#D4A5A5', '#F39C12', '#3498DB', '#8E44AD']
+
+    # Panel a) Average
+    ax = axes[0]
+    ax.text(-0.12, 1.08, "a)", transform=ax.transAxes,
+            fontsize=12, fontweight="bold", va="top")
+    for i, (label, (means, ses)) in enumerate(avg_data.items()):
+        color = avg_colors[i % len(avg_colors)]
+        ax.plot(x_dino, means, label=label, color=color)
+        ax.fill_between(x_dino, means - ses, means + ses, alpha=0.15, color=color)
+    ax.set_xlabel("DinoV2 relative depth", fontsize=fontsize_label)
+    ax.set_ylabel("Information Imbalance", fontsize=fontsize_label)
+    ax.set_title("Average pooling", fontsize=12)
+    ax.legend(fontsize=8, loc="upper right")
+    ax.set_ylim(ylim)
+    ax.tick_params(axis='both', labelsize=fontsize_label)
+
+    # Panel b) Concatenation
+    ax = axes[1]
+    ax.text(-0.12, 1.08, "b)", transform=ax.transAxes,
+            fontsize=12, fontweight="bold", va="top")
+    for i, (label, (means, ses)) in enumerate(concat_data.items()):
+        color = concat_colors[i % len(concat_colors)]
+        ax.plot(x_dino, means, label=label, color=color)
+        ax.fill_between(x_dino, means - ses, means + ses, alpha=0.15, color=color)
+    # Also plot average-all as reference
+    if "All 257 tokens" in avg_data:
+        ref_means, ref_ses = avg_data["All 257 tokens"]
+        ax.plot(x_dino, ref_means, label="Avg all (ref)", color='#0A5EB0', linestyle='--')
+        ax.fill_between(x_dino, ref_means - ref_ses, ref_means + ref_ses, alpha=0.1, color='#0A5EB0')
+    ax.set_xlabel("DinoV2 relative depth", fontsize=fontsize_label)
+    ax.set_title("Concatenation", fontsize=12)
+    ax.legend(fontsize=8, loc="upper right")
+    ax.set_ylim(ylim)
+    ax.tick_params(axis='both', labelsize=fontsize_label)
+
+    plt.tight_layout()
+    plt.savefig(Path("/home/masca/GitHub/deepseek-hidden-states/plots/aggregation_comparison.pdf"), dpi=300)
+    print("Saved: plots/aggregation_comparison.pdf")
 
 

@@ -4,6 +4,8 @@ Mean-pool activations over the token dimension for any model.
 Includes:
 1. Winsorization (clipping to 5th/95th quantiles) to remove spikes.
 2. Option to select only the last K tokens (DeepSeek).
+3. Option to select the first K tokens (e.g. CLS token with --first_k 1).
+4. Option to concatenate instead of averaging (--concat).
 
 Supports two on-disk formats (auto-detected from the first chunk):
 
@@ -17,6 +19,7 @@ Supports two on-disk formats (auto-detected from the first chunk):
 
 Output (both cases):
   mean_chunk_N.safetensors → {layer_N: (n_samples, embed)} float32
+  With --concat: {layer_N: (n_samples, k*embed)} float32
 """
 
 import argparse
@@ -82,6 +85,21 @@ def winsorized_mean(tensor, q_low=0.05, q_high=0.95, dim=1):
     return clamped.mean(dim=dim).to(torch.float32)
 
 
+def winsorize(tensor, q_low=0.05, q_high=0.95):
+    """Winsorize a 3-D tensor (B, T, E) without reducing any dimension."""
+    tensor = tensor.to(torch.float32)
+    B, T, E = tensor.shape
+    flat = tensor.reshape(B, T * E)
+    low_val = torch.quantile(flat, q_low, dim=1)   # (B,)
+    high_val = torch.quantile(flat, q_high, dim=1)  # (B,)
+    clamped = torch.clamp(tensor,
+                          min=low_val[:, None, None],
+                          max=high_val[:, None, None])
+    if not torch.isfinite(clamped).all():
+        raise ValueError("Non-finite values after winsorization in chunk.")
+    return clamped.to(torch.float32)
+
+
 # ---------------------------------------------------------------------------
 # Format detection
 # ---------------------------------------------------------------------------
@@ -100,54 +118,68 @@ def detect_format(chunk_path):
 # ---------------------------------------------------------------------------
 # Processing functions
 # ---------------------------------------------------------------------------
-def process_deepseek_chunk(data, last_k=None, start_token_idx=0):
-    """Mean-pool a DeepSeek/Llama chunk.
-    
+def process_deepseek_chunk(data, last_k=None, first_k=None, start_token_idx=0, concat=False):
+    """Mean-pool (or concatenate) a DeepSeek/Llama chunk.
+
     Args:
         data: List of sentence dictionaries.
         last_k: If integer > 0, only use the last k tokens.
+        first_k: If integer > 0, only use the first k tokens (mutually exclusive with last_k).
         start_token_idx: Index to start pooling from (use 1 to skip BOS).
+        concat: If True, concatenate tokens instead of averaging.
     """
-    layer_means = defaultdict(list)
+    layer_results = defaultdict(list)
     for sentence in data:
         hs = sentence["meta_info"]["hidden_states"][0]  # (layers, tokens, embed)
-        
+
         # 1. CRITICAL: Remove the BOS token (Attention Sink)
         if start_token_idx > 0:
             hs = hs[:, start_token_idx:, :]
 
-        # 2. Slice last k tokens if requested (applied after removing BOS)
-        if last_k is not None and last_k > 0:
+        # 2. Slice tokens
+        if first_k is not None and first_k > 0:
+            hs = hs[:, :first_k, :]
+        elif last_k is not None and last_k > 0:
             hs = hs[:, -last_k:, :]
 
-        # Winsorized mean
-        mean = winsorized_mean(hs, dim=1)  # (layers, embed)
-        
-        for layer_idx in range(mean.shape[0]):
-            layer_means[f"layer_{layer_idx}"].append(mean[layer_idx].numpy())
-    return {k: np.stack(v) for k, v in layer_means.items()}
+        if concat:
+            w = winsorize(hs)  # (layers, tokens, embed)
+            result = w.reshape(w.shape[0], -1)  # (layers, tokens*embed)
+        else:
+            result = winsorized_mean(hs, dim=1)  # (layers, embed)
 
-def process_image_chunk(data, last_k=None):
-    """Mean-pool an image-model chunk (dict of layer tensors)."""
+        for layer_idx in range(result.shape[0]):
+            layer_results[f"layer_{layer_idx}"].append(result[layer_idx].numpy())
+    return {k: np.stack(v) for k, v in layer_results.items()}
+
+def process_image_chunk(data, last_k=None, first_k=None, concat=False):
+    """Mean-pool (or concatenate) an image-model chunk (dict of layer tensors)."""
     result = {}
     for layer_key, tensor in data.items():
         # tensor: (batch, tokens, embed)
-        if last_k is not None and last_k > 0:
+        if first_k is not None and first_k > 0:
+            tensor = tensor[:, :first_k, :]
+        elif last_k is not None and last_k > 0:
             tensor = tensor[:, -last_k:, :]
-        result[layer_key] = winsorized_mean(tensor, dim=1).numpy()
+
+        if concat:
+            w = winsorize(tensor)  # (B, T, E)
+            result[layer_key] = w.reshape(w.shape[0], -1).numpy()  # (B, T*E)
+        else:
+            result[layer_key] = winsorized_mean(tensor, dim=1).numpy()
     return result
 
-def load_and_process(chunk_path, fmt, last_k=None, start_token_idx=0):
-    """Load a chunk and return mean-pooled activations."""
+def load_and_process(chunk_path, fmt, last_k=None, first_k=None, start_token_idx=0, concat=False):
+    """Load a chunk and return mean-pooled/concatenated activations."""
     if fmt == "deepseek":
         with open(chunk_path, "rb") as f:
             data = pickle.load(f)
-        # Pass the argument here!
-        return process_deepseek_chunk(data, last_k=last_k, start_token_idx=start_token_idx)
+        return process_deepseek_chunk(data, last_k=last_k, first_k=first_k,
+                                      start_token_idx=start_token_idx, concat=concat)
     else:
         with open(chunk_path, "rb") as f:
             data = CPU_Unpickler(f).load()
-        return process_image_chunk(data, last_k=last_k)
+        return process_image_chunk(data, last_k=last_k, first_k=first_k, concat=concat)
 
 
 # ---------------------------------------------------------------------------
@@ -164,9 +196,15 @@ def main():
                         help="Directory for mean_chunk_N.safetensors output")
     parser.add_argument("--prefix", type=str, default="chunk_",
                         help="File prefix to match (default: chunk_)")
-    parser.add_argument("--last_k", type=int, default=0,
-                        help="Use last k tokens before pooling. 0 = use all tokens (default).")
-    parser.add_argument("--skip-first", dest="skip_first", action="store_true", 
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--last_k", type=int, default=0,
+                       help="Use last k tokens before pooling. 0 = use all tokens (default).")
+    group.add_argument("--first_k", type=int, default=0,
+                       help="Use first k tokens (e.g. --first_k 1 for CLS). Mutually exclusive with --last_k.")
+    parser.add_argument("--concat", action="store_true",
+                        help="Concatenate selected tokens instead of averaging. "
+                             "Output shape: (n_samples, k*embed).")
+    parser.add_argument("--skip-first", dest="skip_first", action="store_true",
                         help="Skip the first token (BOS) before pooling.")
     parser.add_argument("--verify", action="store_true",
                         help="After processing, verify first chunk against original")
@@ -184,10 +222,13 @@ def main():
     # Detect format from first file
     fmt, first_data = detect_format(files[0])
     print(f"Detected format: {fmt}")
-    if args.last_k > 0:
-        print(f"Pooling strategy: Winsorized Mean over LAST {args.last_k} tokens.")
+    agg = "Concatenation" if args.concat else "Winsorized Mean"
+    if args.first_k > 0:
+        print(f"Pooling strategy: {agg} over FIRST {args.first_k} tokens.")
+    elif args.last_k > 0:
+        print(f"Pooling strategy: {agg} over LAST {args.last_k} tokens.")
     else:
-        print(f"Pooling strategy: Winsorized Mean over ALL tokens.")
+        print(f"Pooling strategy: {agg} over ALL tokens.")
 
     print(f"Found {len(files)} chunk files in {input_dir}")
 
@@ -195,6 +236,9 @@ def main():
     start_idx = 1 if args.skip_first else 0
     print(f"We start from {start_idx}.")
     
+    last_k = args.last_k if args.last_k > 0 else None
+    first_k = args.first_k if args.first_k > 0 else None
+
     total_samples = 0
     for i, file in enumerate(tqdm(files, desc="Processing chunks")):
         out_name = f"mean_{file.stem}.safetensors"
@@ -208,11 +252,17 @@ def main():
 
         # Reuse already-loaded first chunk
         if i == 0:
-            layer_means = (process_deepseek_chunk(first_data, last_k=args.last_k, start_token_idx=start_idx) 
-                           if fmt == "deepseek"
-                           else process_image_chunk(first_data, last_k=args.last_k if args.last_k > 0 else None))
+            if fmt == "deepseek":
+                layer_means = process_deepseek_chunk(
+                    first_data, last_k=last_k, first_k=first_k,
+                    start_token_idx=start_idx, concat=args.concat)
+            else:
+                layer_means = process_image_chunk(
+                    first_data, last_k=last_k, first_k=first_k, concat=args.concat)
         else:
-            layer_means = load_and_process(file, fmt, last_k=args.last_k, start_token_idx=start_idx)
+            layer_means = load_and_process(
+                file, fmt, last_k=last_k, first_k=first_k,
+                start_token_idx=start_idx, concat=args.concat)
 
         total_samples += layer_means["layer_0"].shape[0]
         save_file(layer_means, str(out_path))
@@ -232,9 +282,12 @@ def main():
         
         # Re-compute expected
         if fmt == "deepseek":
-            expected = process_deepseek_chunk(first_data, last_k=args.last_k, start_token_idx=start_idx)
+            expected = process_deepseek_chunk(
+                first_data, last_k=last_k, first_k=first_k,
+                start_token_idx=start_idx, concat=args.concat)
         else:
-            expected = process_image_chunk(first_data, last_k=args.last_k if args.last_k > 0 else None)
+            expected = process_image_chunk(
+                first_data, last_k=last_k, first_k=first_k, concat=args.concat)
             
         saved = load_file(str(out_path))
 
