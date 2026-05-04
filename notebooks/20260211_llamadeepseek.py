@@ -318,6 +318,8 @@ if HAS_IMAGENET:
     # Fix igpt at layer 20, sweep dino layers (skip layer 0)
     cross_igpt_dino_fwd = [cross_igpt_to_dino_mean[igpt_layer_dino, 1:], cross_igpt_to_dino_std[igpt_layer_dino, 1:]]
     cross_igpt_dino_bwd = [cross_dino_to_igpt_mean[1:, igpt_layer_dino], cross_dino_to_igpt_std[1:, igpt_layer_dino]]
+else:
+    raise ValueError
 
 
 # In[20]:
@@ -352,7 +354,8 @@ if HAS_IMAGENET:
     ax.set_ylim(ylim)
     ax.legend(fontsize=fontsize_label, loc='best')
     plt.savefig(Path("/home/masca/GitHub/deepseek-hidden-states/plots/fig4a.pdf"), dpi = 300)
-
+else:
+    raise ValueError
 
 # In[22]:
 
