@@ -15,7 +15,7 @@ from tqdm import tqdm
 import pickle
 import time
 
-def extract_image_hidden_states(model_name: str, dataset: Dataset, subset_size: int = 2500, batch_size: int = 10, device: torch.device = None, output_directory=Path("/home/laios/image_captions_deepseek")):
+def extract_image_hidden_states(model_name: str, dataset: Dataset, subset_size: int = 2500, batch_size: int = 10, device: torch.device = None, output_directory=Path("/home/laios/image_captions_deepseek"), max_length: int = 30):
     """Extract (and store as side effect) the sign of the hidden states for an image transformer.
 
     Args:
@@ -34,7 +34,7 @@ def extract_image_hidden_states(model_name: str, dataset: Dataset, subset_size: 
     clip_model = CLIPModel.from_pretrained(model_name)
     clip_model.to(device)
 
-    output_directory.mkdir(exist_ok=True, parents=True)
+    (output_directory / "text").mkdir(exist_ok=True, parents=True)
 
     print(f"Output: {output_directory}")
     print(f"Device: {device}")
@@ -55,7 +55,7 @@ def extract_image_hidden_states(model_name: str, dataset: Dataset, subset_size: 
                 return_attention_mask=True,
                 truncation=True,
                 padding='max_length',
-                max_length=30).to(device)
+                max_length=max_length).to(device)
         with torch.no_grad():
             clip_output = clip_model(**clip_inputs, output_hidden_states=True)
         all_hidden_states = {}
@@ -66,9 +66,16 @@ def extract_image_hidden_states(model_name: str, dataset: Dataset, subset_size: 
             pickle.dump(all_hidden_states, f)
 
 def main():
-    subset_size = 5000
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--subset_size", type=int, default=5000)
+    parser.add_argument("--max_length", type=int, default=30)
+    parser.add_argument("--output_suffix", type=str, default="")
+    args = parser.parse_args()
+
+    subset_size = args.subset_size
     print(f"Subset size: {subset_size}")
-    image_model_name = "openai/clip-vit-large-patch14"  
+    image_model_name = "openai/clip-vit-large-patch14"
     print(f"Model: {image_model_name}")
     ## dataset_name = "clip-benchmark/wds_flickr30k"
     ## dataset = load_dataset(dataset_name)
@@ -79,7 +86,16 @@ def main():
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(DEVICE)
 
-    extract_image_hidden_states(model_name=image_model_name, dataset=dataset, batch_size=batch_size, subset_size=subset_size, device=DEVICE, output_directory=Path("/home/laios/image-information-imbalance", image_model_name.replace('/', '-')))
+    output_dir_name = image_model_name.replace('/', '-') + args.output_suffix
+    extract_image_hidden_states(
+        model_name=image_model_name,
+        dataset=dataset,
+        batch_size=batch_size,
+        subset_size=subset_size,
+        device=DEVICE,
+        output_directory=Path("/home/laios/image-information-imbalance", output_dir_name),
+        max_length=args.max_length,
+    )
     
 if __name__ == "__main__":
     main()
