@@ -1,0 +1,6 @@
+Loading facebook-dinov2-large:   0%|          | 0/1000 [00:00<?, ?it/s]Loading facebook-dinov2-large:  11%|█▏        | 114/1000 [00:00<00:00, 1137.77it/s]Loading facebook-dinov2-large:  23%|██▎       | 229/1000 [00:00<00:00, 1136.75it/s]Loading facebook-dinov2-large:  34%|███▍      | 343/1000 [00:00<00:00, 1128.84it/s]Loading facebook-dinov2-large:  46%|████▌     | 456/1000 [00:00<00:00, 911.74it/s]                                                                                   Loading openai-imagegpt-medium:   0%|          | 0/88 [00:00<?, ?it/s]                                                                      Traceback (most recent call last):
+  File "/home/mascaretti/deepseek-hidden-states/compute_ii_mean.py", line 274, in <module>
+    main()
+  File "/home/mascaretti/deepseek-hidden-states/compute_ii_mean.py", line 172, in main
+    raise ValueError(f"Sample size mismatch: A={sample_size_A}, B={sample_size_B}")
+ValueError: Sample size mismatch: A=5000, B=880

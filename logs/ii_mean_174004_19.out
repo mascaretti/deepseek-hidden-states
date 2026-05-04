@@ -1,0 +1,14 @@
+=========================================
+II (mean-pooled): deepseek_igpt_medium
+Job 174023, task 19
+Node: dgx01
+Started at: Wed Mar 11 04:54:50 PM CET 2026
+A: /home/laios/activations/flickr/deepseek_windsorised_mean (layer 33)
+B: /home/laios/image-information-imbalance/windsorised_mean/openai-imagegpt-medium
+=========================================
+Loading activations...
+  deepseek_windsorised_mean: 5000 samples, 62 layers, embed=7168
+  openai-imagegpt-medium: 880 samples, 37 layers, embed=1024
+
+Finished at: Wed Mar 11 04:55:02 PM CET 2026
+Exit code: 1

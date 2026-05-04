@@ -1,0 +1,14 @@
+=========================================
+II (mean-pooled): llama_igpt_medium
+Job 174058, task 22
+Node: dgx01
+Started at: Wed Mar 11 05:46:07 PM CET 2026
+A: /home/laios/image-information-imbalance/windsorised_mean/llama (layer 18)
+B: /home/laios/image-information-imbalance/windsorised_mean/openai-imagegpt-medium
+=========================================
+Loading activations...
+  llama: 5000 samples, 33 layers, embed=4096
+  openai-imagegpt-medium: 880 samples, 37 layers, embed=1024
+
+Finished at: Wed Mar 11 05:46:12 PM CET 2026
+Exit code: 1

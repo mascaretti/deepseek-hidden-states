@@ -1,0 +1,26 @@
+=========================================
+II (mean-pooled): deepseek_dino
+Job 174039, task 3
+Node: dgx01
+Started at: Wed Mar 11 05:39:32 PM CET 2026
+A: /home/laios/activations/flickr/deepseek_windsorised_mean (layer 36)
+B: /home/laios/image-information-imbalance/windsorised_mean/facebook-dinov2-large
+=========================================
+Loading activations...
+  deepseek_windsorised_mean: 5000 samples, 62 layers, embed=7168
+  facebook-dinov2-large: 5000 samples, 25 layers, embed=1024
+
+Model A target layers: [36]
+Model B layers: 25 (1024d)
+Sample size: 5000
+
+--- layer_A = 36 (7168d) ---
+L2 Normalisation
+Mean centering
+Metrics: hamming, l2
+Results saved to: /home/laios/image-information-imbalance/results-mean/deepseek_dino
+
+Finished at: Wed Mar 11 05:39:57 PM CET 2026
+Exit code: 0
+Output (hamming): 24 layer files
+Output (l2): 24 layer files

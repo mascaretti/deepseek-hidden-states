@@ -1,1 +1,0 @@
-Mean-pooling chunks:   0%|          | 0/471 [00:00<?, ?it/s]Mean-pooling chunks:   0%|          | 1/471 [00:20<2:44:13, 20.96s/it]Mean-pooling chunks:   0%|          | 2/471 [02:25<10:42:17, 82.17s/it]Mean-pooling chunks:   1%|          | 3/471 [04:12<12:06:11, 93.10s/it]slurmstepd: error: *** JOB 153502 ON dgx01 CANCELLED AT 2026-02-10T11:31:45 ***

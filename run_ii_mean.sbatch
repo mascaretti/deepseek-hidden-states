@@ -40,7 +40,7 @@ case ${SLURM_ARRAY_TASK_ID} in
         NAME="deepseek_igpt"
         INPUT_A="${DEEPSEEK_MEAN}"
         INPUT_B="${IGPT_MEAN}"
-        LAYER_A=33
+        LAYER_A=36
         ;;
     2)
         NAME="igpt_deepseek"
@@ -53,7 +53,7 @@ case ${SLURM_ARRAY_TASK_ID} in
         NAME="deepseek_dino"
         INPUT_A="${DEEPSEEK_MEAN}"
         INPUT_B="${DINOV2_MEAN}"
-        LAYER_A=33
+        LAYER_A=36
         ;;
     4)
         NAME="dino_deepseek"
@@ -66,7 +66,7 @@ case ${SLURM_ARRAY_TASK_ID} in
         NAME="deepseek_dino_base"
         INPUT_A="${DEEPSEEK_MEAN}"
         INPUT_B="${DINOV2_BASE_MEAN}"
-        LAYER_A=33
+        LAYER_A=36
         ;;
     6)
         NAME="dino_base_deepseek"
@@ -79,7 +79,7 @@ case ${SLURM_ARRAY_TASK_ID} in
         NAME="deepseek_dino_small"
         INPUT_A="${DEEPSEEK_MEAN}"
         INPUT_B="${DINOV2_SMALL_MEAN}"
-        LAYER_A=33
+        LAYER_A=36
         ;;
     8)
         NAME="dino_small_deepseek"
@@ -157,7 +157,7 @@ case ${SLURM_ARRAY_TASK_ID} in
         NAME="deepseek_igpt_medium"
         INPUT_A="${DEEPSEEK_MEAN}"
         INPUT_B="${IGPT_MED_MEAN}"
-        LAYER_A=33
+        LAYER_A=36
         ;;
     20)
         NAME="igpt_medium_deepseek"
@@ -196,7 +196,7 @@ case ${SLURM_ARRAY_TASK_ID} in
         NAME="deepseek_igpt_small"
         INPUT_A="${DEEPSEEK_MEAN}"
         INPUT_B="${IGPT_SMALL_MEAN}"
-        LAYER_A=33
+        LAYER_A=36
         ;;
     26)
         NAME="igpt_small_deepseek"
@@ -235,7 +235,7 @@ case ${SLURM_ARRAY_TASK_ID} in
         NAME="deepseek_llama"
         INPUT_A="${DEEPSEEK_MEAN}"
         INPUT_B="${LLAMA_MEAN}"
-        LAYER_A=33
+        LAYER_A=36
         ;;
     32)
         NAME="llama_deepseek"

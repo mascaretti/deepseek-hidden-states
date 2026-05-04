@@ -1,9 +1,0 @@
-=========================================
-DeepSeek mean-pooling preprocessing
-Job ID: 153502
-Node: dgx01
-Started at: Tue Feb 10 11:25:06 AM CET 2026
-Input:  /home/laios/activations/flickr/deepseek_all
-Output: /home/laios/activations/flickr/deepseek_mean
-=========================================
-Found 471 chunk files in /home/laios/activations/flickr/deepseek_all

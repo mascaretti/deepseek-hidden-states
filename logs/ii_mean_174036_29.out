@@ -1,0 +1,12 @@
+=========================================
+II (mean-pooled): igpt_small_dino
+Job 174065, task 29
+Node: dgx01
+Started at: Wed Mar 11 05:46:36 PM CET 2026
+A: /home/laios/image-information-imbalance/windsorised_mean/openai-imagegpt-small (layer 10)
+B: /home/laios/image-information-imbalance/windsorised_mean/facebook-dinov2-large
+=========================================
+Loading activations...
+
+Finished at: Wed Mar 11 05:46:38 PM CET 2026
+Exit code: 1

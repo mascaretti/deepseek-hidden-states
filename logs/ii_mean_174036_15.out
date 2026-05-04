@@ -1,0 +1,26 @@
+=========================================
+II (mean-pooled): dino_clip_image
+Job 174051, task 15
+Node: dgx01
+Started at: Wed Mar 11 05:44:41 PM CET 2026
+A: /home/laios/image-information-imbalance/windsorised_mean/facebook-dinov2-large (layer 24)
+B: /home/laios/image-information-imbalance/windsorised_mean/openai-clip-vit-large-patch14-image
+=========================================
+Loading activations...
+  facebook-dinov2-large: 5000 samples, 25 layers, embed=1024
+  openai-clip-vit-large-patch14-image: 5000 samples, 25 layers, embed=1024
+
+Model A target layers: [24]
+Model B layers: 25 (1024d)
+Sample size: 5000
+
+--- layer_A = 24 (1024d) ---
+L2 Normalisation
+Mean centering
+Metrics: hamming, l2
+Results saved to: /home/laios/image-information-imbalance/results-mean/dino_clip_image
+
+Finished at: Wed Mar 11 05:44:58 PM CET 2026
+Exit code: 0
+Output (hamming): 24 layer files
+Output (l2): 24 layer files
