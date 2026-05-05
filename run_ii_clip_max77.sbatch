@@ -45,11 +45,20 @@ case ${SLURM_ARRAY_TASK_ID} in
         ;;
 esac
 
+# Optional length-77 filter. Submit filtered run with:
+#   sbatch --export=ALL,KEEP_INDICES=data/clip_max77_keep.npy,SUFFIX=_filtered run_ii_clip_max77.sbatch
+SUFFIX="${SUFFIX:-}"
+KEEP_FLAG=""
+if [ -n "${KEEP_INDICES}" ]; then
+    KEEP_FLAG="--keep_indices ${KEEP_INDICES}"
+fi
+
 echo "========================================="
-echo "II (max77): ${NAME}"
+echo "II (max77): ${NAME}${SUFFIX}"
 echo "Job ${SLURM_JOB_ID}, task ${SLURM_ARRAY_TASK_ID}"
 echo "A: ${INPUT_A} (layer ${LAYER_A})"
 echo "B: ${INPUT_B}"
+echo "Keep indices: ${KEEP_INDICES:-<none>}"
 echo "Started at: $(date)"
 echo "========================================="
 
@@ -58,11 +67,12 @@ METRICS="${METRICS:-l2}"
 python compute_ii_mean.py \
     --input_path_A "${INPUT_A}" \
     --input_path_B "${INPUT_B}" \
-    --output_folder "${OUTPUT_BASE}/${NAME}" \
+    --output_folder "${OUTPUT_BASE}/${NAME}${SUFFIX}" \
     --layer_A ${LAYER_A} \
     --mean_center \
     --l2_normalize \
-    --metrics ${METRICS}
+    --metrics ${METRICS} \
+    ${KEEP_FLAG}
 
 STATUS=$?
 echo ""

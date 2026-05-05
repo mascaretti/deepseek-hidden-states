@@ -71,7 +71,7 @@ def _extract_index(f):
     return int(match.group(1)) if match else float("inf")
 
 
-def load_mean_activations(input_path, subset_size=5000, prefix="mean_"):
+def load_mean_activations(input_path, subset_size=5000, prefix="mean_", keep_indices=None):
     """Load mean-pooled activations and concatenate across chunks.
 
     Returns:
@@ -97,7 +97,10 @@ def load_mean_activations(input_path, subset_size=5000, prefix="mean_"):
 
     result = {}
     for layer_key, arrays in layer_data.items():
-        result[layer_key] = np.concatenate(arrays, axis=0)[:subset_size]
+        arr = np.concatenate(arrays, axis=0)[:subset_size]
+        if keep_indices is not None:
+            arr = arr[keep_indices]
+        result[layer_key] = arr
 
     for layer_key, arr in result.items():
         assert arr.dtype == np.float32, f"Expected float32, got {arr.dtype} in {layer_key}"
@@ -142,6 +145,10 @@ def main():
     parser.add_argument("--metrics", type=str, nargs="+",
                         default=["hamming", "l2"],
                         help="Which metrics to compute (default: hamming l2)")
+    parser.add_argument("--keep_indices", type=str, default=None,
+                        help="Optional path to a length-subset_size .npy boolean "
+                             "mask; rows where False are dropped from both A and B "
+                             "before II is computed.")
     args = parser.parse_args()
 
     metrics = set(args.metrics)
@@ -154,10 +161,18 @@ def main():
             l2_parts.append("normalized")
         l2_label = "_".join(l2_parts)
 
+    keep_indices = None
+    if args.keep_indices:
+        keep_indices = np.load(args.keep_indices).astype(bool)
+        print(f"Keep mask: {int(keep_indices.sum()):,}/{len(keep_indices):,} kept "
+              f"({100*keep_indices.mean():.2f}%) — {args.keep_indices}")
+
     # Load once
     print("Loading activations...")
-    act_A = load_mean_activations(args.input_path_A, subset_size=args.subset_size)
-    act_B = load_mean_activations(args.input_path_B, subset_size=args.subset_size)
+    act_A = load_mean_activations(args.input_path_A, subset_size=args.subset_size,
+                                   keep_indices=keep_indices)
+    act_B = load_mean_activations(args.input_path_B, subset_size=args.subset_size,
+                                   keep_indices=keep_indices)
 
     # Validate all requested layers exist
     layer_A_list = args.layer_A
