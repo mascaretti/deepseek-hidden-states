@@ -1,12 +1,0 @@
-Loading facebook-dinov2-large:   0%|          | 0/1000 [00:00<?, ?it/s]Loading facebook-dinov2-large:  11%|█         | 110/1000 [00:00<00:00, 1095.36it/s]Loading facebook-dinov2-large:  22%|██▏       | 224/1000 [00:00<00:00, 1119.14it/s]Loading facebook-dinov2-large:  34%|███▍      | 339/1000 [00:00<00:00, 1130.97it/s]Loading facebook-dinov2-large:  45%|████▌     | 453/1000 [00:00<00:00, 958.83it/s]                                                                                   Traceback (most recent call last):
-  File "/home/mascaretti/deepseek-hidden-states/compute_ii_mean.py", line 274, in <module>
-    main()
-  File "/home/mascaretti/deepseek-hidden-states/compute_ii_mean.py", line 160, in main
-    act_B = load_mean_activations(args.input_path_B, subset_size=args.subset_size)
-  File "/home/mascaretti/deepseek-hidden-states/compute_ii_mean.py", line 82, in load_mean_activations
-    [f for f in folder.iterdir() if f.name.startswith(prefix) and f.suffix == ".safetensors"],
-  File "/home/mascaretti/deepseek-hidden-states/compute_ii_mean.py", line 82, in <listcomp>
-    [f for f in folder.iterdir() if f.name.startswith(prefix) and f.suffix == ".safetensors"],
-  File "/cm/local/apps/python3/lib/python3.9/pathlib.py", line 1078, in iterdir
-    for name in self._accessor.listdir(self):
-FileNotFoundError: [Errno 2] No such file or directory: '/home/laios/image-information-imbalance/windsorised_mean/openai-imagegpt-small'

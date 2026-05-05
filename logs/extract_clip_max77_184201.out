@@ -2,7 +2,7 @@
 CLIP-text extraction (max_length=77)
 Subset size: 5000
 Output suffix: _max77
-Started at: Tue May  5 10:29:51 AM CEST 2026
+Started at: Tue May  5 01:09:34 PM CEST 2026
 Node: dgx01
 =========================================
 Subset size: 5000
@@ -13,3 +13,6 @@ Output: /home/laios/image-information-imbalance/openai-clip-vit-large-patch14_ma
 Device: cuda
 Batch size: 10; Total iterations: 500.
 Compute activations for images
+
+Finished at: Tue May  5 03:05:24 PM CEST 2026
+Exit code: 0

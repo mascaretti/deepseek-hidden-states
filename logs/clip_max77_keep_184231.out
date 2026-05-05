@@ -1,0 +1,17 @@
+=========================================
+Build CLIP max77 keep mask
+Started at: Tue May  5 03:50:02 PM CEST 2026
+Node: dgx01
+=========================================
+Loading /home/datasets/flickr30k
+  using first 5,000 of 14,109 images
+Tokenising with openai/clip-vit-large-patch14
+
+Token-length stats (5-cap concat, CLIP-BPE incl. [BOS]+[EOT]):
+  min=42  median=73  95p=95  max=120
+  ≤ 77: 3,330/5,000 (66.60%)
+
+Saved mask → data/clip_max77_keep.npy (dtype=bool, shape=(5000,))
+
+Finished at: Tue May  5 03:50:19 PM CEST 2026
+Exit code: 0
