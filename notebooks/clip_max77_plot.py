@@ -26,6 +26,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from safetensors.numpy import load_file
 
+try:
+    import scienceplots  # noqa: F401
+    plt.style.use(["nature", "science"])
+except Exception:
+    pass
+
 
 def load_layer_sweep(folder: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Return (layer_idx, ii, ii_se) sorted by layer index for one cell+direction."""
