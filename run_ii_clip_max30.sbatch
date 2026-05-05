@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=ii_clip_max30_filt
-#SBATCH --output=logs/ii_clip_max30_filt_%A_%a.out
-#SBATCH --error=logs/ii_clip_max30_filt_%A_%a.err
+#SBATCH --job-name=ii_clip_max30
+#SBATCH --output=logs/ii_clip_max30_%A_%a.out
+#SBATCH --error=logs/ii_clip_max30_%A_%a.err
 #SBATCH --time=04:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -12,16 +12,14 @@
 #SBATCH --mail-user=amascare@sissa.it
 #SBATCH --array=1-2%1
 
-# Filtered II for the published max=30 CLIP-text ↔ CLIP-image (cell C of the
-# rebuttal A/B). Same as run_ii_mean.sbatch tasks 17/18 but restricted to the
-# 3,330 images whose 5-cap concat is ≤77 CLIP-BPE — the subset on which the
-# max=77 rerun (cell D) sees the full caption. Together C and D give the
-# clean apples-to-apples comparison: extraction max_length 30 vs 77,
-# everything else identical.
-#
-# Submit via:
-#   sbatch --export=ALL,KEEP_INDICES=data/clip_max77_keep.npy,SUFFIX=_filtered \
-#          run_ii_clip_max30_filtered.sbatch
+# II for the published max=30 CLIP-text ↔ CLIP-image. Mirrors run_ii_mean.sbatch
+# tasks 17/18 with optional KEEP_INDICES filter and SUFFIX to disambiguate the
+# output folder. Used for two of the four rebuttal cells:
+#   - Cell A (recheck published): SUFFIX=_recheck, no KEEP_INDICES.
+#       sbatch --export=ALL,SUFFIX=_recheck run_ii_clip_max30.sbatch
+#   - Cell C (filter to ≤77 BPE): KEEP_INDICES + SUFFIX=_filtered.
+#       sbatch --export=ALL,KEEP_INDICES=data/clip_max77_keep.npy,SUFFIX=_filtered \
+#              run_ii_clip_max30.sbatch
 
 source /home/$USER/myjax/bin/activate
 cd /home/$USER/deepseek-hidden-states
