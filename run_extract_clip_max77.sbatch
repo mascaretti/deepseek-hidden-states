@@ -2,7 +2,7 @@
 #SBATCH --job-name=extract_clip_max77
 #SBATCH --output=logs/extract_clip_max77_%j.out
 #SBATCH --error=logs/extract_clip_max77_%j.err
-#SBATCH --time=02:00:00
+#SBATCH --time=05:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=10

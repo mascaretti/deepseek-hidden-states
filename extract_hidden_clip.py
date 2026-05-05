@@ -48,6 +48,9 @@ def extract_image_hidden_states(model_name: str, dataset: Dataset, subset_size: 
     
     print("Compute activations for images")
     for i in tqdm(range(total_iterations), desc="Processing image batch.", leave=False):
+        chunk_path = Path(output_directory, "text", f"chunk_{i}.pkl")
+        if chunk_path.exists():
+            continue
         clip_inputs = clip_processor(
                 text=dataset['txt'][batch_size*i:batch_size*(i+1)],
                 images=dataset['jpg'][batch_size*i:batch_size*(i+1)],
@@ -62,7 +65,7 @@ def extract_image_hidden_states(model_name: str, dataset: Dataset, subset_size: 
         for j in range(0, n_layers):
             all_hidden_states[f"layer_{j}"] = clip_output.text_model_output.hidden_states[j]
             ## all_hidden_states[f"layer_{j}"] = clip_output.vision_model_output.hidden_states[j]
-        with open(Path(output_directory, "text", f"chunk_{i}.pkl"), "wb") as f:
+        with open(chunk_path, "wb") as f:
             pickle.dump(all_hidden_states, f)
 
 def main():
