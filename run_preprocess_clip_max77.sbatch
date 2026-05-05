@@ -22,9 +22,9 @@ mkdir -p logs
 IMAGE_BASE="/home/laios/image-information-imbalance"
 MEAN_BASE="${IMAGE_BASE}/windsorised_mean"
 
-INPUT="${IMAGE_BASE}/openai-clip-vit-large-patch14_max77"
+INPUT="${IMAGE_BASE}/openai-clip-vit-large-patch14_max77/text"
 OUTPUT="${MEAN_BASE}/openai-clip-vit-large-patch14-text-max77"
-PREFIX="text-chunk_"
+PREFIX="chunk_"
 
 echo "========================================="
 echo "Mean-pool CLIP-text (max_length=77)"
