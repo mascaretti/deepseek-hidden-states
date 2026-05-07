@@ -20,6 +20,11 @@ def Lhalf_distance(x, y):
     return jnp.sum(jnp.sqrt(jnp.abs(x - y))) ** 2
 
 def pairwise_distances(distance, xs, ys):
+  if distance is L2_distance:
+    sq_xs = jnp.sum(xs * xs, axis=1)
+    sq_ys = jnp.sum(ys * ys, axis=1)
+    d2 = sq_xs[:, None] + sq_ys[None, :] - 2.0 * (xs @ ys.T)
+    return jnp.sqrt(jnp.maximum(d2, 0.0))
   return jax.vmap(lambda x: jax.vmap(lambda y: distance(x, y))(xs))(ys).T
 
 def compute_relative_rank(x_dist, y_dist):
