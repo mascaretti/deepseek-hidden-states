@@ -26,7 +26,7 @@ from tqdm import tqdm
 
 from cka import cka_distance, pairwise_l2
 from information_imbalance_module import L2_distance, build_information_imbalance
-from rsa import rankdata_flat
+from rsa import upper_tri_ranks, spearman_from_ranks
 
 
 # ---------------------------------------------------------------------------
@@ -108,7 +108,7 @@ def compute_panel_a_single(key, L=10, n_samples=500, dim=10, sigma=0.1, k_nn=10)
         dx = pairwise_l2(X[l])
         dy = pairwise_l2(Y[l])
         cka[l] = float(cka_distance(dx.reshape(-1), dy.reshape(-1)))
-        spearman[l] = float(cka_distance(rankdata_flat(dx), rankdata_flat(dy)))
+        spearman[l] = spearman_from_ranks(upper_tri_ranks(dx), upper_tri_ranks(dy))
         no[l] = _overlap_fraction(_knn_from_dist(dx, k_nn),
                                    _knn_from_dist(dy, k_nn), k_nn)
 
@@ -136,7 +136,7 @@ def compute_panel_b_single(key, p=1000, n_samples=500, n_data=100, k_nn=10):
 
     dist_full_mat = pairwise_l2(Y)
     dist_full_flat = dist_full_mat.reshape(-1)
-    rank_full_flat = rankdata_flat(dist_full_flat)
+    rank_full_np = upper_tri_ranks(dist_full_mat)
     knn_full = _knn_from_dist(dist_full_mat, k_nn)
 
     key, ii_key = random.split(key)
@@ -150,7 +150,7 @@ def compute_panel_b_single(key, p=1000, n_samples=500, n_data=100, k_nn=10):
         dist_sub_mat = pairwise_l2(Y_sub)
         dist_sub_flat = dist_sub_mat.reshape(-1)
         cka_vals[i] = float(cka_distance(dist_full_flat, dist_sub_flat))
-        spearman_vals[i] = float(cka_distance(rank_full_flat, rankdata_flat(dist_sub_flat)))
+        spearman_vals[i] = spearman_from_ranks(rank_full_np, upper_tri_ranks(dist_sub_mat))
         fwd, bwd = ii_fn(Y, Y_sub)
         ii_fwd_vals[i] = float(fwd)
         ii_bwd_vals[i] = float(bwd)
