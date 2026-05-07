@@ -25,7 +25,7 @@ from jax import random
 from scipy.spatial.distance import cdist
 from tqdm import tqdm
 
-from cka import build_cka_distance
+from cka import build_cka_distance, cka_distance, pairwise_l2
 from information_imbalance_module import L2_distance, build_information_imbalance
 
 
@@ -33,25 +33,23 @@ from information_imbalance_module import L2_distance, build_information_imbalanc
 # Neighborhood Overlap
 # ---------------------------------------------------------------------------
 
+def _knn_indices(Z, k):
+    """Indices of the k nearest neighbours of each row of Z (self excluded)."""
+    Z_np = np.asarray(Z, dtype=np.float64)
+    D = cdist(Z_np, Z_np, metric="sqeuclidean")
+    np.fill_diagonal(D, np.inf)
+    return np.argsort(D, axis=1)[:, :k]
+
+
+def _overlap_fraction(knn_X, knn_Y, k):
+    """Mean per-row Jaccard@k of two (n, k) integer kNN index arrays."""
+    eq = knn_X[:, :, None] == knn_Y[:, None, :]
+    return float(eq.any(axis=2).sum(axis=1).mean() / k)
+
+
 def neighborhood_overlap(X, Y, k=10):
     """Mean fraction of k-nearest neighbors shared between X and Y."""
-    X_np = np.asarray(X, dtype=np.float64)
-    Y_np = np.asarray(Y, dtype=np.float64)
-    n = X_np.shape[0]
-
-    D_X = cdist(X_np, X_np, metric="sqeuclidean")
-    D_Y = cdist(Y_np, Y_np, metric="sqeuclidean")
-
-    np.fill_diagonal(D_X, np.inf)
-    np.fill_diagonal(D_Y, np.inf)
-
-    knn_X = np.argsort(D_X, axis=1)[:, :k]
-    knn_Y = np.argsort(D_Y, axis=1)[:, :k]
-
-    overlaps = np.array([
-        len(np.intersect1d(knn_X[i], knn_Y[i])) for i in range(n)
-    ])
-    return float(overlaps.mean() / k)
+    return _overlap_fraction(_knn_indices(X, k), _knn_indices(Y, k), k)
 
 
 # ---------------------------------------------------------------------------
@@ -100,7 +98,8 @@ def compute_panel_a_single(key, L=10, n_samples=500, dim=10, sigma=0.1, k_nn=10)
         fwd, bwd = ii_fn(X[l], Y[l])
         imb_XY[l] = float(fwd)
         imb_YX[l] = float(bwd)
-        cka[l] = float(build_cka_distance(X[l], Y[l], distance_fn=L2_distance))
+        cka[l] = float(cka_distance(pairwise_l2(X[l]).reshape(-1),
+                                    pairwise_l2(Y[l]).reshape(-1)))
         no[l] = neighborhood_overlap(X[l], Y[l], k=k_nn)
 
     return imb_XY, imb_YX, cka, no, np.array(ranks)
@@ -124,10 +123,13 @@ def compute_panel_b_single(key, p=1000, n_samples=500, n_data=100, k_nn=10):
     ii_bwd_vals = np.zeros(len(feature_indices))
     no_vals = np.zeros(len(feature_indices))
 
+    dist_full = pairwise_l2(Y).reshape(-1)
+    knn_full = _knn_indices(Y, k_nn)
+
     for i, jj in enumerate(feature_indices):
         jj = int(jj)
         Y_sub = Y[:, :jj]
-        cka_vals[i] = float(build_cka_distance(Y, Y_sub, distance_fn=L2_distance))
+        cka_vals[i] = float(cka_distance(dist_full, pairwise_l2(Y_sub).reshape(-1)))
         key, subkey = random.split(key)
         ii_fn = build_information_imbalance(
             key=subkey, sample_size=n_samples, distance_fn=L2_distance,
@@ -135,7 +137,7 @@ def compute_panel_b_single(key, p=1000, n_samples=500, n_data=100, k_nn=10):
         fwd, bwd = ii_fn(Y, Y_sub)
         ii_fwd_vals[i] = float(fwd)
         ii_bwd_vals[i] = float(bwd)
-        no_vals[i] = neighborhood_overlap(Y, Y_sub, k=k_nn)
+        no_vals[i] = _overlap_fraction(knn_full, _knn_indices(Y_sub, k_nn), k_nn)
 
     return fracs, cka_vals, ii_fwd_vals, ii_bwd_vals, no_vals
 

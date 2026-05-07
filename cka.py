@@ -11,6 +11,22 @@ except ImportError:  # pragma: no cover - fallback for minimal environments
 import jax.numpy as jnp
 
 
+@jax.jit
+def pairwise_l2(Z):
+    """Full pairwise L2 distance matrix via |x-y|^2 = |x|^2 + |y|^2 - 2 x·y."""
+    sq = jnp.sum(Z * Z, axis=1)
+    d2 = jnp.maximum(sq[:, None] + sq[None, :] - 2.0 * (Z @ Z.T), 0.0)
+    return jnp.sqrt(d2)
+
+
+@jax.jit
+def cka_distance(dx, dy):
+    """Centered Frobenius correlation between two pairwise-distance matrices (any shape, flattened)."""
+    dx = dx - jnp.mean(dx)
+    dy = dy - jnp.mean(dy)
+    return jnp.sum(dx * dy) / (jnp.sqrt(jnp.sum(dx * dx)) * jnp.sqrt(jnp.sum(dy * dy)))
+
+
 def build_cka_distance(X, Y, distance_fn, chunk_size=100):
     """Compute CKA with memory-efficient chunking"""
     n, p = X.shape
