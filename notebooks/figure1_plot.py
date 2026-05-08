@@ -41,11 +41,14 @@ def main():
     p_values = d["p_values"]
 
     # Colors
-    col_xy  = "#364F6B"
-    col_yx  = "#609966"
-    col_cka = "#C44536"
-    col_no  = "#FC5185"
+    col_xy   = "#364F6B"
+    col_yx   = "#609966"
+    col_cka  = "#C44536"
+    col_no   = "#FC5185"
+    col_spm  = "#E89C31"
     ms, mew = 3, 0.3
+
+    have_spearman = "a_mean_spearman" in d.files
 
     n_panels_b = len(p_values)
     fig, axes = plt.subplots(1, 1 + n_panels_b,
@@ -65,12 +68,15 @@ def main():
     ax = axes[0]
     rel = np.arange(L) / L
 
-    for key_prefix, label, color in [
+    panel_a_lines = [
         ("a_mean_XY", r"$\Delta(X \rightarrow Y)$", col_xy),
         ("a_mean_YX", r"$\Delta(Y \rightarrow X)$", col_yx),
         ("a_mean_cka", "CKA", col_cka),
         ("a_mean_no", "NO", col_no),
-    ]:
+    ]
+    if have_spearman:
+        panel_a_lines.append(("a_mean_spearman", "Spearman", col_spm))
+    for key_prefix, label, color in panel_a_lines:
         mean = d[key_prefix]
         se = d[key_prefix.replace("mean", "se")]
         ax.plot(rel, mean, "-o", color=color, markersize=ms,
@@ -92,12 +98,15 @@ def main():
         p = int(p)
         fracs = d[f"b_{p}_fracs"]
 
-        for key_base, label, color in [
+        panel_b_lines = [
             (f"b_{p}_mean_cka", "CKA", col_cka),
             (f"b_{p}_mean_fwd", r"$\Delta(Y \rightarrow Y_{\mathrm{sub}})$", col_xy),
             (f"b_{p}_mean_bwd", r"$\Delta(Y_{\mathrm{sub}} \rightarrow Y)$", col_yx),
             (f"b_{p}_mean_no", "NO", col_no),
-        ]:
+        ]
+        if have_spearman:
+            panel_b_lines.insert(1, (f"b_{p}_mean_spearman", "Spearman", col_spm))
+        for key_base, label, color in panel_b_lines:
             mean = d[key_base]
             se = d[key_base.replace("mean", "se")]
             ax.plot(fracs, mean, color=color, markersize=ms,
