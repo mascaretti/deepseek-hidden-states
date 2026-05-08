@@ -67,13 +67,13 @@ MODEL_NAMES = {
 # when sweeping from_model layers.
 # LLM anchors fixed at ~55% relative depth; vision models at sweep minima.
 ANCHOR_LAYER = {
-    ('deepseek', 'igpt'): 33,       # ~55% of 60
-    ('deepseek', 'dino'): 33,       # ~55% of 60
-    ('deepseek', 'dino_base'): 33,  # ~55% of 60
-    ('deepseek', 'dino_small'): 33, # ~55% of 60
-    ('deepseek', 'llama'): 33,      # ~55% of 60
-    ('llama', 'igpt'): 18,          # ~55% of 32
-    ('llama', 'dino'): 18,          # ~55% of 32
+    ('deepseek', 'igpt'): 36,       # best in [50%–65%] depth range
+    ('deepseek', 'dino'): 36,       # best in [50%–65%] depth range
+    ('deepseek', 'dino_base'): 36,  # best in [50%–65%] depth range
+    ('deepseek', 'dino_small'): 36, # best in [50%–65%] depth range
+    ('deepseek', 'llama'): 36,      # best in [50%–65%] depth range
+    ('llama', 'igpt'): 19,          # best in [50%–65%] depth range
+    ('llama', 'dino'): 19,          # best in [50%–65%] depth range
     ('dino', 'igpt'): 24,
     ('igpt', 'dino'): 20,
     ('clip_image', 'clip_text'): 20,  # sweep: CLIP↔CLIP min at (20, 11)
@@ -83,7 +83,7 @@ ANCHOR_LAYER = {
     ('igpt', 'deepseek'): 20,
     ('dino', 'llama'): 24,
     ('igpt', 'llama'): 20,
-    ('llama', 'deepseek'): 18,      # ~55% of 32
+    ('llama', 'deepseek'): 19,      # best in [50%–65%] depth range
 }
 
 N_LAYERS = {
@@ -200,7 +200,7 @@ def save_bootstrap_results(output_path, forward_data, backward_data, config):
 # In[8]:
 
 
-def make_comparison(to_model, from_model, rng, n_replicas = 100, bootstrap_size = 750, sample_size = 5_000, base_dir=None, hamming=False):
+def make_comparison(to_model, from_model, rng, n_replicas = 100, bootstrap_size = 750, sample_size = 5_000, base_dir=None, hamming=False, shuffle=False):
     if base_dir is None:
         base_dir = Path("data")
     metric = "hamming" if hamming else "l2_centered_normalized"
@@ -216,9 +216,16 @@ def make_comparison(to_model, from_model, rng, n_replicas = 100, bootstrap_size 
             print(f"  (no sweep data, using legacy path)")
     else:
         AtoB = make_path(Path(base_dir, f"{to_model}_{from_model}", metric))
-    print(f"Loading {AtoB}")
+    print(f"Loading {AtoB}" + (" [SHUFFLE NULL]" if shuffle else ""))
     inf_imb = load_inf_imb_data(AtoB, N_LAYERS[from_model])
     inf_matrix, mult_matrix, n_rows = extract_matrices(inf_imb, N_LAYERS[from_model])
+    if shuffle:
+        # Replace real ranks with uniform random integers to simulate destroyed pairing.
+        # Under random pairing, the rank of a random sample is ~Uniform(0, n_cols),
+        # giving II ≈ 1 for all layers.
+        n_cols = sample_size - n_rows
+        inf_matrix[:, :, 0] = rng.integers(0, n_cols, size=inf_matrix[:, :, 0].shape)
+        inf_matrix[:, :, 1] = rng.integers(0, n_cols, size=inf_matrix[:, :, 1].shape)
     inf_forward, inf_backward = bootstrap(rng, inf_matrix, mult_matrix, n_replicas, bootstrap_size, N_LAYERS[from_model], n_rows, sample_size)
     forward_mean = np.mean(inf_forward, axis=1)
     forward_std = np.std(inf_forward, axis=1)
@@ -295,15 +302,26 @@ except AssertionError:
 
 
 if HAS_IMAGENET:
-    dino_igpt_layer = 39
-    imagenet_dino_igpt_fwd = []
-    imagenet_dino_igpt_fwd.append(np.load(Path(imagenet_path, "dino_ii_mean.npy"))[dino_igpt_layer, 1:])
-    imagenet_dino_igpt_fwd.append(np.load(Path(imagenet_path, "dino_ii_std.npy"))[dino_igpt_layer, 1:])
+    # Within-model II: extract same-layer diagonal (layer i vs layer i)
+    dino_ii_matrix = np.load(Path(imagenet_path, "dino_ii_mean.npy"))
+    dino_ii_std_matrix = np.load(Path(imagenet_path, "dino_ii_std.npy"))
+    dino_diag_mean = np.diag(dino_ii_matrix)[1:]   # skip layer 0, shape (39,)
+    dino_diag_std = np.diag(dino_ii_std_matrix)[1:]
 
-    igpt_layer_dino = 20
-    imagenet_igpt_dino_fwd = []
-    imagenet_igpt_dino_fwd.append(np.load(Path(imagenet_path, "igpt_ii_mean.npy"))[igpt_layer_dino, 1:])
-    imagenet_igpt_dino_fwd.append(np.load(Path(imagenet_path, "igpt_ii_std.npy"))[igpt_layer_dino, 1:])
+    igpt_ii_matrix = np.load(Path(imagenet_path, "igpt_ii_mean.npy"))
+    igpt_ii_std_matrix = np.load(Path(imagenet_path, "igpt_ii_std.npy"))
+    igpt_diag_mean = np.diag(igpt_ii_matrix)[1:]   # skip layer 0, shape (48,)
+    igpt_diag_std = np.diag(igpt_ii_std_matrix)[1:]
+
+    # Find minima on the diagonal
+    dino_min_idx = np.argmin(dino_diag_mean)
+    dino_min_layer = dino_min_idx + 1  # +1 because we skipped layer 0
+    igpt_min_idx = np.argmin(igpt_diag_mean)
+    igpt_min_layer = igpt_min_idx + 1
+
+    print(f"DinoV2 within-model II diagonal minimum: layer {dino_min_layer} (rel depth {dino_min_layer/39:.2f}), II = {dino_diag_mean[dino_min_idx]:.4f}")
+    print(f"ImageGPT within-model II diagonal minimum: layer {igpt_min_layer} (rel depth {igpt_min_layer/48:.2f}), II = {igpt_diag_mean[igpt_min_idx]:.4f}")
+    print(f"Current ANCHOR_LAYER: dino→igpt={ANCHOR_LAYER[('dino', 'igpt')]}, igpt→dino={ANCHOR_LAYER[('igpt', 'dino')]}")
 
     # Cross-model ImageNet: DinoV2-huge (40 layers) ↔ ImageGPT (49 layers)
     cross_dino_to_igpt_mean = np.load(Path(imagenet_path, "cross_dino_to_igpt_mean.npy"))
@@ -311,11 +329,15 @@ if HAS_IMAGENET:
     cross_igpt_to_dino_mean = np.load(Path(imagenet_path, "cross_igpt_to_dino_mean.npy"))
     cross_igpt_to_dino_std = np.load(Path(imagenet_path, "cross_igpt_to_dino_std.npy"))
 
-    # Fix dino at last layer (39), sweep igpt layers (skip layer 0)
+    # Anchor layers for cross-model ImageNet panels
+    dino_igpt_layer = ANCHOR_LAYER[('dino', 'igpt')]  # dino layer fixed when sweeping igpt
+    igpt_layer_dino = ANCHOR_LAYER[('igpt', 'dino')]  # igpt layer fixed when sweeping dino
+
+    # Fix dino at anchor layer, sweep igpt layers (skip layer 0)
     cross_dino_igpt_fwd = [cross_dino_to_igpt_mean[dino_igpt_layer, 1:], cross_dino_to_igpt_std[dino_igpt_layer, 1:]]
     cross_dino_igpt_bwd = [cross_igpt_to_dino_mean[1:, dino_igpt_layer], cross_igpt_to_dino_std[1:, dino_igpt_layer]]
 
-    # Fix igpt at layer 20, sweep dino layers (skip layer 0)
+    # Fix igpt at anchor layer, sweep dino layers (skip layer 0)
     cross_igpt_dino_fwd = [cross_igpt_to_dino_mean[igpt_layer_dino, 1:], cross_igpt_to_dino_std[igpt_layer_dino, 1:]]
     cross_igpt_dino_bwd = [cross_dino_to_igpt_mean[1:, igpt_layer_dino], cross_dino_to_igpt_std[1:, igpt_layer_dino]]
 else:
@@ -335,17 +357,22 @@ x = {key:np.linspace(0, 1, N_LAYERS[key]) for key in N_LAYERS.keys()}
 
 
 if HAS_IMAGENET:
+    x_igpt_diag = np.arange(1, 49) / 48  # layers 1..48, relative depth
+    x_dino_diag = np.arange(1, 40) / 39  # layers 1..39, relative depth
+
     fig, ax = plt.subplots(1, 1, figsize=figsize)
     label_forward = f"{MODEL_NAMES['igpt']}"
-    ax.plot(x['igpt'], imagenet_igpt_dino_fwd[0], '-', color=MODEL_COLORS['igpt'],
+    ax.plot(x_igpt_diag, igpt_diag_mean, '-', color=MODEL_COLORS['igpt'],
             label=label_forward, linewidth=2, marker='o',
             markersize=3, markeredgecolor='black', markeredgewidth=0.3)
-    ax.fill_between(x['igpt'], imagenet_igpt_dino_fwd[0] - imagenet_igpt_dino_fwd[1], imagenet_igpt_dino_fwd[0] + imagenet_igpt_dino_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
+    ax.fill_between(x_igpt_diag, igpt_diag_mean - igpt_diag_std, igpt_diag_mean + igpt_diag_std, alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
+
     label_forward = f"{MODEL_NAMES['dino']}"
-    ax.plot(np.arange(39)/39, imagenet_dino_igpt_fwd[0], '-', color=MODEL_COLORS['dino'],
+    ax.plot(x_dino_diag, dino_diag_mean, '-', color=MODEL_COLORS['dino'],
             label=label_forward, linewidth=2, marker='o',
             markersize=3, markeredgecolor='black', markeredgewidth=0.3)
-    ax.fill_between(np.arange(39)/39, imagenet_dino_igpt_fwd[0] - imagenet_dino_igpt_fwd[1], imagenet_dino_igpt_fwd[0] + imagenet_dino_igpt_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
+    ax.fill_between(x_dino_diag, dino_diag_mean - dino_diag_std, dino_diag_mean + dino_diag_std, alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
+
     title = f"Dataset: ImageNet1k"
     ax.set_title(title, fontsize=12)
     ax.set_xlabel("Relative depth", fontsize=fontsize_label)
@@ -420,77 +447,75 @@ plt.savefig(Path("/home/masca/GitHub/deepseek-hidden-states/plots/fig4c.pdf"), d
 # In[24]:
 
 
-clipi_clipt_fwd, clipi_clipt_bwd = make_comparison(to_model="clip_image", from_model="clip_text", rng=rng, n_replicas=n_replicas, bootstrap_size=bootstrap_size, sample_size=sample_size, base_dir=base_dir, hamming=DO_HAMMING)
+clipi_clipt_fwd, clipi_clipt_bwd = make_comparison(to_model="clip_text", from_model="clip_image", rng=rng, n_replicas=n_replicas, bootstrap_size=bootstrap_size, sample_size=sample_size, base_dir=base_dir, hamming=DO_HAMMING)
 clipi_dino_fwd, clipi_dino_bwd = make_comparison(to_model="clip_image", from_model="dino", rng=rng, n_replicas=n_replicas, bootstrap_size=bootstrap_size, sample_size=sample_size, base_dir=base_dir, hamming=DO_HAMMING)
 
-# ---- Figure 4a: ImageNet1k within-model + Image-Captions Flickr30k ----
+# ---- Figure 4a: ImageNet1k within-model (same-layer diagonal) + Image-Captions Flickr30k ----
 if HAS_IMAGENET:
-    x_igpt_imagenet = np.arange(48) / 48  # igpt 49 layers, skip layer 0 → 48 points
-    x_dino_imagenet = np.arange(39) / 39  # dino-huge 40 layers, skip layer 0 → 39 points
+    x_igpt_imagenet = np.arange(1, 49) / 48  # igpt layers 1..48, relative depth
+    x_dino_imagenet = np.arange(1, 40) / 39  # dino layers 1..39, relative depth
 
-fig, axes = plt.subplots(1, 2, figsize=(3.5 * figsize[0], figsize[1]), sharey=True)
+fig, axes = plt.subplots(1, 2, figsize=(2.5 * figsize[0], figsize[1]), sharey=True)
 
 for i, ax in enumerate(axes):
     ax.text(-0.12, 1.08, f"{chr(ord('a') + i)})", transform=ax.transAxes,
-            fontsize=12, fontweight="bold", va="top")
+            fontsize=fontsize_label, fontweight="bold", va="top")
 
-# a) ImageNet1k — within-model
+# a) ImageNet1k — within-model same-layer diagonal
 ax = axes[0]
 if HAS_IMAGENET:
-    label_forward = f"{MODEL_NAMES['igpt']} → {MODEL_NAMES['igpt']}"
-    ax.plot(x_igpt_imagenet, imagenet_igpt_dino_fwd[0], '-', color=MODEL_COLORS['igpt'],
-            label=label_forward, linewidth=2, marker='o',
+    ax.plot(x_igpt_imagenet, igpt_diag_mean, '-', color=MODEL_COLORS['igpt'],
+            label=MODEL_NAMES['igpt'], linewidth=2, marker='o',
             markersize=3, markeredgecolor='black', markeredgewidth=0.3)
-    ax.fill_between(x_igpt_imagenet, imagenet_igpt_dino_fwd[0] - imagenet_igpt_dino_fwd[1], imagenet_igpt_dino_fwd[0] + imagenet_igpt_dino_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
+    ax.fill_between(x_igpt_imagenet, igpt_diag_mean - igpt_diag_std, igpt_diag_mean + igpt_diag_std, alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
 
-    label_forward = f"{MODEL_NAMES['dino']} → {MODEL_NAMES['dino']}"
-    ax.plot(x_dino_imagenet, imagenet_dino_igpt_fwd[0], '-', color=MODEL_COLORS['dino'],
-            label=label_forward, linewidth=2, marker='o',
+    ax.plot(x_dino_imagenet, dino_diag_mean, '-', color=MODEL_COLORS['dino'],
+            label=MODEL_NAMES['dino'], linewidth=2, marker='o',
             markersize=3, markeredgecolor='black', markeredgewidth=0.3)
-    ax.fill_between(x_dino_imagenet, imagenet_dino_igpt_fwd[0] - imagenet_dino_igpt_fwd[1], imagenet_dino_igpt_fwd[0] + imagenet_dino_igpt_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
+    ax.fill_between(x_dino_imagenet, dino_diag_mean - dino_diag_std, dino_diag_mean + dino_diag_std, alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
 else:
     ax.text(0.5, 0.5, "ImageNet data\nnot available", transform=ax.transAxes,
             ha='center', va='center', fontsize=12, color='gray')
 
-ax.set_title("Same-class images (ImageNet-1k)", fontsize=12)
+ax.set_title("Same-class images (ImageNet-1k)", fontsize=fontsize_label)
 ax.set_xlabel("Relative depth", fontsize=fontsize_label)
 ax.set_ylabel("Information Imbalance", fontsize=fontsize_label)
 ax.tick_params(axis='both', labelsize=fontsize_label)
 ax.set_ylim(ylim)
-ax.legend(fontsize=fontsize_label, loc='best')
+ax.legend(fontsize=fontsize_label - 2, loc='lower left')
 
-# b) Image-Captions on Flickr30k: DeepSeek ↔ igpt/dino + CLIP-Image → CLIP-Text
+# b) Image-Captions on Flickr30k: DeepSeek ↔ igpt/dino + CLIP-Image ↔ CLIP-Text
 ax = axes[1]
-label_forward = f"{MODEL_NAMES['deepseek']} → {MODEL_NAMES['igpt']}"
 ax.plot(x['igpt'], igpt_fwd[0], '-', color=MODEL_COLORS['igpt'],
-        label=label_forward, linewidth=2, marker='o',
+        label=f"{MODEL_NAMES['deepseek']} → {MODEL_NAMES['igpt']}", linewidth=2, marker='o',
         markersize=3, markeredgecolor='black', markeredgewidth=0.3)
 ax.fill_between(x['igpt'], igpt_fwd[0] - igpt_fwd[1], igpt_fwd[0] + igpt_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
 ax.plot(x['igpt'], igpt_bwd[0], '--', color=MODEL_COLORS['igpt'], linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
 ax.fill_between(x['igpt'], igpt_bwd[0] - igpt_bwd[1], igpt_bwd[0] + igpt_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
 
-label_forward = f"{MODEL_NAMES['deepseek']} → {MODEL_NAMES['dino']}"
 ax.plot(x['dino'], dino_fwd[0], '-', color=MODEL_COLORS['dino'],
-        label=label_forward, linewidth=2, marker='o',
+        label=f"{MODEL_NAMES['deepseek']} → {MODEL_NAMES['dino']}", linewidth=2, marker='o',
         markersize=3, markeredgecolor='black', markeredgewidth=0.3)
 ax.fill_between(x['dino'], dino_fwd[0] - dino_fwd[1], dino_fwd[0] + dino_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
 ax.plot(x['dino'], dino_bwd[0], '--', color=MODEL_COLORS['dino'], linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
 ax.fill_between(x['dino'], dino_bwd[0] - dino_bwd[1], dino_bwd[0] + dino_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
 
-# CLIP-Image → CLIP-Text
-label_forward = f"{MODEL_NAMES['clip_image']} → {MODEL_NAMES['clip_text']}"
-ax.plot(x['clip_text'], clipi_clipt_fwd[0], '-', color=MODEL_COLORS['clip_text'],
-        label=label_forward, linewidth=2, marker='o',
+# CLIP-Image ↔ CLIP-Text  (sweep image-side layers, fix text side)
+ax.plot(x['clip_image'], clipi_clipt_fwd[0], '-', color=MODEL_COLORS['clip_text'],
+        label=f"{MODEL_NAMES['clip_text']} → {MODEL_NAMES['clip_image']}", linewidth=2, marker='o',
         markersize=3, markeredgecolor='black', markeredgewidth=0.3)
-ax.fill_between(x['clip_text'], clipi_clipt_fwd[0] - clipi_clipt_fwd[1], clipi_clipt_fwd[0] + clipi_clipt_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['clip_text'])
-ax.plot(x['clip_text'], clipi_clipt_bwd[0], '--', color=MODEL_COLORS['clip_text'], linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
-ax.fill_between(x['clip_text'], clipi_clipt_bwd[0] - clipi_clipt_bwd[1], clipi_clipt_bwd[0] + clipi_clipt_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['clip_text'])
+ax.fill_between(x['clip_image'], clipi_clipt_fwd[0] - clipi_clipt_fwd[1], clipi_clipt_fwd[0] + clipi_clipt_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['clip_text'])
+ax.plot(x['clip_image'], clipi_clipt_bwd[0], '--', color=MODEL_COLORS['clip_text'], linewidth=2, markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x['clip_image'], clipi_clipt_bwd[0] - clipi_clipt_bwd[1], clipi_clipt_bwd[0] + clipi_clipt_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['clip_text'])
 
-ax.set_title("Image--caption pairs (Flickr30k)", fontsize=12)
+# Single gray dashed entry for reverse direction
+ax.plot([], [], '--', color='gray', linewidth=1.5, label='dashed: reverse')
+
+ax.set_title("Image--caption pairs (Flickr30k)", fontsize=fontsize_label)
 ax.set_xlabel("Relative depth", fontsize=fontsize_label)
 ax.tick_params(axis='both', labelsize=fontsize_label)
 ax.set_ylim(ylim)
-ax.legend(fontsize=fontsize_label, loc='best')
+ax.legend(fontsize=fontsize_label - 2, loc='lower left')
 
 plt.tight_layout()
 plt.savefig(Path("/home/masca/GitHub/deepseek-hidden-states/plots/fig4a.pdf"), dpi=300)
@@ -962,6 +987,37 @@ min_dino = np.unravel_index(np.nanargmin(ds_dino_hm_avg), ds_dino_hm_avg.shape)
 print(f"DeepSeek-ImageGPT min avg II: {ds_igpt_hm_avg[min_igpt]:.4f} at DS layer {ds_igpt_la[min_igpt[0]]}, IGPT layer {ds_igpt_lb[min_igpt[1]]}")
 print(f"DeepSeek-DinoV2   min avg II: {ds_dino_hm_avg[min_dino]:.4f} at DS layer {ds_dino_la[min_dino[0]]}, Dino layer {ds_dino_lb[min_dino[1]]}")
 
+# ---- Optimal DeepSeek anchor layer analysis ----
+# For each DS layer, find best (min) vision-layer II
+ds_igpt_best_per_ds = np.nanmin(ds_igpt_hm_avg, axis=1)  # shape (n_ds_layers,)
+ds_dino_best_per_ds = np.nanmin(ds_dino_hm_avg, axis=1)
+
+# Combined objective: sum of best-vision-layer II for both vision partners
+combined_ds = ds_igpt_best_per_ds + ds_dino_best_per_ds
+
+# Unconstrained optimum
+best_unconstrained_idx = np.nanargmin(combined_ds)
+best_unconstrained_layer = ds_igpt_la[best_unconstrained_idx]
+
+# Constrained optimum: [50%, 65%] relative depth → layers 30–39 for 60-layer model
+depth_lo, depth_hi = 0.50, 0.65
+n_ds = N_LAYERS['deepseek']
+layer_lo, layer_hi = int(np.ceil(depth_lo * n_ds)), int(np.floor(depth_hi * n_ds))
+range_mask = (ds_igpt_la >= layer_lo) & (ds_igpt_la <= layer_hi)
+combined_range = np.where(range_mask, combined_ds, np.inf)
+best_range_idx = np.argmin(combined_range)
+best_range_layer = ds_igpt_la[best_range_idx]
+
+print(f"\n--- Optimal DeepSeek anchor layer analysis ---")
+print(f"Unconstrained optimum: DS layer {best_unconstrained_layer} (combined II = {combined_ds[best_unconstrained_idx]:.4f})")
+print(f"  IGPT best II: {ds_igpt_best_per_ds[best_unconstrained_idx]:.4f}, DinoV2 best II: {ds_dino_best_per_ds[best_unconstrained_idx]:.4f}")
+print(f"Best in [{depth_lo:.0%}–{depth_hi:.0%}] (layers {layer_lo}–{layer_hi}): DS layer {best_range_layer} (combined II = {combined_ds[best_range_idx]:.4f})")
+print(f"  IGPT best II: {ds_igpt_best_per_ds[best_range_idx]:.4f}, DinoV2 best II: {ds_dino_best_per_ds[best_range_idx]:.4f}")
+# Compare all layers in the range
+print(f"All layers in range:")
+for idx in np.where(range_mask)[0]:
+    print(f"  DS layer {ds_igpt_la[idx]:2d} ({ds_igpt_la[idx]/n_ds:.0%}): combined={combined_ds[idx]:.4f}  IGPT={ds_igpt_best_per_ds[idx]:.4f}  DinoV2={ds_dino_best_per_ds[idx]:.4f}")
+
 # Load matrices — Llama and CLIP sweeps (may not be available yet)
 sweep_pairs_extra = {
     'llama_igpt': ('llama', 'igpt', 'LLama3.1-8B', 'ImageGPT'),
@@ -985,6 +1041,39 @@ for sweep_name, (model_a, model_b, label_a, label_b) in sweep_pairs_extra.items(
             print(f"{label_a}-{label_b} min avg II: {hm_avg[hm_min]:.4f} at {label_a} layer {la[hm_min[0]]}, {label_b} layer {lb[hm_min[1]]}")
         except Exception as e:
             print(f"WARNING: Could not load {sweep_name} sweep: {e}")
+
+# ---- Optimal LLama3.1 anchor layer analysis (same [50%–65%] constraint) ----
+if 'llama_igpt' in extra_heatmaps and 'llama_dino' in extra_heatmaps:
+    ll_igpt = extra_heatmaps['llama_igpt']
+    ll_dino = extra_heatmaps['llama_dino']
+    ll_igpt_best_per_ll = np.nanmin(ll_igpt['avg'], axis=1)
+    ll_dino_best_per_ll = np.nanmin(ll_dino['avg'], axis=1)
+    combined_ll = ll_igpt_best_per_ll + ll_dino_best_per_ll
+
+    n_ll = N_LAYERS['llama']
+    ll_la = ll_igpt['la']  # Llama layer indices
+
+    # Unconstrained
+    best_ll_idx = np.nanargmin(combined_ll)
+    best_ll_layer = ll_la[best_ll_idx]
+
+    # Constrained [50%–65%]
+    ll_lo, ll_hi = int(np.ceil(depth_lo * n_ll)), int(np.floor(depth_hi * n_ll))
+    ll_mask = (ll_la >= ll_lo) & (ll_la <= ll_hi)
+    combined_ll_range = np.where(ll_mask, combined_ll, np.inf)
+    best_ll_range_idx = np.argmin(combined_ll_range)
+    best_ll_range_layer = ll_la[best_ll_range_idx]
+
+    print(f"\n--- Optimal LLama3.1 anchor layer analysis ---")
+    print(f"Unconstrained optimum: LL layer {best_ll_layer} (combined II = {combined_ll[best_ll_idx]:.4f})")
+    print(f"  IGPT best II: {ll_igpt_best_per_ll[best_ll_idx]:.4f}, DinoV2 best II: {ll_dino_best_per_ll[best_ll_idx]:.4f}")
+    print(f"Best in [{depth_lo:.0%}–{depth_hi:.0%}] (layers {ll_lo}–{ll_hi}): LL layer {best_ll_range_layer} (combined II = {combined_ll[best_ll_range_idx]:.4f})")
+    print(f"  IGPT best II: {ll_igpt_best_per_ll[best_ll_range_idx]:.4f}, DinoV2 best II: {ll_dino_best_per_ll[best_ll_range_idx]:.4f}")
+    print(f"All layers in range:")
+    for idx in np.where(ll_mask)[0]:
+        print(f"  LL layer {ll_la[idx]:2d} ({ll_la[idx]/n_ll:.0%}): combined={combined_ll[idx]:.4f}  IGPT={ll_igpt_best_per_ll[idx]:.4f}  DinoV2={ll_dino_best_per_ll[idx]:.4f}")
+else:
+    print("WARNING: LLama sweep data not available for anchor analysis")
 
 n_heatmaps = 2 + len(extra_heatmaps)
 
@@ -1042,6 +1131,219 @@ plt.savefig(Path("/home/masca/GitHub/deepseek-hidden-states/plots/heatmap_ii.pdf
 
 
 # In[ ]:
+
+
+# ==========================================================================
+# Null (shuffled pairing) sanity checks: II should → 1 when correspondence is broken
+# ==========================================================================
+
+print("\n===== Computing NULL (shuffled) comparisons =====")
+null_rng = np.random.default_rng(42)  # separate rng so we don't perturb real results
+
+# --- Null comparisons for fig4a (ImageNet within-model + Flickr30k image-caption) ---
+# ImageNet within-model null: uniform random ranks → II ≈ 1
+# Use same shape as real data but fill with ~1
+null_igpt_diag_mean = np.ones_like(igpt_diag_mean)
+null_igpt_diag_std = np.full_like(igpt_diag_std, 0.02)
+null_dino_diag_mean = np.ones_like(dino_diag_mean)
+null_dino_diag_std = np.full_like(dino_diag_std, 0.02)
+
+# Flickr30k null: DeepSeek ↔ vision models with shuffled pairings
+null_igpt_fwd, null_igpt_bwd = make_comparison("deepseek", "igpt", null_rng, n_replicas=n_replicas, bootstrap_size=bootstrap_size, sample_size=sample_size, base_dir=base_dir, hamming=DO_HAMMING, shuffle=True)
+null_dino_fwd, null_dino_bwd = make_comparison("deepseek", "dino", null_rng, n_replicas=n_replicas, bootstrap_size=bootstrap_size, sample_size=sample_size, base_dir=base_dir, hamming=DO_HAMMING, shuffle=True)
+null_clipi_clipt_fwd, null_clipi_clipt_bwd = make_comparison("clip_text", "clip_image", null_rng, n_replicas=n_replicas, bootstrap_size=bootstrap_size, sample_size=sample_size, base_dir=base_dir, hamming=DO_HAMMING, shuffle=True)
+
+# ---- null4a: same structure as fig4a ----
+fig, axes = plt.subplots(1, 2, figsize=(2.5 * figsize[0], figsize[1]), sharey=True)
+for i, ax in enumerate(axes):
+    ax.text(-0.12, 1.08, f"{chr(ord('a') + i)})", transform=ax.transAxes,
+            fontsize=fontsize_label, fontweight="bold", va="top")
+
+ax = axes[0]
+ax.plot(x_igpt_imagenet, null_igpt_diag_mean, '-', color=MODEL_COLORS['igpt'],
+        label=MODEL_NAMES['igpt'], linewidth=2, marker='o',
+        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x_igpt_imagenet, null_igpt_diag_mean - null_igpt_diag_std, null_igpt_diag_mean + null_igpt_diag_std, alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
+ax.plot(x_dino_imagenet, null_dino_diag_mean, '-', color=MODEL_COLORS['dino'],
+        label=MODEL_NAMES['dino'], linewidth=2, marker='o',
+        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x_dino_imagenet, null_dino_diag_mean - null_dino_diag_std, null_dino_diag_mean + null_dino_diag_std, alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
+ax.set_title("Same-class images — NULL (ImageNet-1k)", fontsize=fontsize_label)
+ax.set_xlabel("Relative depth", fontsize=fontsize_label)
+ax.set_ylabel("Information Imbalance", fontsize=fontsize_label)
+ax.tick_params(axis='both', labelsize=fontsize_label)
+ax.set_ylim(ylim)
+ax.legend(fontsize=fontsize_label - 2, loc='lower left')
+
+ax = axes[1]
+ax.plot(x['igpt'], null_igpt_fwd[0], '-', color=MODEL_COLORS['igpt'],
+        label=f"{MODEL_NAMES['deepseek']} → {MODEL_NAMES['igpt']}", linewidth=2, marker='o',
+        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x['igpt'], null_igpt_fwd[0] - null_igpt_fwd[1], null_igpt_fwd[0] + null_igpt_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
+ax.plot(x['igpt'], null_igpt_bwd[0], '--', color=MODEL_COLORS['igpt'], linewidth=2)
+ax.fill_between(x['igpt'], null_igpt_bwd[0] - null_igpt_bwd[1], null_igpt_bwd[0] + null_igpt_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
+ax.plot(x['dino'], null_dino_fwd[0], '-', color=MODEL_COLORS['dino'],
+        label=f"{MODEL_NAMES['deepseek']} → {MODEL_NAMES['dino']}", linewidth=2, marker='o',
+        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x['dino'], null_dino_fwd[0] - null_dino_fwd[1], null_dino_fwd[0] + null_dino_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
+ax.plot(x['dino'], null_dino_bwd[0], '--', color=MODEL_COLORS['dino'], linewidth=2)
+ax.fill_between(x['dino'], null_dino_bwd[0] - null_dino_bwd[1], null_dino_bwd[0] + null_dino_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
+ax.plot(x['clip_image'], null_clipi_clipt_fwd[0], '-', color=MODEL_COLORS['clip_text'],
+        label=f"{MODEL_NAMES['clip_text']} → {MODEL_NAMES['clip_image']}", linewidth=2, marker='o',
+        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x['clip_image'], null_clipi_clipt_fwd[0] - null_clipi_clipt_fwd[1], null_clipi_clipt_fwd[0] + null_clipi_clipt_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['clip_text'])
+ax.plot(x['clip_image'], null_clipi_clipt_bwd[0], '--', color=MODEL_COLORS['clip_text'], linewidth=2)
+ax.fill_between(x['clip_image'], null_clipi_clipt_bwd[0] - null_clipi_clipt_bwd[1], null_clipi_clipt_bwd[0] + null_clipi_clipt_bwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['clip_text'])
+ax.plot([], [], '--', color='gray', linewidth=1.5, label='dashed: reverse')
+ax.set_title("Image--caption pairs — NULL (Flickr30k)", fontsize=fontsize_label)
+ax.set_xlabel("Relative depth", fontsize=fontsize_label)
+ax.tick_params(axis='both', labelsize=fontsize_label)
+ax.set_ylim(ylim)
+ax.legend(fontsize=fontsize_label - 2, loc='lower left')
+plt.tight_layout()
+plt.savefig(Path("/home/masca/GitHub/deepseek-hidden-states/plots/null4a.pdf"), dpi=300)
+print("Saved: plots/null4a.pdf")
+
+# --- Null comparisons for fig4b ---
+null_dino_igpt_fwd, null_dino_igpt_bwd = make_comparison("dino", "igpt", null_rng, n_replicas=n_replicas, bootstrap_size=bootstrap_size, sample_size=sample_size, base_dir=base_dir, hamming=DO_HAMMING, shuffle=True)
+null_igpt_dino_fwd, null_igpt_dino_bwd = make_comparison("igpt", "dino", null_rng, n_replicas=n_replicas, bootstrap_size=bootstrap_size, sample_size=sample_size, base_dir=base_dir, hamming=DO_HAMMING, shuffle=True)
+null_clipi_dino_fwd, null_clipi_dino_bwd = make_comparison("clip_image", "dino", null_rng, n_replicas=n_replicas, bootstrap_size=bootstrap_size, sample_size=sample_size, base_dir=base_dir, hamming=DO_HAMMING, shuffle=True)
+
+# ImageNet cross-model null: uniform → II ≈ 1
+null_cross_dino_igpt_fwd = [np.ones(48), np.full(48, 0.02)]
+null_cross_dino_igpt_bwd = [np.ones(48), np.full(48, 0.02)]
+null_cross_igpt_dino_fwd = [np.ones(39), np.full(39, 0.02)]
+null_cross_igpt_dino_bwd = [np.ones(39), np.full(39, 0.02)]
+
+fig, axes = plt.subplots(1, 3, figsize=(3.5 * figsize[0], figsize[1]), sharey=True)
+for i, ax in enumerate(axes):
+    ax.text(-0.14, 1.10, f"{chr(ord('a') + i)})", transform=ax.transAxes,
+            fontsize=12, fontweight="bold", va="top")
+
+ax = axes[0]
+ax.plot(x_igpt_imagenet, null_cross_dino_igpt_fwd[0], '-', color=MODEL_COLORS['igpt'],
+        label=f"{MODEL_NAMES['dino']} → {MODEL_NAMES['igpt']}", linewidth=2, marker='o',
+        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x_igpt_imagenet, null_cross_dino_igpt_fwd[0] - null_cross_dino_igpt_fwd[1], null_cross_dino_igpt_fwd[0] + null_cross_dino_igpt_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
+ax.plot(x_igpt_imagenet, null_cross_dino_igpt_bwd[0], '--', color=MODEL_COLORS['igpt'], linewidth=2)
+ax.plot(x_dino_imagenet, null_cross_igpt_dino_fwd[0], '-', color=MODEL_COLORS['dino'],
+        label=f"{MODEL_NAMES['igpt']} → {MODEL_NAMES['dino']}", linewidth=2, marker='o',
+        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x_dino_imagenet, null_cross_igpt_dino_fwd[0] - null_cross_igpt_dino_fwd[1], null_cross_igpt_dino_fwd[0] + null_cross_igpt_dino_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
+ax.plot(x_dino_imagenet, null_cross_igpt_dino_bwd[0], '--', color=MODEL_COLORS['dino'], linewidth=2)
+ax.set_title("ImageNet1k (cross-model) — NULL", fontsize=12)
+ax.set_xlabel("Relative depth", fontsize=fontsize_label)
+ax.set_ylabel("Information Imbalance", fontsize=fontsize_label)
+ax.tick_params(axis='both', labelsize=fontsize_label)
+ax.set_ylim(ylim)
+ax.legend(fontsize=fontsize_label, loc='best')
+
+ax = axes[1]
+ax.plot(x['igpt'], null_dino_igpt_fwd[0], '-', color=MODEL_COLORS['igpt'],
+        label=f"{MODEL_NAMES['dino']} → {MODEL_NAMES['igpt']}", linewidth=2, marker='o',
+        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x['igpt'], null_dino_igpt_fwd[0] - null_dino_igpt_fwd[1], null_dino_igpt_fwd[0] + null_dino_igpt_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
+ax.plot(x['igpt'], null_dino_igpt_bwd[0], '--', color=MODEL_COLORS['igpt'], linewidth=2)
+ax.plot(x['dino'], null_igpt_dino_fwd[0], '-', color=MODEL_COLORS['dino'],
+        label=f"{MODEL_NAMES['igpt']} → {MODEL_NAMES['dino']}", linewidth=2, marker='o',
+        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x['dino'], null_igpt_dino_fwd[0] - null_igpt_dino_fwd[1], null_igpt_dino_fwd[0] + null_igpt_dino_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
+ax.plot(x['dino'], null_igpt_dino_bwd[0], '--', color=MODEL_COLORS['dino'], linewidth=2)
+ax.set_title("Image-image — NULL (Flickr30k)", fontsize=12)
+ax.set_xlabel("Relative depth", fontsize=fontsize_label)
+ax.tick_params(axis='both', labelsize=fontsize_label)
+ax.set_ylim(ylim)
+ax.legend(fontsize=fontsize_label, loc='best')
+
+ax = axes[2]
+ax.plot(x['clip_image'], null_clipi_dino_fwd[0], '-', color=MODEL_COLORS['dino'],
+        label=f"{MODEL_NAMES['clip_image']} → {MODEL_NAMES['dino']}", linewidth=2, marker='o',
+        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x['clip_image'], null_clipi_dino_fwd[0] - null_clipi_dino_fwd[1], null_clipi_dino_fwd[0] + null_clipi_dino_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
+ax.plot(x['dino'], null_clipi_dino_bwd[0], '--', color=MODEL_COLORS['dino'], linewidth=2)
+ax.set_title("CLIP-Image vs DinoV2 — NULL", fontsize=12)
+ax.set_xlabel("Relative depth", fontsize=fontsize_label)
+ax.tick_params(axis='both', labelsize=fontsize_label)
+ax.set_ylim(ylim)
+ax.legend(fontsize=fontsize_label, loc='best')
+plt.tight_layout()
+plt.savefig(Path("/home/masca/GitHub/deepseek-hidden-states/plots/null4b.pdf"), dpi=300)
+print("Saved: plots/null4b.pdf")
+
+# --- Null comparisons for fig4c ---
+null_igpt_fwd_ll, null_igpt_bwd_ll = make_comparison("llama", "igpt", null_rng, n_replicas=n_replicas, bootstrap_size=bootstrap_size, sample_size=sample_size, base_dir=base_dir, hamming=DO_HAMMING, shuffle=True)
+null_dino_fwd_ll, null_dino_bwd_ll = make_comparison("llama", "dino", null_rng, n_replicas=n_replicas, bootstrap_size=bootstrap_size, sample_size=sample_size, base_dir=base_dir, hamming=DO_HAMMING, shuffle=True)
+null_dino_fwd_base, null_dino_bwd_base = make_comparison("deepseek", "dino_base", null_rng, n_replicas=n_replicas, bootstrap_size=bootstrap_size, sample_size=sample_size, base_dir=base_dir, hamming=DO_HAMMING, shuffle=True)
+null_dino_fwd_small, null_dino_bwd_small = make_comparison("deepseek", "dino_small", null_rng, n_replicas=n_replicas, bootstrap_size=bootstrap_size, sample_size=sample_size, base_dir=base_dir, hamming=DO_HAMMING, shuffle=True)
+null_ds_dino_fwd, null_ds_dino_bwd = make_comparison("dino", "deepseek", null_rng, n_replicas=n_replicas, bootstrap_size=bootstrap_size, sample_size=sample_size, base_dir=base_dir, hamming=DO_HAMMING, shuffle=True)
+null_ds_igpt_fwd, null_ds_igpt_bwd = make_comparison("igpt", "deepseek", null_rng, n_replicas=n_replicas, bootstrap_size=bootstrap_size, sample_size=sample_size, base_dir=base_dir, hamming=DO_HAMMING, shuffle=True)
+
+fig, axes = plt.subplots(1, 3, figsize=(3.5 * figsize[0], figsize[1]), sharey=True)
+for i, ax in enumerate(axes):
+    ax.text(-0.12, 1.08, f"{chr(ord('a') + i)})", transform=ax.transAxes,
+            fontsize=12, fontweight="bold", va="top")
+
+# a) Llama → igpt/dino NULL
+ax = axes[0]
+ax.plot(x['igpt'], null_igpt_fwd_ll[0], '-', color=MODEL_COLORS['igpt'],
+        label=f"{MODEL_NAMES['llama']} → {MODEL_NAMES['igpt']}", linewidth=2, marker='o',
+        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x['igpt'], null_igpt_fwd_ll[0] - null_igpt_fwd_ll[1], null_igpt_fwd_ll[0] + null_igpt_fwd_ll[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
+ax.plot(x['igpt'], null_igpt_bwd_ll[0], '--', color=MODEL_COLORS['igpt'], linewidth=2)
+ax.plot(x['dino'], null_dino_fwd_ll[0], '-', color=MODEL_COLORS['dino'],
+        label=f"{MODEL_NAMES['llama']} → {MODEL_NAMES['dino']}", linewidth=2, marker='o',
+        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x['dino'], null_dino_fwd_ll[0] - null_dino_fwd_ll[1], null_dino_fwd_ll[0] + null_dino_fwd_ll[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
+ax.plot(x['dino'], null_dino_bwd_ll[0], '--', color=MODEL_COLORS['dino'], linewidth=2)
+ax.set_xlabel("Relative depth", fontsize=fontsize_label)
+ax.set_ylabel("Information Imbalance", fontsize=fontsize_label)
+ax.tick_params(axis='both', labelsize=fontsize_label)
+ax.set_ylim(ylim)
+ax.legend(fontsize=fontsize_label, loc='best')
+
+# b) DeepSeek → dino sizes NULL
+ax = axes[1]
+null_dino_fwd_null, null_dino_bwd_null = null_dino_fwd, null_dino_bwd  # reuse from fig4a null
+ax.plot(x['dino'], null_dino_fwd_null[0], '-', color=MODEL_COLORS['dino'],
+        label=f"{MODEL_NAMES['deepseek']} → {MODEL_NAMES['dino']}", linewidth=2, marker='o',
+        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x['dino'], null_dino_fwd_null[0] - null_dino_fwd_null[1], null_dino_fwd_null[0] + null_dino_fwd_null[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
+ax.plot(x['dino'], null_dino_bwd_null[0], '--', color=MODEL_COLORS['dino'], linewidth=2)
+ax.plot(x['dino_base'], null_dino_fwd_base[0], '-', color=MODEL_COLORS['dino_base'],
+        label=f"{MODEL_NAMES['deepseek']} → {MODEL_NAMES['dino_base']}", linewidth=2, marker='o',
+        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x['dino_base'], null_dino_fwd_base[0] - null_dino_fwd_base[1], null_dino_fwd_base[0] + null_dino_fwd_base[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino_base'])
+ax.plot(x['dino_base'], null_dino_bwd_base[0], '--', color=MODEL_COLORS['dino_base'], linewidth=2)
+ax.plot(x['dino_small'], null_dino_fwd_small[0], '-', color=MODEL_COLORS['dino_small'],
+        label=f"{MODEL_NAMES['deepseek']} → {MODEL_NAMES['dino_small']}", linewidth=2, marker='o',
+        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x['dino_small'], null_dino_fwd_small[0] - null_dino_fwd_small[1], null_dino_fwd_small[0] + null_dino_fwd_small[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino_small'])
+ax.plot(x['dino_small'], null_dino_bwd_small[0], '--', color=MODEL_COLORS['dino_small'], linewidth=2)
+ax.set_xlabel("Relative depth", fontsize=fontsize_label)
+ax.tick_params(axis='both', labelsize=fontsize_label)
+ax.set_ylim(ylim)
+ax.legend(fontsize=fontsize_label, loc='best')
+
+# c) Image models → DeepSeek NULL
+ax = axes[2]
+ax.plot(x['deepseek'], null_ds_dino_fwd[0], '-', color=MODEL_COLORS['dino'],
+        label=f"{MODEL_NAMES['dino']} → {MODEL_NAMES['deepseek']}", linewidth=2, marker='o',
+        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x['deepseek'], null_ds_dino_fwd[0] - null_ds_dino_fwd[1], null_ds_dino_fwd[0] + null_ds_dino_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['dino'])
+ax.plot(x['deepseek'], null_ds_dino_bwd[0], '--', color=MODEL_COLORS['dino'], linewidth=2)
+ax.plot(x['deepseek'], null_ds_igpt_fwd[0], '-', color=MODEL_COLORS['igpt'],
+        label=f"{MODEL_NAMES['igpt']} → {MODEL_NAMES['deepseek']}", linewidth=2, marker='o',
+        markersize=3, markeredgecolor='black', markeredgewidth=0.3)
+ax.fill_between(x['deepseek'], null_ds_igpt_fwd[0] - null_ds_igpt_fwd[1], null_ds_igpt_fwd[0] + null_ds_igpt_fwd[1], alpha=0.2, linewidth=0, color=MODEL_COLORS['igpt'])
+ax.plot(x['deepseek'], null_ds_igpt_bwd[0], '--', color=MODEL_COLORS['igpt'], linewidth=2)
+ax.set_xlabel("DeepSeek-V3 relative depth", fontsize=fontsize_label)
+ax.tick_params(axis='both', labelsize=fontsize_label)
+ax.set_ylim(ylim)
+ax.legend(fontsize=fontsize_label, loc='best')
+
+plt.tight_layout()
+plt.savefig(Path("/home/masca/GitHub/deepseek-hidden-states/plots/null4c.pdf"), dpi=300)
+print("Saved: plots/null4c.pdf")
 
 
 # ==========================================================================
