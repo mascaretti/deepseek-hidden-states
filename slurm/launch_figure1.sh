@@ -16,8 +16,8 @@ cd /home/mascaretti/deepseek-hidden-states
 mkdir -p logs
 
 python notebooks/figure1_compute.py \
-       	--p_values 1000 100000 \
+       	--p_values 100 100000 \
 	--n_reps 10 \
         --n_samples 2500 \
-        --output notebooks/figure1_data_p1e3_p1e5
+        --output notebooks/figure1_data_p1e2_p1e5
 
