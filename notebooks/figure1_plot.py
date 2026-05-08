@@ -33,6 +33,8 @@ def main():
     parser.add_argument("--input", type=str, required=True, help="Path to .npz from figure1_compute.py")
     parser.add_argument("--output", type=str, default="notebooks/figure1_ii_cka",
                         help="Output path (no extension)")
+    parser.add_argument("--no_spearman", action="store_true",
+                        help="Suppress the Spearman/RSA curve even if present in the npz")
     args = parser.parse_args()
 
     d = np.load(args.input, allow_pickle=True)
@@ -48,7 +50,7 @@ def main():
     col_spm  = "#E89C31"
     ms, mew = 3, 0.3
 
-    have_spearman = "a_mean_spearman" in d.files
+    have_spearman = "a_mean_spearman" in d.files and not args.no_spearman
 
     n_panels_b = len(p_values)
     fig, axes = plt.subplots(1, 1 + n_panels_b,
