@@ -299,3 +299,7 @@ pyrightconfig.json
 
 
 results/
+
+# Local data artefacts (synced from cluster, not source)
+data/
+coco_captions_subsample.txt
