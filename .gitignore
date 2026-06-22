@@ -303,3 +303,7 @@ results/
 # Local data artefacts (synced from cluster, not source)
 data/
 coco_captions_subsample.txt
+
+# Cluster logs and stray backups
+logs/
+*.bak

@@ -143,8 +143,8 @@ Smoke check: `verify_clip_max77_smoke.py`.
 ```bash
 .venv/bin/python -m pytest tests/test_preprocessing.py -xvs
 ```
-Distance/geometry diagnostics: `analyze_distances.py`, `plot_distance_diagnostics.py`,
-`validate_sweep.py`, `test_twoNN.py`.
+Distance/geometry diagnostics: `test_twoNN.py`, `test_distance_strategies.py`
+(both driven by `run_test_distance.sbatch`).
 
 ---
 
