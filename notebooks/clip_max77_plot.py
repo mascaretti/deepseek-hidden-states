@@ -50,16 +50,16 @@ def load_layer_sweep(folder: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
 CELLS = {
     "forward": [
-        ("A — max=30, all 5,000",     "clip_text_clip_image",                    "tab:blue", "-"),
-        ("B — max=77, all 5,000",     "clip_text_max77_clip_image",              "tab:red",  "-"),
-        ("C — max=30, filtered 3,330", "clip_text_clip_image_filtered",          "tab:blue", "--"),
-        ("D — max=77, filtered 3,330", "clip_text_max77_clip_image_filtered",    "tab:red",  "--"),
+        ("A: max\\_length=30 (published), all 5{,}000 images",        "clip_text_clip_image",                    "tab:blue", "-"),
+        ("B: max\\_length=77 (rebuttal), all 5{,}000 images",         "clip_text_max77_clip_image",              "tab:red",  "-"),
+        ("C: max\\_length=30, $\\leq$77 BPE subset (3{,}330 images)", "clip_text_clip_image_filtered",          "tab:blue", "--"),
+        ("D: max\\_length=77, $\\leq$77 BPE subset (3{,}330 images)", "clip_text_max77_clip_image_filtered",    "tab:red",  "--"),
     ],
     "backward": [
-        ("A — max=30, all 5,000",     "clip_image_clip_text",                    "tab:blue", "-"),
-        ("B — max=77, all 5,000",     "clip_image_clip_text_max77",              "tab:red",  "-"),
-        ("C — max=30, filtered 3,330", "clip_image_clip_text_filtered",          "tab:blue", "--"),
-        ("D — max=77, filtered 3,330", "clip_image_clip_text_max77_filtered",    "tab:red",  "--"),
+        ("A: max\\_length=30 (published), all 5{,}000 images",        "clip_image_clip_text",                    "tab:blue", "-"),
+        ("B: max\\_length=77 (rebuttal), all 5{,}000 images",         "clip_image_clip_text_max77",              "tab:red",  "-"),
+        ("C: max\\_length=30, $\\leq$77 BPE subset (3{,}330 images)", "clip_image_clip_text_filtered",          "tab:blue", "--"),
+        ("D: max\\_length=77, $\\leq$77 BPE subset (3{,}330 images)", "clip_image_clip_text_max77_filtered",    "tab:red",  "--"),
     ],
 }
 
@@ -85,7 +85,7 @@ def main():
 
     results = Path(args.results_dir)
 
-    fig, axes = plt.subplots(1, 2, figsize=(11, 4.5), sharey=False)
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5.0), sharey=False)
     for ax, (direction, cells) in zip(axes, CELLS.items()):
         for label, dirname, color, ls in cells:
             folder = results / dirname / args.metric_subdir
@@ -101,7 +101,7 @@ def main():
         ax.set_xlabel(X_LABELS[direction])
         ax.set_ylabel("Information imbalance")
         ax.grid(True, alpha=0.3, linewidth=0.5)
-        ax.legend(loc="best", fontsize=8, framealpha=0.9)
+        ax.legend(loc="best", fontsize=7, framealpha=0.9)
 
     fig.tight_layout()
     out = Path(args.output)
