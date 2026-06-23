@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this codebase does
 
-Measures **Information Imbalance (II)** and **CKA** between hidden states of large unimodal models (DeepSeek-V3, Llama-3.1-8B, CLIP text/image, DinoV2, ImageGPT) on Flickr30k captions+images. The published paper is in `paper/`; the active branch (`image-captions`) is the TMLR rebuttal track.
+Measures **Information Imbalance (II)** and **CKA** between hidden states of large unimodal models (DeepSeek-V3, Llama-3.1-8B, CLIP text/image, DinoV2, ImageGPT) on Flickr30k captions+images. The published paper is **not** in this repo — it lives in the Overleaf-synced project `~/Documenti/Semantics-TMLR/` (this repo renders figures into its `figs-tmlr/`). The active branch (`image-captions`) is the TMLR rebuttal track.
 
 ## Workflow: extract → preprocess → compute II
 
@@ -48,7 +48,7 @@ The cached `notebooks/figure1_data.npz` is at `p_values=[100, 5000]`, `n_reps=10
 - `run_extract_clip_max77.sbatch` — re-extracts CLIP-text at `max_length=77`.
 - `run_preprocess_clip_max77.sbatch` — mean-pool the max=77 extraction.
 - `run_ii_clip_max{30,77}.sbatch` — II for the four cells (max=30/77 × all/filtered) via `SUFFIX` and `KEEP_INDICES` env vars.
-- `run_ii_deepseek_dino_filtered.sbatch` — DeepSeek↔DinoV2 on the filtered subset, `LAYER_A=36` (≈60% relative depth, per `paper/main.tex:405`).
+- `run_ii_deepseek_dino_filtered.sbatch` — DeepSeek↔DinoV2 on the filtered subset, `LAYER_A=36` (≈60% relative depth = layer 36 of 61).
 - Plot scripts under `notebooks/clip_*_plot.py`.
 
 Outputs land in `${IMAGE_BASE}/results-mean/<pair>{,_filtered}/<metric>/layer_NN.safetensors`. Locally synced under `data/results-mean/`.
@@ -63,7 +63,7 @@ Outputs land in `${IMAGE_BASE}/results-mean/<pair>{,_filtered}/<metric>/layer_NN
 .venv/bin/python -m pytest tests/test_preprocessing.py::<name> -xvs
 
 # Render a paper figure
-.venv/bin/python notebooks/<plot>.py --results_dir data/results-mean --output paper/figs-tmlr/rebuttal/<name>
+.venv/bin/python notebooks/<plot>.py --results_dir data/results-mean --output ~/Documenti/Semantics-TMLR/figs-tmlr/rebuttal/<name>
 
 # Inspect a results safetensors
 .venv/bin/python -c "from safetensors.numpy import load_file; print(load_file('<path>').keys())"
@@ -89,9 +89,7 @@ Don't rclone source files — use git.
 
 ## Where things live
 
-- `paper/figs-tmlr/` — current (TMLR camera-ready) figures.
-- `paper/figs-tmlr/rebuttal/` — figures for the rebuttal response.
-- `paper/figs.bak/` — older backups, including `combined_ii_cka.pdf` and `cka_gaussian_p_100000.pdf` from the previous Fig.-1 era.
+- `~/Documenti/Semantics-TMLR/` — the Overleaf-synced paper project (source + figures). Figures render into its `figs-tmlr/` (and `figs-tmlr/rebuttal/`). The repo's own `paper/` copy was removed as a stale, un-synced duplicate.
 - `infimbgauss/` — pickles from the Gaussian/Bernoulli CKA experiments (`legacy/run_cka.py`).
 - `data/` — local copies of cluster results (`results-mean/`), keep-masks (`clip_max77_keep.npy`), tokeniser artefacts.
 - `legacy/` — superseded compute scripts (REPORT.org documents what each file replaced and why).
@@ -101,6 +99,6 @@ Don't rclone source files — use git.
 
 - sbatch headers: 10 cpus, 128 GB RAM, 1 GPU, 4–24 h walltime, mail to `amascare@sissa.it`.
 - Layer indices are 0-based in code but 1-based in paper text.
-- DeepSeek "≈ 60% relative depth" = layer 36 of 61 (`paper/main.tex:405`).
+- DeepSeek "≈ 60% relative depth" = layer 36 of 61.
 - CLIP text encoder is fed the 5-caption concatenation per image, **not** per-caption (`extract_hidden_clip.py:54-61`).
 - `scienceplots` is imported with try/except so plots render even when LaTeX/scienceplots is missing.

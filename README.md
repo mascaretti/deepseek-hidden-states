@@ -8,8 +8,11 @@ predictability* between two representation spaces: `Δ(X→Y) ≈ 0` means neigh
 in `X` predict those in `Y`; `Δ(X→Y) ≈ 1` means they carry no information about each
 other. The asymmetry `Δ(X→Y) ≠ Δ(Y→X)` is the quantity of interest.
 
-The accompanying paper lives in `paper/` (the active branch `image-captions` is
-the TMLR rebuttal track). For agent‑oriented working notes and conventions, see
+The accompanying TMLR paper is maintained in a separate Overleaf‑synced project
+(`~/Documenti/Semantics-TMLR/`), **not** in this repo — this repository holds
+only the compute/plot code and renders figures into that project's `figs-tmlr/`.
+The active branch `image-captions` is the TMLR rebuttal track. For
+agent‑oriented working notes and conventions, see
 [`CLAUDE.md`](CLAUDE.md); for an audit of which scripts are active vs superseded,
 see [`REPORT.org`](REPORT.org).
 
@@ -64,7 +67,7 @@ has a `run_<name>.sbatch` driver (many are slurm arrays — see the
                           │   layer_NN.safetensors
                           │   {inf_imb, inf_imb_se, ranks, cards, r_ranks, r_cards}
                           ▼
-        notebooks/*_plot.py  →  paper/figs-tmlr/{,rebuttal/}*.pdf
+        notebooks/*_plot.py  →  figs-tmlr/{,rebuttal/}*.pdf  (Overleaf project)
 
   side-branch (CLIP token-cap rebuttal):
    build_clip_max77_keep.py ─► data/clip_max77_keep.npy ─► --keep_indices
@@ -104,15 +107,17 @@ Supporting metric libs: `cka.py`, `rsa.py` (Spearman/RSA), `alignment_metrics_li
 
 | Figure | Compute | Plot | Notes |
 |---|---|---|---|
-| **Fig. 1** (headline II‑vs‑CKA) | `notebooks/figure1_compute.py` | `notebooks/figure1_plot.py` | Synthetic Gaussians; II + CKA + RSA + Neighborhood Overlap, jackknife. Driver: `slurm/launch_figure1.sh`. Cached: `notebooks/figure1_data.npz`. |
-| CLIP rebuttal (token‑cap control) | — (reads `results-mean/`) | `notebooks/clip_max77_plot.py`, `notebooks/clip_four_cell_plot.py`, `notebooks/clip_vs_deepseek_filtered_plot.py` | Render to `paper/figs-tmlr/rebuttal/` |
+| **Fig. 1** (headline II‑vs‑CKA) | `notebooks/figure1_compute.py` | `notebooks/figure1_plot.py` | Synthetic Gaussians; II + CKA + RSA + Neighborhood Overlap, jackknife. Driver: `slurm/launch_figure1.sh`. Cached at the paper's p‑values: `notebooks/figure1_data_p1e2_p1e5.npz` (`p=10²,10⁵`). The plot emits a 2‑panel main figure (a + `p=10²`) and a standalone `_appendix.pdf` (`p=10⁵`). |
+| CLIP rebuttal (token‑cap control) | — (reads `results-mean/`) | `notebooks/clip_max77_plot.py`, `notebooks/clip_four_cell_plot.py`, `notebooks/clip_vs_deepseek_filtered_plot.py` | Render into the Overleaf project's `figs-tmlr/rebuttal/` |
 | CKA at p=10⁵ | `legacy/run_cka.py` (pickles in `infimbgauss/`) | `notebooks/cka_p1e5_plot.py` | |
 | Flickr token lengths | — | `notebooks/flickr_token_lengths.py` | Self‑contained (downloads Flickr30k) |
 
 Typical render:
 ```bash
-.venv/bin/python notebooks/figure1_plot.py --input notebooks/figure1_data.npz \
-    --output paper/figs-tmlr/figure1_ii_cka
+.venv/bin/python notebooks/figure1_plot.py \
+    --input notebooks/figure1_data_p1e2_p1e5.npz \
+    --output ~/Documenti/Semantics-TMLR/figs-tmlr/figure1_ii_cka
+# emits the 2-panel main figure + figure1_ii_cka_appendix.pdf (the p=1e5 panel)
 ```
 
 ---
@@ -156,7 +161,6 @@ Distance/geometry diagnostics: `test_twoNN.py`, `test_distance_strategies.py`
 | `run_*.sbatch`, `slurm/` | Cluster drivers (slurm arrays) |
 | `notebooks/` | Figure compute/plot scripts (dated experiment scripts too) |
 | `data/` | Local copies of cluster results (`results-mean/`), keep‑masks — **gitignored** |
-| `paper/` | TMLR paper source + figures (`figs-tmlr/`, `figs-tmlr/rebuttal/`) |
 | `legacy/` | Superseded compute scripts — see `REPORT.org` before reusing |
 | `infimbgauss/` | Gaussian/Bernoulli CKA pickles |
 
