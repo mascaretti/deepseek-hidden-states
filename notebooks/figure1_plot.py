@@ -1,9 +1,15 @@
 #!/usr/bin/env python
 """
-Plot Figure 1 from precomputed .npz (produced by figure1_compute.py).
+Plot Figure 1 (+ its appendix companion) from precomputed .npz (produced by
+figure1_compute.py).
 
-Left:   Panel A — II(X→Y), II(Y→X), CKA, Neighborhood Overlap vs rank index r.
-Right:  Panel B — one sub-panel per p value, II/CKA/NO vs fraction of shared features.
+Main figure (`{output}.pdf`):
+    Panel a — II(X→Y), II(Y→X), CKA, Neighborhood Overlap vs rank index r.
+    Panel b — shared-features curves at the *first* p value (p_values[0]).
+
+Appendix figure (`{output}_appendix.pdf`):
+    The remaining p value(s) (p_values[1:]) as a standalone figure — the
+    right-most shared-features panel that used to sit in Fig. 1.
 
 Usage:
     python notebooks/figure1_plot.py --input notebooks/figure1_data.npz \
@@ -52,20 +58,39 @@ def main():
 
     have_spearman = "a_mean_spearman" in d.files and not args.no_spearman
 
-    n_panels_b = len(p_values)
-    fig, axes = plt.subplots(1, 1 + n_panels_b,
-                             figsize=(3.5 * (1 + n_panels_b), 2.5))
-    if not hasattr(axes, "__len__"):
-        axes = [axes]
+    def draw_panel_b(ax, p):
+        """Render one shared-features sub-panel (II/CKA/NO/Spearman vs fraction)."""
+        p = int(p)
+        fracs = d[f"b_{p}_fracs"]
+        panel_b_lines = [
+            (f"b_{p}_mean_cka", "CKA", col_cka),
+            (f"b_{p}_mean_fwd", r"$\Delta(Y \rightarrow Y_{\mathrm{sub}})$", col_xy),
+            (f"b_{p}_mean_bwd", r"$\Delta(Y_{\mathrm{sub}} \rightarrow Y)$", col_yx),
+            (f"b_{p}_mean_no", "NO", col_no),
+        ]
+        if have_spearman:
+            panel_b_lines.insert(1, (f"b_{p}_mean_spearman", "Spearman", col_spm))
+        for key_base, label, color in panel_b_lines:
+            mean = d[key_base]
+            se = d[key_base.replace("mean", "se")]
+            ax.plot(fracs, mean, color=color, markersize=ms,
+                    markeredgecolor="black", markeredgewidth=mew, label=label)
+            ax.fill_between(fracs, mean - se, mean + se, color=color, alpha=0.2)
+        ax.set_xlabel("Fraction of shared features", fontsize=11)
+        ax.set_ylim(-0.05, 1.05)
+        ax.tick_params(labelsize=11)
+        ax.set_title(f"$p = {p}$", fontsize=11)
 
-    # Panel labels
-    labels = [chr(ord("a") + i) for i in range(1 + n_panels_b)]
+    # ==================================================================
+    # Main figure — Panel a (rank mapping) + Panel b (first p value)
+    # ==================================================================
+    fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.5))
     for i, ax in enumerate(axes):
-        ax.text(-0.14, 1.10, f"{labels[i]})", transform=ax.transAxes,
+        ax.text(-0.14, 1.10, f"{chr(ord('a') + i)})", transform=ax.transAxes,
                 fontsize=12, fontweight="bold", va="top")
 
     # ------------------------------------------------------------------
-    # Panel A
+    # Panel a
     # ------------------------------------------------------------------
     ax = axes[0]
     rel = np.arange(L) / L
@@ -93,38 +118,32 @@ def main():
     ax.set_title(f"$p = {dim}$", fontsize=11)
 
     # ------------------------------------------------------------------
-    # Panel B (one per p)
+    # Panel b — first p value only
     # ------------------------------------------------------------------
-    for i, p in enumerate(p_values):
-        ax = axes[1 + i]
-        p = int(p)
-        fracs = d[f"b_{p}_fracs"]
-
-        panel_b_lines = [
-            (f"b_{p}_mean_cka", "CKA", col_cka),
-            (f"b_{p}_mean_fwd", r"$\Delta(Y \rightarrow Y_{\mathrm{sub}})$", col_xy),
-            (f"b_{p}_mean_bwd", r"$\Delta(Y_{\mathrm{sub}} \rightarrow Y)$", col_yx),
-            (f"b_{p}_mean_no", "NO", col_no),
-        ]
-        if have_spearman:
-            panel_b_lines.insert(1, (f"b_{p}_mean_spearman", "Spearman", col_spm))
-        for key_base, label, color in panel_b_lines:
-            mean = d[key_base]
-            se = d[key_base.replace("mean", "se")]
-            ax.plot(fracs, mean, color=color, markersize=ms,
-                    markeredgecolor="black", markeredgewidth=mew, label=label)
-            ax.fill_between(fracs, mean - se, mean + se, color=color, alpha=0.2)
-
-        ax.set_xlabel("Fraction of shared features", fontsize=11)
-        ax.set_ylim(-0.05, 1.05)
-        ax.tick_params(labelsize=11)
-        ## ax.legend(fontsize=6, loc="best")
-        ax.set_title(f"$p = {p}$", fontsize=11)
+    draw_panel_b(axes[1], p_values[0])
 
     fig.tight_layout()
     for ext in ("pdf", "png"):
         fig.savefig(f"{args.output}.{ext}", dpi=300)
     print(f"Saved {args.output}.pdf and {args.output}.png")
+
+    # ==================================================================
+    # Appendix figure — the remaining p value(s), standalone
+    # ==================================================================
+    appendix_ps = p_values[1:]
+    if len(appendix_ps) > 0:
+        fig_a, axes_a = plt.subplots(1, len(appendix_ps),
+                                     figsize=(3.5 * len(appendix_ps), 2.5))
+        if not hasattr(axes_a, "__len__"):
+            axes_a = [axes_a]
+        for ax, p in zip(axes_a, appendix_ps):
+            draw_panel_b(ax, p)
+        axes_a[0].set_ylabel("II / CKA / NO", fontsize=11)
+        fig_a.tight_layout()
+        out_app = f"{args.output}_appendix"
+        for ext in ("pdf", "png"):
+            fig_a.savefig(f"{out_app}.{ext}", dpi=300)
+        print(f"Saved {out_app}.pdf and {out_app}.png")
 
 
 if __name__ == "__main__":
