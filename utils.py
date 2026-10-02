@@ -20,7 +20,6 @@ def list_folder(path, desc="chunk_"):
     return files
 
 def bf16_torch_to_jax(tensor):
-    import jax.numpy as jnp
     intermediate_tensor = tensor.view(torch.uint16)
     tensor = jnp.array(intermediate_tensor).view('bfloat16')
     return tensor
